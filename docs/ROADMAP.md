@@ -12,7 +12,7 @@ Post-workshop: phase 5. Speed target: about 10 tok/s generation (tentative).
 | 1 | `feat/baseline-smoke` | Build llama.cpp for CPU, run a small supported GGUF, log a `llama-bench` baseline | in review (validated on cloud VM; laptop run pending) |
 | 2 | `feat/apertus-gguf` | Check v1.5 against llama.cpp's `apertus` architecture, convert to F16 GGUF and quantize to Q4_K_M on a VM, run and benchmark on the laptop | in review (converted and validated against the reference on the cloud VM; laptop run pending) |
 | 3 | `feat/serving` | `serve.sh` with `llama-server` (web UI + OpenAI API), verified with networking off; the workshop demo | in review (verified offline on the cloud VM with a stand-in model; laptop run with Apertus pending) |
-| 4 | `perf/cpu-tuning` | Benchmark matrix (threads, quant types, KV-cache quant, context, optional Vulkan); pick the fastest acceptable config | planned |
+| 4 | `perf/cpu-tuning` | Benchmark matrix (threads, quant types, KV-cache quant, context, optional Vulkan); pick the fastest acceptable config | in review (script ready; laptop run and config choice pending) |
 | 5 | `feat/dspark-spec-decoding` | Port the DSpark head into llama.cpp, measure acceptance rate and tok/s | planned (post-workshop) |
 
 ## Phase details
