@@ -7,6 +7,5 @@ models/
 *.safetensors
 
 # Python
-.venv/
-.venv-ref/
+.venv*/
 __pycache__/
