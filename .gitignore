@@ -1,0 +1,11 @@
+# llama.cpp checkout and build (scripts/setup_llamacpp.sh)
+vendor/
+
+# Model weights and conversion work dirs
+models/
+*.gguf
+*.safetensors
+
+# Python
+.venv/
+__pycache__/
