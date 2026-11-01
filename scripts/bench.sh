@@ -13,13 +13,15 @@
 #   --dry-run  print the row instead of appending it
 # Extra args after "--" go to llama-bench verbatim and are recorded in Settings,
 # e.g. -- -ctk q8_0 -ctv q8_0 -fa 1
-# Env: LLAMA_CPP_DIR (default: vendor/llama.cpp), RESULTS (default: benchmarks/results.md)
+# Env: LLAMA_CPP_DIR (default: vendor/llama.cpp), BUILD_DIR (default: $LLAMA_CPP_DIR/build),
+#      RESULTS (default: benchmarks/results.md)
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LLAMA_CPP_DIR="${LLAMA_CPP_DIR:-$REPO_ROOT/vendor/llama.cpp}"
 RESULTS="${RESULTS:-$REPO_ROOT/benchmarks/results.md}"
-BENCH="$LLAMA_CPP_DIR/build/bin/llama-bench"
+BUILD_DIR="${BUILD_DIR:-$LLAMA_CPP_DIR/build}"
+BENCH="$BUILD_DIR/bin/llama-bench"
 
 model="" threads=4 n_prompt=512 n_gen=128 reps=3 hw="" name="" notes="" dry_run=0
 extra=()
@@ -35,7 +37,7 @@ while [[ $# -gt 0 ]]; do
     --notes) notes="$2"; shift 2 ;;
     --dry-run) dry_run=1; shift ;;
     --) shift; extra=("$@"); break ;;
-    -h|--help) sed -n '2,18p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,17p' "$0"; exit 0 ;;
     *) echo "unknown option: $1 (see --help)" >&2; exit 1 ;;
   esac
 done
