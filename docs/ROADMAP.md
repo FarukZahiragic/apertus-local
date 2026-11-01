@@ -9,7 +9,7 @@ Post-workshop: phase 5. Speed target: about 10 tok/s generation (tentative).
 | Phase | Branch | Goal | Status |
 | --- | --- | --- | --- |
 | 0 | `chore/bootstrap` | Repo skeleton, working rules, docs, README | in review |
-| 1 | `feat/baseline-smoke` | Build llama.cpp for CPU, run a small supported GGUF, log a `llama-bench` baseline | planned |
+| 1 | `feat/baseline-smoke` | Build llama.cpp for CPU, run a small supported GGUF, log a `llama-bench` baseline | in review (validated on cloud VM; laptop run pending) |
 | 2 | `feat/apertus-gguf` | Check v1.5 against llama.cpp's `apertus` architecture, convert to F16 GGUF and quantize to Q4_K_M on a VM, run and benchmark on the laptop | planned |
 | 3 | `feat/serving` | `serve.sh` with `llama-server` (web UI + OpenAI API), verified with networking off; the workshop demo | planned |
 | 4 | `perf/cpu-tuning` | Benchmark matrix (threads, quant types, KV-cache quant, context, optional Vulkan); pick the fastest acceptable config | planned |

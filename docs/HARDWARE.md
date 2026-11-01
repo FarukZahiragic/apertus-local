@@ -26,6 +26,13 @@
 - A machine with faster memory (LPDDR5x on Intel Lunar Lake, or Apple M-series at
   100 GB/s or more) would likely reach 10 tok/s or more without speculative decoding.
 
+## Cloud VM (conversion and script testing only)
+
+The scripts are developed and tested on a cloud VM: Intel Xeon (Sapphire Rapids class,
+AVX-512 with VNNI and AMX), 4 vCPU, 16 GB RAM (about 5 GB available), no GPU. It also
+runs the HF to GGUF conversion. Its benchmark rows are labelled `cloud VM (NOT laptop)`
+and say nothing about laptop speed.
+
 ## Threads
 
 The i5-1135G7 has 4 physical cores. Generation usually peaks at 4 threads (one per
