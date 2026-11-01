@@ -35,11 +35,11 @@ laptop the Hardware column is filled in as `laptop i5-1135G7` automatically.
 
 The conversion runs on a cloud VM, not the laptop (it needs about 40 GB of disk); see
 [docs/IO.md](docs/IO.md#conversion-cloud-vm). On the laptop, put only the Q4_K_M file
-(about 5.5 GB) into `models/`, by `scp`, USB stick, or from a private Hugging Face repo:
+(5.3 GiB) into `models/`, by `scp`, USB stick, or from a private Hugging Face repo:
 
 ```bash
 HF_TOKEN=... scripts/get_model.sh <hf-user>/apertus-v1.5-8b-GGUF apertus-v1.5-8b-Q4_K_M.gguf
-sha256sum models/apertus-v1.5-8b-Q4_K_M.gguf     # compare with SHA256SUMS from the VM
+sha256sum models/apertus-v1.5-8b-Q4_K_M.gguf     # e8ddf308...0a90eb8c (full value in docs/IO.md)
 vendor/llama.cpp/build/bin/llama-cli -m models/apertus-v1.5-8b-Q4_K_M.gguf \
   -t 4 -c 4096 -n 128 -st -p "Explain in two sentences what Apertus is."
 scripts/bench.sh -m models/apertus-v1.5-8b-Q4_K_M.gguf -t 4 --name Apertus-v1.5-8B
