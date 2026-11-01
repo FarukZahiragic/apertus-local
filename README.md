@@ -18,7 +18,20 @@ sudo apt install -y git cmake build-essential python3 curl
 git clone https://github.com/FarukZahiragic/apertus-local && cd apertus-local
 ```
 
-The steps are added as each phase lands (see [docs/ROADMAP.md](docs/ROADMAP.md)).
+### 1. Build llama.cpp and run a smoke test
+
+```bash
+scripts/setup_llamacpp.sh        # pinned llama.cpp, CPU build with -march=native (~10 min)
+scripts/get_model.sh             # Qwen2.5-1.5B-Instruct Q4_K_M (1.1 GB), sha256-checked
+vendor/llama.cpp/build/bin/llama-cli -m models/qwen2.5-1.5b-instruct-q4_k_m.gguf \
+  -t 4 -n 64 -st -p "In one sentence, why does running a model locally help privacy?"
+scripts/bench.sh -m models/qwen2.5-1.5b-instruct-q4_k_m.gguf -t 4 --notes "baseline"
+```
+
+`bench.sh` appends a row to [benchmarks/results.md](benchmarks/results.md); on the
+laptop the Hardware column is filled in as `laptop i5-1135G7` automatically.
+
+Further steps are added as each phase lands (see [docs/ROADMAP.md](docs/ROADMAP.md)).
 
 ## Docs
 
