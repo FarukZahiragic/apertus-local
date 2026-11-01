@@ -35,11 +35,15 @@ The output head is kept at Q6_K or better in every variant (see
 
 ## Benchmarks
 
-Command format (phase 1 adds the script):
+Command format:
 
 ```bash
-scripts/bench.sh -m models/<file>.gguf [-t THREADS] [-- extra llama-bench args]
+scripts/bench.sh -m models/<file>.gguf [-t THREADS] [-p 512] [-n 128] [-r 3] \
+  [--hw LABEL] [--notes TEXT] [--dry-run] [-- extra llama-bench args]
 ```
+
+It runs `llama-bench -o json` and turns the result into one table row. Extra
+`llama-bench` flags (for example `-ctk q8_0 -ctv q8_0`) are recorded in Settings.
 
 Each run appends one row to [benchmarks/results.md](../benchmarks/results.md):
 
