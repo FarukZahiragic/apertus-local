@@ -10,19 +10,48 @@
 `HF_TOKEN` is only read from the environment and only needed on the machine that
 downloads the gated weights (the cloud VM). Never commit it.
 
+The Apertus revision is pinned in `scripts/convert_quantize.sh` (`HF_REVISION`, default
+`0be762a6`, the `main` head on 2026-11-01). The DSpark drafter was trained against
+revision `a411d838`; check that the weights did not change between the two before
+phase 5.
+
+## Conversion (cloud VM)
+
+```bash
+scripts/setup_llamacpp.sh
+export HF_TOKEN=...                       # account that accepted the model terms
+scripts/convert_quantize.sh               # Q4_K_M and Q4_0; add IQ4_XS etc. as arguments
+```
+
+Needs about 40 GB of disk and 8 GB of free RAM. Only the language model is converted;
+the vision and audio tokenizers are skipped. `models/SHA256SUMS` gets one line per
+output file.
+
+Logit check against the reference implementation (separate venv, because the
+converter pins `transformers==4.57.6`):
+
+```bash
+python3 -m venv .venv-ref
+.venv-ref/bin/pip install --extra-index-url https://download.pytorch.org/whl/cpu torch==2.11.0 \
+  numpy safetensors "transformers @ git+https://github.com/swiss-ai/transformers@3797303dda74844e3d1f8977ff5518bb91f818b4"
+.venv-ref/bin/python scripts/check_logits.py --hf-dir models/hf/Apertus-v1.5-8B \
+  --gguf models/apertus-v1.5-8b-Q4_K_M.gguf
+```
+
 ## GGUF files
 
 All model files live in `models/` (ignored by git).
 
 | File | Size (approx.) | Use |
 | --- | --- | --- |
-| `apertus-v1.5-8b-F16.gguf` | 16 GB | Intermediate, VM only |
-| `apertus-v1.5-8b-Q4_K_M.gguf` | 5 GB | Default for the laptop |
-| `apertus-v1.5-8b-Q4_0.gguf` | 4.7 GB | Tuning comparison (fast CPU repack paths) |
-| `apertus-v1.5-8b-IQ4_XS.gguf` | 4.5 GB | Tuning comparison |
+| `apertus-v1.5-8b-F16.gguf` | 16 GB | Intermediate, VM only (`--keep-f16`) |
+| `apertus-v1.5-8b-Q4_K_M.gguf` | 5.5 GB | Default for the laptop |
+| `apertus-v1.5-8b-Q4_0.gguf` | 5.3 GB | Tuning comparison (fast CPU repack paths) |
+| `apertus-v1.5-8b-IQ4_XS.gguf` | 5.1 GB | Tuning comparison |
 
-The output head is kept at Q6_K or better in every variant (see
-[ARCHITECTURE.md](ARCHITECTURE.md#references)).
+The output head and token embedding are Q6_K in every variant (see
+[ARCHITECTURE.md](ARCHITECTURE.md#quantization-choices)). The laptop has about 11 GB of
+free disk: copy only the Q4 file(s) it needs, never the F16 file or the HF download.
 
 ## llama-server
 

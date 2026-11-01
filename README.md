@@ -31,6 +31,20 @@ scripts/bench.sh -m models/qwen2.5-1.5b-instruct-q4_k_m.gguf -t 4 --notes "basel
 `bench.sh` appends a row to [benchmarks/results.md](benchmarks/results.md); on the
 laptop the Hardware column is filled in as `laptop i5-1135G7` automatically.
 
+### 2. Get Apertus-v1.5-8B as a 4-bit GGUF
+
+The conversion runs on a cloud VM, not the laptop (it needs about 40 GB of disk); see
+[docs/IO.md](docs/IO.md#conversion-cloud-vm). On the laptop, put only the Q4_K_M file
+(about 5.5 GB) into `models/`, by `scp`, USB stick, or from a private Hugging Face repo:
+
+```bash
+HF_TOKEN=... scripts/get_model.sh <hf-user>/apertus-v1.5-8b-GGUF apertus-v1.5-8b-Q4_K_M.gguf
+sha256sum models/apertus-v1.5-8b-Q4_K_M.gguf     # compare with SHA256SUMS from the VM
+vendor/llama.cpp/build/bin/llama-cli -m models/apertus-v1.5-8b-Q4_K_M.gguf \
+  -t 4 -c 4096 -n 128 -st -p "Explain in two sentences what Apertus is."
+scripts/bench.sh -m models/apertus-v1.5-8b-Q4_K_M.gguf -t 4 --name Apertus-v1.5-8B
+```
+
 Further steps are added as each phase lands (see [docs/ROADMAP.md](docs/ROADMAP.md)).
 
 ## Docs

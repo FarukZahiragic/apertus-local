@@ -10,6 +10,7 @@
 | RAM | 2 x 8 GB DDR4-3200, dual channel (16 GB) |
 | Memory bandwidth | 51.2 GB/s theoretical, about 35 to 40 GB/s in practice |
 | OS | Ubuntu 24.04 |
+| Free disk | about 11 GB: room for one or two Q4 GGUF files (about 5.5 GB each), not the F16 file |
 
 ## What this means for speed
 
