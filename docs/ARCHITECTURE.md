@@ -85,8 +85,19 @@ logits with `llama-debug` on the GGUF. On a synthetic checkpoint with the exact 
 layout (2 small layers, real 266,752-token vocabulary and tokenizer, real vision/audio
 tokenizer shapes), the F16 GGUF matched the reference with NMSE 1.8e-6, KL 1.5e-6,
 identical top-10 and identical tokenization; non-text logits were masked; `rope_freqs`
-matched the reference llama3 frequencies to 1e-7. The same check on the real weights
-runs once Hugging Face access is granted.
+matched the reference llama3 frequencies to 1e-7.
+
+On the real weights (revision `0be762a6`, prompt "The capital of Switzerland is", 6
+tokens), against the reference:
+
+| GGUF | NMSE | KL | Top-1 | Top-10 overlap |
+| --- | --- | --- | --- | --- |
+| F16 | 7.4e-8 | 3.4e-8 | same | 10/10 |
+| Q4_K_M | 5.2e-3 | 3.2e-3 | same | 8/10 |
+
+Tokenization matched, the 135,680 non-text logits were masked, and `llama-cli` gave a
+coherent answer. The GGUF has `add_bos=true` and llama-server adds exactly one `<s>`
+before the rendered chat template.
 
 ### Quantization choices
 

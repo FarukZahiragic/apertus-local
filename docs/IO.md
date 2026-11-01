@@ -42,12 +42,12 @@ python3 -m venv .venv-ref
 
 All model files live in `models/` (ignored by git).
 
-| File | Size (approx.) | Use |
-| --- | --- | --- |
-| `apertus-v1.5-8b-F16.gguf` | 16 GB | Intermediate, VM only (`--keep-f16`) |
-| `apertus-v1.5-8b-Q4_K_M.gguf` | 5.5 GB | Default for the laptop |
-| `apertus-v1.5-8b-Q4_0.gguf` | 5.3 GB | Tuning comparison (fast CPU repack paths) |
-| `apertus-v1.5-8b-IQ4_XS.gguf` | 5.1 GB | Tuning comparison |
+| File | Size | Use | sha256 (HF rev `0be762a6`, llama.cpp `442b0444`) |
+| --- | --- | --- | --- |
+| `apertus-v1.5-8b-F16.gguf` | 16.0 GiB | Intermediate, VM only (`--keep-f16`) | `f8282ab55311b6710620b040e62daa7e73c56b804a8bb114a48cd39385adac21` |
+| `apertus-v1.5-8b-Q4_K_M.gguf` | 5.3 GiB | Default for the laptop | `e8ddf308abe64441725dcdbfc32e7c89f2b52b94e90f24c30236694f0a90eb8c` |
+| `apertus-v1.5-8b-Q4_0.gguf` | 4.9 GiB | Tuning comparison (fast CPU repack paths) | `a1f9585e5e60294eea62d5540dc4b2dd15da6faa20a620e42aa1becb46fc5882` |
+| `apertus-v1.5-8b-IQ4_XS.gguf` | 4.8 GiB | Tuning comparison | `999946833b89d5b6f9bf2ddd93a56af7fc58a728a359537db0a84bb6e2ac757e` |
 
 The output head and token embedding are Q6_K in every variant (see
 [ARCHITECTURE.md](ARCHITECTURE.md#quantization-choices)). The laptop has about 11 GB of
