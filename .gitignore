@@ -8,4 +8,5 @@ models/
 
 # Python
 .venv/
+.venv-ref/
 __pycache__/

@@ -5,7 +5,7 @@
 | Component | Role | Where it runs |
 | --- | --- | --- |
 | `swiss-ai/Apertus-v1.5-8B` (Hugging Face) | Source weights, BF16 safetensors (gated) | downloaded on a cloud VM |
-| `convert_hf_to_gguf.py` + `llama-quantize` (llama.cpp) | Convert to an F16 GGUF, then quantize to 4-bit (Q4_K_M, Q4_0) | cloud VM (the F16 file is about 16 GB) |
+| `scripts/convert_quantize.sh` (`convert_hf_to_gguf.py` + `llama-quantize`) | Convert the language model to an F16 GGUF, then quantize to 4-bit (Q4_K_M, Q4_0) | cloud VM (the F16 file is about 16 GB) |
 | `apertus-v1.5-8b-Q4_K_M.gguf` | The single file copied to the laptop (about 5 GB) | laptop |
 | `llama-server` (llama.cpp) | Built-in chat web UI and OpenAI-compatible API on localhost | laptop, offline |
 | `llama-bench` + `scripts/bench.sh` | Speed measurements, one row per run in `benchmarks/results.md` | laptop (and VM, labelled) |
@@ -34,8 +34,77 @@ from local files; after setup, no network access is needed.
 - `llama-server` ships a chat web UI and an OpenAI-compatible API in one binary, so
   workshop participants need no extra software.
 - It has an `apertus` architecture (added for Apertus v1, including the xIELU
-  activation and QK-norm). Whether v1.5 maps onto it cleanly is checked in phase 2.
+  activation and QK-norm). v1.5 needs a small extension, see below.
 - `llama-bench` gives reproducible prompt and generation throughput numbers.
+
+## Apertus v1.5 support
+
+### What changed from v1
+
+Upstream llama.cpp only knows `ApertusForCausalLM` (v1). The v1.5 checkpoint is
+`Apertus1p5ForConditionalGeneration` (`model_type: apertus1p5`), a multimodal wrapper.
+Compared with the reference implementation (Swiss AI transformers fork
+`feature/apertus_1p5_pipeline` @ `3797303`, the code inside the official
+`ghcr.io/swiss-ai/vllm_apertus_1.5_release` image):
+
+| Item | v1.5 | Same as v1? |
+| --- | --- | --- |
+| Decoder | 32 layers, hidden 4096, 32 query / 8 KV heads, head dim 128, pre-norm RMSNorm, QK-norm | yes |
+| MLP | up/down projections with xIELU (per-layer `alpha_n`, `alpha_p`, `beta`, `eps`), intermediate 21,504 | yes |
+| RoPE | llama3 scaling, theta 4,000,000, factor 32, original context 8,192 (NEOX-style `rotate_half`) | yes (now under `rope_parameters`) |
+| Weight names | `model.language_model.*` and `lm_head.weight`; vision and audio tokenizers under `model.vision_tokenizer.*`, `model.audio_tokenizer.*` | no |
+| Config | text settings nested under `text_config` | no |
+| Vocabulary | **untied and split**: input embedding 266,752 rows (131,072 text + image codebook at 131,272 + audio codebook at 262,344), output head 131,072 rows (`output_vocab_size`) | no |
+| Chat format | new template (`<|system_start|>`, `<|assistant_start|>`, deliberation and tool sections); end of turn `<|assistant_end|>` (68) | no |
+
+### How it is handled
+
+We build from a community branch instead of patching llama.cpp ourselves:
+[`MichelRosselli/llama.cpp` @ `model/apertus-v1.5-refresh-20260914`](https://github.com/MichelRosselli/llama.cpp/tree/model/apertus-v1.5-refresh-20260914),
+pinned at commit `442b0444` in `scripts/setup_llamacpp.sh`. It is 7 commits on top of
+upstream `b11347`, which already contains the DSpark drafter (`--spec-type draft-dspark`,
+upstream #25173), so the same build serves phases 2 to 5. The upstream PR for the split
+vocabulary (ggml-org/llama.cpp#26226) is still open. The branch:
+
+- registers `Apertus1p5ForConditionalGeneration` in the converter, reads `text_config`,
+  maps `model.language_model.*`, and ignores the vision and audio tokenizers for the
+  text GGUF;
+- writes `apertus.vocab_size_out = 131072`, loads a 131,072-row output head next to the
+  full 266,752-row embedding, and pads the logits of non-text tokens with -inf;
+- adds the v1.5 chat template and tool-call parser, and sets `<|assistant_end|>` as
+  EOS/EOT.
+
+Not used here: its vision/audio (`mtmd`) support. Missing for phase 5: the Apertus graph
+does not expose `t_layer_inp` hidden states yet, which DSpark needs.
+
+### Validation against the reference
+
+`scripts/check_logits.py` runs the reference decoder layers one at a time (weights
+streamed from safetensors, about 3 GB of RAM for the 8B model) and compares last-token
+logits with `llama-debug` on the GGUF. On a synthetic checkpoint with the exact v1.5
+layout (2 small layers, real 266,752-token vocabulary and tokenizer, real vision/audio
+tokenizer shapes), the F16 GGUF matched the reference with NMSE 1.8e-6, KL 1.5e-6,
+identical top-10 and identical tokenization; non-text logits were masked; `rope_freqs`
+matched the reference llama3 frequencies to 1e-7.
+
+On the real weights (revision `0be762a6`, prompt "The capital of Switzerland is", 6
+tokens), against the reference:
+
+| GGUF | NMSE | KL | Top-1 | Top-10 overlap |
+| --- | --- | --- | --- | --- |
+| F16 | 7.4e-8 | 3.4e-8 | same | 10/10 |
+| Q4_K_M | 5.2e-3 | 3.2e-3 | same | 8/10 |
+
+Tokenization matched, the 135,680 non-text logits were masked, and `llama-cli` gave a
+coherent answer. The GGUF has `add_bos=true` and llama-server adds exactly one `<s>`
+before the rendered chat template.
+
+### Quantization choices
+
+`scripts/convert_quantize.sh` keeps the output head and the token embedding at Q6_K in
+every variant. The head is read for every generated token, and the reference post below
+measured a 6 to 11% quality loss from 4-bit embedding and head. The embedding costs disk
+space only: rows are looked up, not multiplied.
 
 ## Where DSpark plugs in
 
