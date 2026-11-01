@@ -45,6 +45,18 @@ vendor/llama.cpp/build/bin/llama-cli -m models/apertus-v1.5-8b-Q4_K_M.gguf \
 scripts/bench.sh -m models/apertus-v1.5-8b-Q4_K_M.gguf -t 4 --name Apertus-v1.5-8B
 ```
 
+### 3. Serve it offline (the workshop demo)
+
+```bash
+scripts/serve.sh                      # http://127.0.0.1:8080/ web UI, /v1 OpenAI API
+python3 -m venv .venv-client && .venv-client/bin/pip install openai   # once, while online
+.venv-client/bin/python examples/openai_client.py "What is Apertus?"
+```
+
+Defaults: 4 threads, 4,096-token context (`CTX=8192 scripts/serve.sh` for longer
+documents), one slot. How to prove it works with networking disabled:
+[docs/OFFLINE.md](docs/OFFLINE.md).
+
 Further steps are added as each phase lands (see [docs/ROADMAP.md](docs/ROADMAP.md)).
 
 ## Docs
@@ -54,4 +66,5 @@ Further steps are added as each phase lands (see [docs/ROADMAP.md](docs/ROADMAP.
 - [docs/IO.md](docs/IO.md): model files, server endpoint, benchmark format
 - [docs/ROADMAP.md](docs/ROADMAP.md): phases and status
 - [docs/HARDWARE.md](docs/HARDWARE.md): laptop specs and speed expectations
+- [docs/OFFLINE.md](docs/OFFLINE.md): verifying the demo with networking disabled
 - [benchmarks/results.md](benchmarks/results.md): all benchmark runs
