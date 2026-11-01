@@ -80,6 +80,14 @@ scripts/bench.sh -m models/<file>.gguf [-t THREADS] [-p 512] [-n 128] [-r 3] \
 
 It runs `llama-bench -o json` and turns the result into one table row. Extra
 `llama-bench` flags (for example `-ctk q8_0 -ctv q8_0`) are recorded in Settings.
+`BUILD_DIR=vendor/llama.cpp/build-vulkan` selects the Vulkan build.
+
+The tuning matrix writes the same row format to
+[benchmarks/cpu-tuning.md](../benchmarks/cpu-tuning.md):
+
+```bash
+scripts/bench_matrix.sh [--quick] [--vulkan] [--dry-run] [MODEL.gguf ...]
+```
 
 Each run appends one row to [benchmarks/results.md](../benchmarks/results.md):
 

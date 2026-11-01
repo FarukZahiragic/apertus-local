@@ -57,6 +57,19 @@ Defaults: 4 threads, 4,096-token context (`CTX=8192 scripts/serve.sh` for longer
 documents), one slot. How to prove it works with networking disabled:
 [docs/OFFLINE.md](docs/OFFLINE.md).
 
+### 4. Tune for the laptop (optional)
+
+```bash
+scripts/bench_matrix.sh --quick       # 5-minute setup check
+scripts/bench_matrix.sh               # full matrix, about 35 to 45 minutes
+```
+
+It compares 4 vs 8 threads, Q4_K_M / Q4_0 / IQ4_XS (whichever files are in `models/`),
+F16 vs Q8_0 KV cache, and filled contexts, and writes rows to
+[benchmarks/cpu-tuning.md](benchmarks/cpu-tuning.md). For the Iris Xe iGPU, build once
+with `scripts/setup_llamacpp.sh --vulkan` (see the script header for packages) and add
+`--vulkan`. With 11 GB of free disk, test one extra quant file at a time.
+
 Further steps are added as each phase lands (see [docs/ROADMAP.md](docs/ROADMAP.md)).
 
 ## Docs
