@@ -62,8 +62,11 @@ free disk: copy only the Q4 file(s) it needs, never the F16 file or the HF downl
 - Health: `http://127.0.0.1:8080/health`
 - Model name in the API: the GGUF file name without `.gguf`, e.g. `apertus-v1.5-8b-Q4_K_M`.
 - Flags set by `scripts/serve.sh`: `--threads 4`, `--ctx-size 4096`, `--parallel 1`,
-  `--jinja` (Apertus 1.5 chat template from the GGUF), `--offline` (no downloads).
-  Override with `MODEL`, `HOST`, `PORT`, `THREADS`, `CTX`, or pass extra flags after `--`.
+  `--jinja` (Apertus 1.5 chat template from the GGUF),
+  `--chat-template-kwargs '{"enable_thinking":false}'` (no deliberation before answers;
+  `THINKING=1` turns it back on), `--offline` (no downloads).
+  Override with `MODEL`, `HOST`, `PORT`, `THREADS`, `CTX`, `THINKING`, or pass extra flags
+  after `--`.
 - KV cache: about 0.13 MB per token at F16 (32 layers x 8 KV heads x 128 x 2), so
   0.5 GB at 4,096 tokens and 1 GB at 8,192.
 - Client example: `examples/openai_client.py` (official `openai` package; `--file` for

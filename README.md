@@ -54,7 +54,8 @@ python3 -m venv .venv-client && .venv-client/bin/pip install openai   # once, wh
 ```
 
 Defaults: 4 threads, 4,096-token context (`CTX=8192 scripts/serve.sh` for longer
-documents), one slot. How to prove it works with networking disabled:
+documents), one slot, thinking off (`THINKING=1 scripts/serve.sh` to let Apertus
+deliberate first, which is much slower on a CPU). How to prove it works with networking disabled:
 [docs/OFFLINE.md](docs/OFFLINE.md).
 
 ### 4. Tune for the laptop (optional)

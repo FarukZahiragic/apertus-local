@@ -8,6 +8,7 @@
 #        PORT     (default: 8080)
 #        THREADS  (default: 4, one per physical core on the i5-1135G7)
 #        CTX      context size in tokens (default: 4096; 8192 for longer documents)
+#        THINKING 1 to let Apertus deliberate before answering (default: 0, off)
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -19,10 +20,15 @@ HOST="${HOST:-127.0.0.1}"
 PORT="${PORT:-8080}"
 THREADS="${THREADS:-4}"
 CTX="${CTX:-4096}"
+THINKING="${THINKING:-0}"
 
 [[ "${1:-}" == "--" ]] && shift
 [[ -x "$SERVER" ]] || { echo "error: $SERVER missing; run scripts/setup_llamacpp.sh" >&2; exit 1; }
 [[ -f "$MODEL" ]] || { echo "error: model not found: $MODEL (see README step 2)" >&2; exit 1; }
+
+# The upstream template enables deliberation by default; on a CPU that adds tens of
+# seconds of reasoning before every answer, so it is off unless THINKING=1.
+if [[ "$THINKING" == "1" ]]; then enable_thinking=true; else enable_thinking=false; fi
 
 echo "Web UI:     http://$HOST:$PORT/"
 echo "OpenAI API: http://$HOST:$PORT/v1  (any API key)"
@@ -37,5 +43,6 @@ exec "$SERVER" \
   --ctx-size "$CTX" \
   --parallel 1 \
   --jinja \
+  --chat-template-kwargs "{\"enable_thinking\":$enable_thinking}" \
   --offline \
   "$@"
