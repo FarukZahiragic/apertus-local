@@ -1,13 +1,23 @@
 # apertus-local
 
-Run [Apertus-v1.5-8B](https://huggingface.co/swiss-ai/Apertus-v1.5-8B) on a regular
-laptop with no GPU and no internet during inference, using
-[llama.cpp](https://github.com/ggml-org/llama.cpp). Built for the hands-on deployment
-session of the Nov 10 NGO workshop: private data never leaves the machine, and it keeps
-working with poor connectivity.
+Run [Apertus-v1.5-8B](https://huggingface.co/swiss-ai/Apertus-v1.5-8B) on a machine
+you control, with no GPU and no internet during inference, using
+[llama.cpp](https://github.com/ggml-org/llama.cpp). The use is private chat and
+questions about a document: the data stays on that machine, including when
+connectivity is poor.
 
-Reference machine: Intel i5-1135G7, 16 GB RAM, Ubuntu 24.04 (see
-[docs/HARDWARE.md](docs/HARDWARE.md)). Expect about 6 to 8 tokens/s generation.
+The measured run is a laptop ([docs/HARDWARE.md](docs/HARDWARE.md),
+[benchmarks/results.md](benchmarks/results.md)). The same path is a server you
+administer: local weights, llama.cpp, and a chat UI or an OpenAI-compatible API
+on that machine (`HOST` in `scripts/serve.sh`; the default bind is localhost).
+It is also the pattern for other open-weight models llama.cpp already supports.
+The Qwen file in the quickstart is that case. Apertus 1.5 is the special case:
+stock llama.cpp does not load it yet, so this repository converts it to a 4-bit
+GGUF first.
+
+A split onto a small added GPU is outside this repository. On the reference
+laptop the fair Q4_K_M run is about 5.9 tokens/s generation and 23 tokens/s
+prompt processing (the 1 November 2026 row in `benchmarks/results.md`).
 
 ## Quickstart
 
@@ -45,7 +55,7 @@ vendor/llama.cpp/build/bin/llama-cli -m models/apertus-v1.5-8b-Q4_K_M.gguf \
 scripts/bench.sh -m models/apertus-v1.5-8b-Q4_K_M.gguf -t 4 --name Apertus-v1.5-8B
 ```
 
-### 3. Serve it offline (the workshop demo)
+### 3. Serve it offline
 
 ```bash
 scripts/serve.sh                      # http://127.0.0.1:8080/ web UI, /v1 OpenAI API
