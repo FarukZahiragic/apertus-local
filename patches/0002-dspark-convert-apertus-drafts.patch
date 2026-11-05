@@ -1,0 +1,52 @@
+diff --git a/conversion/llama.py b/conversion/llama.py
+index 06ac04ba..67d0b0f3 100644
+--- a/conversion/llama.py
++++ b/conversion/llama.py
+@@ -475,7 +475,8 @@ class Apertus1p5Model(ApertusModel):
+     model_arch = gguf.MODEL_ARCH.APERTUS
+ 
+     def set_vocab(self):
+-        super().set_vocab()
++        # explicit base call: DFlash/DSpark drafts run this method on their own instance
++        LlamaModel.set_vocab(self)
+ 
+         with open(self.dir_model / "tokenizer.json", encoding="utf-8") as f:
+             tokenizer_json = json.load(f)
+diff --git a/conversion/qwen.py b/conversion/qwen.py
+index 4946456e..467cf07c 100644
+--- a/conversion/qwen.py
++++ b/conversion/qwen.py
+@@ -918,6 +918,20 @@ class DSparkModel(DFlashModel):
+         has_conf = any("confidence_head.proj" in name for name in self.model_tensors)
+         self.gguf_writer.add_has_confidence_head(has_conf)
+ 
++        # speculators masks the block causally on sliding-window layers unless sliding_window_non_causal is set
++        if "sliding_window_non_causal" in self.hparams and "is_causal" not in self.hparams:
++            is_swa = [lt == "sliding_attention" for lt in self.hparams.get("layer_types") or []]
++            if is_swa and all(is_swa):
++                self.gguf_writer.add_causal_attention(not self.hparams["sliding_window_non_causal"])
++            elif any(is_swa) and not self.hparams["sliding_window_non_causal"]:
++                raise ValueError("mixed sliding/full layers with a block-causal sliding mask are not supported")
++
++    def generate_extra_tensors(self) -> Iterable[tuple[str, Tensor]]:
++        yield from super().generate_extra_tensors()
++        # the Qwen3 path does not emit llama3 RoPE frequency factors (e.g. Apertus drafts)
++        from .llama import LlamaModel
++        yield from LlamaModel.generate_extra_tensors(self)  # ty: ignore[invalid-argument-type]
++
+     @classmethod
+     def filter_tensors(cls, item: tuple[str, Callable[[], Tensor]]) -> tuple[str, Callable[[], Tensor]] | None:
+         if item[0] == "t2d":  # not used at runtime
+@@ -939,7 +953,11 @@ class DSparkModel(DFlashModel):
+ 
+         n_vocab = self.hparams["vocab_size"]
+         if self._n_vocab_draft < n_vocab and self._d2t is None:
+-            raise ValueError(f"draft_vocab_size {self._n_vocab_draft} < vocab_size {n_vocab} but no d2t table found")
++            if self._n_vocab_draft != self.hparams.get("output_vocab_size"):
++                raise ValueError(f"draft_vocab_size {self._n_vocab_draft} < vocab_size {n_vocab} but no d2t table found")
++            # split-vocabulary targets (e.g. Apertus v1.5): the draft vocab is the first
++            # output_vocab_size tokens and the target's output head is shared, so d2t is the identity
++            self._d2t = torch.zeros(self._n_vocab_draft, dtype=torch.int64)
+ 
+         # write d2t as absolute target token ids
+         if self._d2t is not None:
