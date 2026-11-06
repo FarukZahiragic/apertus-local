@@ -81,6 +81,22 @@ F16 vs Q8_0 KV cache, and filled contexts, and writes rows to
 with `scripts/setup_llamacpp.sh --vulkan` (see the script header for packages) and add
 `--vulkan`. With 11 GB of free disk, test one extra quant file at a time.
 
+### 5. Speculative decoding with DSpark (experimental)
+
+Re-run `scripts/setup_llamacpp.sh` first: it applies the patches in `patches/`. Put the
+draft GGUF (about 1 GB, converted with `scripts/convert_dspark.sh` on the VM) into
+`models/` next to the target, then:
+
+```bash
+scripts/bench_dspark.sh               # no draft vs k=3 vs k=5, rows go to benchmarks/results.md
+scripts/serve_dspark.sh               # same as serve.sh, plus the draft (K=3 by default)
+```
+
+The draft only helps with thinking off, and only if the laptop verifies a few tokens
+almost as fast as one. On the cloud VM it was break-even (see
+[benchmarks/results.md](benchmarks/results.md)); keep `scripts/serve.sh` as the
+default unless the laptop rows show a gain.
+
 Further steps are added as each phase lands (see [docs/ROADMAP.md](docs/ROADMAP.md)).
 
 ## Docs
