@@ -4,7 +4,7 @@
 # target's token embedding and output head, so it adds about 1 GB of weights.
 #
 # Usage: scripts/serve_dspark.sh [-- extra llama-server args]
-# Env:   DRAFT   draft GGUF (default: models/apertus-v1.5-8b-dspark-e10-Q4_K_M.gguf)
+# Env:   DRAFT   draft GGUF (default: models/apertus-v1.5-8b-dspark-e10-Q4_0.gguf)
 #        K       tokens drafted per step (default: 3; the block allows up to 8)
 #        plus everything scripts/serve.sh reads (MODEL, HOST, PORT, THREADS, CTX, THINKING)
 #
@@ -12,7 +12,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DRAFT="${DRAFT:-$REPO_ROOT/models/apertus-v1.5-8b-dspark-e10-Q4_K_M.gguf}"
+DRAFT="${DRAFT:-$REPO_ROOT/models/apertus-v1.5-8b-dspark-e10-Q4_0.gguf}"
 K="${K:-3}"
 
 [[ "${1:-}" == "--" ]] && shift

@@ -4,7 +4,7 @@
 # the target's config and tokenizer files are needed here (not its weights).
 #
 # Usage: scripts/convert_dspark.sh [--hf-dir DIR] [TYPE ...]
-#   TYPE        llama-quantize types to produce besides F16 (default: Q4_K_M)
+#   TYPE        llama-quantize types to produce besides F16 (default: Q4_0)
 #   --hf-dir    use an existing local draft checkpoint instead of downloading
 # Env: HF_TOKEN        token with access to the draft and target repos
 #      DRAFT_MODEL     (default: faruk-zahiragic/Apertus-v1.5-8B-DSpark-e10-thinking-off, private)
@@ -35,7 +35,7 @@ while [[ $# -gt 0 ]]; do
     *) types+=("$1"); shift ;;
   esac
 done
-[[ ${#types[@]} -gt 0 ]] || types=(Q4_K_M)
+[[ ${#types[@]} -gt 0 ]] || types=(Q4_0)
 
 QUANTIZE="$LLAMA_CPP_DIR/build/bin/llama-quantize"
 [[ -x "$QUANTIZE" ]] || { echo "error: $QUANTIZE missing; run scripts/setup_llamacpp.sh" >&2; exit 1; }

@@ -14,7 +14,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RESULTS="${RESULTS:-$REPO_ROOT/benchmarks/results.md}"
 MODEL="${MODEL:-$REPO_ROOT/models/apertus-v1.5-8b-Q4_K_M.gguf}"
-DRAFT="${DRAFT:-$REPO_ROOT/models/apertus-v1.5-8b-dspark-e10-Q4_K_M.gguf}"
+DRAFT="${DRAFT:-$REPO_ROOT/models/apertus-v1.5-8b-dspark-e10-Q4_0.gguf}"
 export MODEL DRAFT PORT=8097 THINKING=0
 
 ks="3 5" n_predict=256 hw="" dry_run=0
