@@ -41,11 +41,14 @@ case "$head" in
   dspark)
     DRAFT_MODEL="${DRAFT_MODEL:-faruk-zahiragic/Apertus-v1.5-8B-DSpark-e10-thinking-off}"
     DRAFT_REVISION="${DRAFT_REVISION:-f1741d68803a4837499dcefc65aca114eaa0837b}"
-    NAME="${NAME:-apertus-v1.5-8b-dspark-e10}" ;;
+    NAME="${NAME:-apertus-v1.5-8b-dspark-e10}"
+    quant_args=() ;;
   eagle3)
     DRAFT_MODEL="${DRAFT_MODEL:-faruk-zahiragic/Apertus-v1.5-8B-EAGLE3.1-e10-thinking-off}"
     DRAFT_REVISION="${DRAFT_REVISION:-4c9d4c9e250a83ebeee43563ecf71c1118b735cd}"
-    NAME="${NAME:-apertus-v1.5-8b-eagle3.1-e10}" ;;
+    NAME="${NAME:-apertus-v1.5-8b-eagle3.1-e10}"
+    # the draft reads its own 131,072-row head once per drafted token: keep it 4-bit
+    quant_args=(--output-tensor-type q4_0) ;;
   *) echo "error: unknown --head $head (dspark or eagle3)" >&2; exit 1 ;;
 esac
 
@@ -77,7 +80,7 @@ outputs=("$base")
 for type in "${types[@]}"; do
   out="$MODELS_DIR/$NAME-$type.gguf"
   echo "== quantizing $type -> $out"
-  "$QUANTIZE" "$base" "$out" "$type"
+  "$QUANTIZE" "${quant_args[@]}" "$base" "$out" "$type"
   outputs+=("$out")
 done
 
