@@ -128,13 +128,14 @@ def run_draft(draft_dir: Path, layer_cls, feats, anchor: int, tw: Weights, head,
     return slots
 
 
-def run_llamacpp(target_gguf: Path, draft_gguf: Path, prompt: str, n_slots: int, threads: int):
+def run_llamacpp(target_gguf: Path, draft_gguf: Path, prompt: str, n_slots: int, threads: int,
+                 spec_type: str = "draft-dspark"):
     exe = REPO_ROOT / "vendor/llama.cpp/build/bin/llama-speculative-simple"
     if not exe.exists():
         subprocess.run(["cmake", "--build", str(exe.parent.parent), "--target", "llama-speculative-simple", "-j"],
                        check=True)
     out = subprocess.run(
-        [str(exe), "-m", str(target_gguf), "-md", str(draft_gguf), "--spec-type", "draft-dspark",
+        [str(exe), "-m", str(target_gguf), "-md", str(draft_gguf), "--spec-type", spec_type,
          "--spec-draft-n-max", str(n_slots), "-p", prompt, "-n", "10", "--temp", "0", "--top-k", "1",
          "-c", "1024", "-t", str(threads), "-lv", "5"],
         capture_output=True, check=True)
