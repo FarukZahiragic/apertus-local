@@ -106,39 +106,51 @@ every variant. The head is read for every generated token, and the reference pos
 measured a 6 to 11% quality loss from 4-bit embedding and head. The embedding costs disk
 space only: rows are looked up, not multiplied.
 
-## Where DSpark plugs in
+## Speculative decoding (DSpark and EAGLE 3.1)
 
-DSpark is a head-style drafter: it reads the target model's hidden states and proposes
-the next few tokens, which the target then verifies in one batched forward pass. The
-pinned llama.cpp already implements DSpark (upstream #25173, `--spec-type draft-dspark`),
-so phase 5 adapts it to Apertus instead of porting the head.
+A draft head reads the target model's hidden states and proposes the next few tokens;
+the target verifies them in one batched forward pass and keeps the matching prefix. The
+pinned llama.cpp already runs both head types (`--spec-type draft-dspark`, upstream
+#25173, and `--spec-type draft-eagle3`), so phase 5 adapts them to Apertus instead of
+porting heads. Both drafts were trained on the same thinking-off data and accept about
+equally often.
 
-The draft (`faruk-zahiragic/Apertus-v1.5-8B-DSpark-e10-thinking-off`, private, trained
-with Speculators on thinking-off answers):
-
-- 5 Qwen3-style layers (hidden 4096, sliding window 2,048), about 1.7B parameters;
-- reads the target's inputs to layers 1, 8, 15, 22 and 29, fuses them (`fc` +
-  `hidden_norm`) and attends to them as extra K/V context;
-- drafts one block of 8 slots, `[last token, mask x 7]`, in a single forward pass, with
-  a low-rank Markov head chaining each slot on the previous draft token and a confidence
-  head (unused by default);
-- shares the target's 266,752-row token embedding and 131,072-row output head; the GGUF
-  holds only the draft's own weights (0.9 GB at Q4_0, the default draft quant).
+| | DSpark (`...-DSpark-e10-thinking-off`) | EAGLE 3.1 (`...-EAGLE3.1-e10-thinking-off`) |
+| --- | --- | --- |
+| Trainer | Speculators `7046ac6` | TorchSpec `6c042a8` |
+| Layers | 5 Qwen3-style layers (sliding window 2,048), about 1.7B parameters | 1 Llama layer, 294M parameters, plus a copy of the target's output head |
+| Target features | inputs of layers 1, 8, 15, 22, 29 (`fc` + `hidden_norm`), attended as extra K/V | inputs of layers 2, 16, 29, each RMS-normed (`fc_norm`), then `fc` |
+| Drafting | one pass over `[last token, mask x 7]`, Markov head chains the slots | one pass per draft token, feeding back its own normed hidden state |
+| Shared with the target | token embedding and output head | token embedding |
 
 What was needed on our side (`patches/`, applied by `scripts/setup_llamacpp.sh`):
 
-1. the Apertus graph records its layer inputs (`t_layer_inp`), which the drafter reads;
-2. the converter writes an identity `d2t` for the 131,072-token draft vocabulary, emits
-   the llama3 `rope_freqs` the Qwen3 path dropped, marks the block causal as trained
-   (`sliding_window_non_causal: false`), and can reuse the Apertus vocabulary.
+1. the Apertus graph records its layer inputs (`t_layer_inp`), which both drafts read;
+2. DSpark converter: identity `d2t` for the 131,072-token draft vocabulary, the llama3
+   `rope_freqs` the Qwen3 path dropped, the block-causal mask it was trained with, and
+   reuse of the Apertus vocabulary;
+3. EAGLE 3.1: per-target `fc_norm` and `norm_output` in the graph (as in TorchSpec and
+   the Swiss AI vLLM fork), identity `d2t` and full-vocabulary tokenization in the
+   converter.
 
-`scripts/check_dspark.py` compares the first draft after a chat prompt with the
-Speculators reference code the draft was trained with. With the F16 target and F16 draft,
-all 8 slots agree, with identical top-3 candidates and at most 6e-4 difference in the
-top-1 probability.
+Both conversions match their references on the first draft after a chat prompt (F16
+target and draft): `scripts/check_dspark.py` against the Speculators code (8/8 slots,
+identical top-3, at most 6e-4 difference in the top-1 probability) and
+`scripts/check_eagle3.py` against the TorchSpec / vLLM math (5/5 steps, identical
+top-3, at most 5e-4).
+
+### Why the speedup is small on a CPU
+
+On a GPU, verifying several drafted tokens costs almost the same as generating one,
+and the draft is cheap next to the target, so these heads reach 2.4x to 2.7x. On 4 CPU
+cores, verifying 4 tokens costs about 1.4 target steps, and one draft round costs about
+one more: DSpark reads its 1 GB of layers plus the 0.44 GB output head once; EAGLE reads
+its small layer plus its own copy of the head once per drafted token. With about 2.5
+tokens accepted per round, both land at about 1.2x to 1.3x on the cloud VM (see
+`benchmarks/results.md`).
 
 The serving path stays the same: `scripts/serve_spec.sh` is `scripts/serve.sh` plus the
-draft (`--model-draft`, `--spec-type draft-dspark`, `--spec-draft-n-max`).
+draft (`--model-draft`, `--spec-type`, `--spec-draft-n-max`).
 
 ## References
 

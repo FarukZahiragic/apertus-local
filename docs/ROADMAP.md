@@ -13,7 +13,7 @@ Post-workshop: phase 5. Speed target: about 10 tok/s generation (tentative).
 | 2 | `feat/apertus-gguf` | Check v1.5 against llama.cpp's `apertus` architecture, convert to F16 GGUF and quantize to Q4_K_M on a VM, run and benchmark on the laptop | merged (converted and validated against the reference on the cloud VM; laptop Q4_K_M: pp512 23.16 tok/s, tg128 5.89 tok/s) |
 | 3 | `feat/serving` | `serve.sh` with `llama-server` (web UI + OpenAI API), verified with networking off; the workshop demo | merged (verified offline on the cloud VM with a stand-in model; laptop run with Apertus pending) |
 | 4 | `perf/cpu-tuning` | Benchmark matrix (threads, quant types, KV-cache quant, context, optional Vulkan); pick the fastest acceptable config | merged (script ready; laptop run and config choice pending) |
-| 5 | `feat/dspark-spec-decoding` | Run the DSpark draft head through llama.cpp, measure acceptance rate and tok/s | in review (draft matches the reference; cloud VM k=3: 0.51 acceptance, 2.5 tokens per target step, 0.97x to 1.25x; laptop run pending) |
+| 5 | `feat/dspark-spec-decoding`, `feat/eagle3-spec-decoding` | Run draft heads (DSpark, EAGLE 3.1) through llama.cpp, measure acceptance rate and tok/s | in review (both drafts match their references; cloud VM k=3: about 0.5 acceptance, 2.5 tokens per target step; EAGLE 3.1 1.38x, DSpark 1.22x; laptop run pending) |
 
 ## Phase details
 
@@ -41,10 +41,12 @@ OpenAI-client request. This is the workshop demo: chat and document Q&A.
 Threads 4 vs 8; Q4_K_M vs Q4_0 vs IQ4_XS; KV-cache quantization; context size;
 optionally the Vulkan backend on Iris Xe for prompt processing.
 
-### 5. DSpark speculative decoding (post-workshop)
-The pinned llama.cpp already runs DSpark drafts (`--spec-type draft-dspark`). Two small
-patches in `patches/` adapt it to Apertus v1.5: the target graph exposes its layer
-inputs, and the converter handles the split vocabulary, llama3 RoPE and the trained
-block-causal mask. `scripts/check_dspark.py` matches the Speculators reference slot by
-slot. Next: run `scripts/bench_spec.sh` on the laptop and keep the draft only if
-generation gets faster there.
+### 5. Speculative decoding (post-workshop)
+The pinned llama.cpp already runs DSpark and EAGLE-3 drafts. Three small patches in
+`patches/` adapt them to Apertus v1.5: the target graph exposes its layer inputs, the
+DSpark converter handles the split vocabulary, llama3 RoPE and the trained block-causal
+mask, and EAGLE 3.1 gets per-target `fc_norm` and `norm_output`. `scripts/check_dspark.py`
+and `scripts/check_eagle3.py` match the training references step by step. The EAGLE 3.1
+draft is the default: same acceptance as DSpark with a draft half the size. Next: run
+`scripts/bench_spec.sh` on the laptop and keep the draft only if generation gets faster
+there.
