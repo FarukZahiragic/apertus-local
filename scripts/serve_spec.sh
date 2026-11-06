@@ -4,7 +4,7 @@
 # embedding (and, for DSpark, its output head).
 #
 # Usage: scripts/serve_spec.sh [-- extra llama-server args]
-# Env:   DRAFT      draft GGUF (default: models/apertus-v1.5-8b-dspark-e10-Q4_0.gguf)
+# Env:   DRAFT      draft GGUF (default: models/apertus-v1.5-8b-eagle3.1-e10-Q4_0.gguf)
 #        SPEC_TYPE  draft-eagle3 or draft-dspark (default: from the DRAFT file name)
 #        K          tokens drafted per step (default: 3)
 #        plus everything scripts/serve.sh reads (MODEL, HOST, PORT, THREADS, CTX, THINKING)
@@ -13,7 +13,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DRAFT="${DRAFT:-$REPO_ROOT/models/apertus-v1.5-8b-dspark-e10-Q4_0.gguf}"
+DRAFT="${DRAFT:-$REPO_ROOT/models/apertus-v1.5-8b-eagle3.1-e10-Q4_0.gguf}"
 K="${K:-3}"
 if [[ -z "${SPEC_TYPE:-}" ]]; then
   case "$(basename "$DRAFT")" in
