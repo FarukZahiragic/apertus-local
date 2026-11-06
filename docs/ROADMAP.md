@@ -46,5 +46,5 @@ The pinned llama.cpp already runs DSpark drafts (`--spec-type draft-dspark`). Tw
 patches in `patches/` adapt it to Apertus v1.5: the target graph exposes its layer
 inputs, and the converter handles the split vocabulary, llama3 RoPE and the trained
 block-causal mask. `scripts/check_dspark.py` matches the Speculators reference slot by
-slot. Next: run `scripts/bench_dspark.sh` on the laptop and keep the draft only if
+slot. Next: run `scripts/bench_spec.sh` on the laptop and keep the draft only if
 generation gets faster there.

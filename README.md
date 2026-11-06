@@ -84,12 +84,12 @@ with `scripts/setup_llamacpp.sh --vulkan` (see the script header for packages) a
 ### 5. Speculative decoding with DSpark (experimental)
 
 Re-run `scripts/setup_llamacpp.sh` first: it applies the patches in `patches/`. Put the
-draft GGUF (about 1 GB, converted with `scripts/convert_dspark.sh` on the VM) into
+draft GGUF (about 1 GB, converted with `scripts/convert_draft.sh` on the VM) into
 `models/` next to the target, then:
 
 ```bash
-scripts/bench_dspark.sh               # no draft vs k=3 vs k=5, rows go to benchmarks/results.md
-scripts/serve_dspark.sh               # same as serve.sh, plus the draft (K=3 by default)
+scripts/bench_spec.sh                 # no draft vs k=3 vs k=5, rows go to benchmarks/results.md
+scripts/serve_spec.sh                 # same as serve.sh, plus the draft (K=3 by default)
 ```
 
 The draft only helps with thinking off, and only if the laptop verifies a few tokens

@@ -137,7 +137,7 @@ Speculators reference code the draft was trained with. With the F16 target and F
 all 8 slots agree, with identical top-3 candidates and at most 6e-4 difference in the
 top-1 probability.
 
-The serving path stays the same: `scripts/serve_dspark.sh` is `scripts/serve.sh` plus the
+The serving path stays the same: `scripts/serve_spec.sh` is `scripts/serve.sh` plus the
 draft (`--model-draft`, `--spec-type draft-dspark`, `--spec-draft-n-max`).
 
 ## References

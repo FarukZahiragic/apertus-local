@@ -31,7 +31,7 @@ output file.
 DSpark draft (needs the target's config and tokenizer files, not its weights):
 
 ```bash
-scripts/convert_dspark.sh                 # F16 + Q4_0 (default draft); add Q4_K_M etc. as arguments
+scripts/convert_draft.sh --head dspark   # F16 + Q4_0; add Q4_K_M etc. as arguments
 ```
 
 Logit check against the reference implementation (separate venv, because the
@@ -57,7 +57,7 @@ git -C /tmp/speculators apply models/hf/Apertus-v1.5-8B-DSpark-e10-thinking-off/
   --target-gguf models/apertus-v1.5-8b-F16.gguf --draft-gguf models/apertus-v1.5-8b-dspark-e10-F16.gguf
 ```
 
-(`convert_dspark.sh` downloads only `config.json`, `model.safetensors` and `SHA256SUMS`;
+(`convert_draft.sh` downloads only `config.json`, `model.safetensors` and `SHA256SUMS`;
 fetch `speculators.patch` from the same repo.)
 
 ## GGUF files
@@ -99,8 +99,8 @@ free disk: copy only the Q4 file(s) it needs, never the F16 file or the HF downl
   0.5 GB at 4,096 tokens and 1 GB at 8,192.
 - Client example: `examples/openai_client.py` (official `openai` package; `--file` for
   document Q&A, `--repeat N` for a reliability run).
-- `scripts/serve_dspark.sh` adds the DSpark draft: `--model-draft $DRAFT`,
-  `--spec-type draft-dspark`, `--spec-draft-n-max $K` (default 3), `--threads-draft`.
+- `scripts/serve_spec.sh` adds a draft head: `--model-draft $DRAFT`,
+  `--spec-type $SPEC_TYPE` (from the draft file name), `--spec-draft-n-max $K` (default 3), `--threads-draft`.
   Same endpoint and flags otherwise; the draft adds about 1 GB of weights.
 
 ## Benchmarks
@@ -116,7 +116,7 @@ It runs `llama-bench -o json` and turns the result into one table row. Extra
 `llama-bench` flags (for example `-ctk q8_0 -ctv q8_0`) are recorded in Settings.
 `BUILD_DIR=vendor/llama.cpp/build-vulkan` selects the Vulkan build.
 
-`scripts/bench_dspark.sh [--k "3 5"] [-n 256] [--hw LABEL] [--dry-run]` measures speculative
+`scripts/bench_spec.sh [--k "3 5"] [-n 256] [--hw LABEL] [--dry-run]` measures speculative
 decoding end to end through `llama-server` (6 chat prompts, thinking off, greedy): a
 no-draft baseline, then one run per draft length. Its rows fill the Draft accept column
 as `acceptance rate (τ mean tokens per target step, including the target's own token)`.
