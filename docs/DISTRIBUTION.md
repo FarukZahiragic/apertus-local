@@ -95,3 +95,36 @@ the roadmap hardware checks. The automated suite exercises download corruption,
 resumption, backend selection, launcher readiness and shutdown with fixture servers.
 These fixtures do not prove Apertus quality, macOS performance, or offline hardware
 operation. Record actual benchmark runs in `benchmarks/results.md`.
+
+## Hugging Face publication
+
+The [model repository](https://huggingface.co/faruk-zahiragic/Apertus-v1.5-8B-GGUF)
+and [download Space](https://huggingface.co/spaces/faruk-zahiragic/apertus-local)
+are in the project owner's namespace. The verified GGUF is public and the model
+URL is pinned in `config/model.env`. Platform download buttons stay disabled until
+validated release URLs and checksum URLs are present in `hf-space/config.json`.
+The page uses static HTML/CSS/JS with no third-party fonts, scripts or telemetry.
+
+Maintainers can prepare the upload tools once (not needed by participants):
+
+```bash
+python3 -m venv .venv-release
+.venv-release/bin/pip install 'huggingface_hub>=0.34,<3'
+.venv-release/bin/hf auth login
+scripts/publish_hf.sh                 # publish the exact GGUF and the static Space
+scripts/publish_hf.sh --space-only    # verify remote GGUF hash and update only page
+```
+
+`HF_TOKEN` is read from the environment or supplied to the process from the normal
+HF credential cache outside this repo. It is never printed, saved in source or
+bundled. By default the script creates public repositories in the authenticated
+personal namespace; `--private` creates private repositories instead. Existing
+repository visibility is preserved. `MODEL_REPO` and `SPACE_REPO` override names.
+The model upload includes provenance, SHA256SUMS and the original Apache license.
+Publication metadata is written under ignored `dist/hf-publication.json`.
+
+To enable a native platform, first validate its archive, publish that archive and
+its checksum under a fixed release version, then set `available`, `url`,
+`checksum_url`, `status` and the top-level `version` in `hf-space/config.json`.
+Publish with `--space-only`. Never enable Mac downloads before signing and actual
+Mac checks pass. GitHub CI artifacts are development builds, not workshop releases.
