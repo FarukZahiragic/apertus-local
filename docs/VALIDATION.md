@@ -1,6 +1,6 @@
 # Native deployment validation
 
-Implementation and hardware acceptance are tracked separately. PRs #16–#22 form a
+Implementation and hardware acceptance are tracked separately. PRs #16–#23 form a
 dependent stack; `main` is not changed until they are reviewed and merged.
 
 ## Recorded on 7 November 2026
@@ -13,6 +13,7 @@ dependent stack; `main` is not changed until they are reviewed and merged.
 | Same configuration | 50 streamed requests, maximum 16 generated tokens each | 50/50 pass |
 | Linux, actual Bash 3.2 | Download corruption/resumption/completed-part recovery; Darwin detection; runtime overrides/auto gating; launcher ownership, readiness, startup failure, Metal-to-CPU retry and archive contents | 16 tests pass |
 | Linux, actual Bash 3.2 | Standalone Mac setup: clone/start from a single file, paths with spaces, preserve existing edits/folders, reject unsupported hardware and stop safely when Apple tools need interactive installation | 5 fixture tests pass |
+| Linux, system Bash and actual Bash 3.2 | Mac release preflight, unsigned output preservation, credential rejection, temporary keychain cleanup/restoration on success and failure, rejected notarization response | 5 fixture tests pass; Apple commands/services are simulated, not real signing |
 | Friend's physical Apple Silicon Mac; chip/RAM/macOS/backend not recorded | Standalone setup, tests, manual chat and fresh offline start | pass, reported by project owner; no automated report supplied |
 | Node | Download availability, required checksums and safe URLs | 3 tests pass |
 | GitHub-hosted Apple M1 VM, 7 GB RAM, macOS 15 | Portable CPU/Metal builds, relocated app packaging, real CPU and partial Metal inference (`GPU_LAYERS=8 LOAD_MODE=none`) | pass in [native CI](https://github.com/FarukZahiragic/apertus-local/actions/runs/42386944980); hosted VM is not a participant laptop |
@@ -21,6 +22,8 @@ dependent stack; `main` is not changed until they are reviewed and merged.
 
 The functional report is generated under ignored `dist/validation-reference-laptop.json`.
 The short Qwen throughput regression run is recorded in `benchmarks/results.md`.
+The complete Python fixture suite now contains 26 passing tests, alongside the
+three passing Node download-page tests.
 Functional request checks are not performance benchmarks. The owner informally
 observed generation in the thirty-something tokens/s range on the friend's Mac,
 with faster prompt processing too. The configuration and raw results were not
