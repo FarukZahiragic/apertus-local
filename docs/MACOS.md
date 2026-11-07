@@ -13,10 +13,14 @@ The build uses Apple Clang, the pinned Apertus-compatible llama.cpp fork and the
 same patches as Linux. A stock Homebrew llama.cpp is not a substitute for this pin.
 
 ```bash
-git clone https://github.com/FarukZahiragic/apertus-local
-cd apertus-local
+git clone --branch chore/workshop-validation https://github.com/FarukZahiragic/apertus-local apertus-1.5-local
+cd apertus-1.5-local
 scripts/setup_llamacpp.sh --cpu
 ```
+
+The implementation is currently in stacked PRs #16–#21. The command above checks
+out the full implementation branch while review is pending; after those PRs merge,
+the same deployment will be available from `main`.
 
 Copy `apertus-v1.5-8b-Q4_K_M.gguf` into `models/` using USB or an authorized model
 repository. No conversion is needed on the Mac. Verify an existing copy offline:
