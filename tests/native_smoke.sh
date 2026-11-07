@@ -47,6 +47,17 @@ for backend in "${backends[@]}"; do
     tail -n 50 ".apertus-state/server-$PORT-$backend.log"
     exit 1
   fi
+  if [[ "${CHECK_OFFLINE_BROWSER:-0}" == 1 ]]; then
+    chrome="$(command -v google-chrome || command -v chromium || true)"
+    [[ -n "$chrome" ]] || { echo 'error: CI browser unavailable' >&2; exit 1; }
+    # CI's namespace runs as root. The browser visits only our trusted local UI.
+    "$chrome" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage \
+      --disable-background-networking --no-first-run --disable-extensions \
+      --user-data-dir="$(mktemp -d)" --virtual-time-budget=10000 \
+      --dump-dom "http://127.0.0.1:$PORT/" > dist/offline-ui.html 2>dist/offline-browser.log
+    grep -iq 'apertus' dist/offline-ui.html || { echo 'error: browser did not load the local model UI' >&2; exit 1; }
+    echo 'Actual browser rendered the Apertus UI with external networking blocked.'
+  fi
   scripts/launch.sh --stop
   wait "$launcher"
   launcher=''
