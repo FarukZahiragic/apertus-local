@@ -14,16 +14,16 @@ generation (tentative, not reached on the reference laptop).
 | 0 | `chore/bootstrap` | Repo skeleton, working rules, docs, README | merged |
 | 1 | `feat/baseline-smoke` | Build llama.cpp for CPU, run a small supported GGUF, log a `llama-bench` baseline | merged (validated on cloud VM and laptop i5-1135G7) |
 | 2 | `feat/apertus-gguf` | Check v1.5 against llama.cpp's `apertus` architecture, convert to F16 GGUF and quantize to Q4_K_M on a VM, run and benchmark on the laptop | merged (converted and validated against the reference on the cloud VM; laptop Q4_K_M: pp512 23.16 tok/s, tg128 5.89 tok/s) |
-| 3 | `feat/serving` | `serve.sh` with `llama-server` (web UI + OpenAI API), verified with networking off; the workshop demo | merged; laptop server chat measured, but network-disabled Apertus UI/API and reliability checks remain pending (earlier VM offline check used a stand-in model) |
+| 3 | `feat/serving` | `serve.sh` with `llama-server` (web UI + OpenAI API), verified with networking off; the workshop demo | merged; laptop server chat measured, but network-disabled Apertus UI/API checks remain pending; 50 streamed requests at 4K context pass on the reference laptop (Nov 7, max 16 tokens) (earlier VM offline check used a stand-in model) |
 | 4 | `perf/cpu-tuning` | Benchmark matrix (threads, quant types, KV-cache quant, context, optional Vulkan); pick the fastest acceptable config | merged; full laptop matrix pending, CPU/no-draft retained after the recorded Vulkan and EAGLE comparisons |
 | 5 | `feat/dspark-spec-decoding`, `feat/eagle3-spec-decoding` | Run draft heads (DSpark, EAGLE 3.1) through llama.cpp, measure acceptance rate and tok/s | merged via PRs #13 and #14; reference checks pass, VM gains recorded; laptop CPU EAGLE k=3: 5.38 vs 5.82 tok/s without draft, Vulkan also slower; experimental only |
 | Cleanup | `chore/repo-cleanup` | Consolidate phase 5, fix benchmark lifecycle and build selection, sync measured results and handoff docs | merged; serving smoke and benchmark failure-path checks pass; remaining validation is listed below |
 | 6 | `feat/macos-support` | Portable builds, downloads and benchmark scripts on macOS and Linux | implemented; download and simulated Darwin checks pass, Mac hardware validation pending |
 | 7 | `perf/apple-silicon` | Reproducible CPU/Metal comparison on an Apple Silicon Mac | harness implemented; Mac inference, latency, quality and sustained-load measurements pending |
 | 8 | `feat/hardware-defaults` | Detect hardware, choose conservative settings, allow explicit overrides | implemented; Bash 3.2 selection and override checks pass; automatic Metal remains gated on hardware validation |
-| 9 | `feat/workshop-launcher` | Downloadable native runtime and a simple local-chat launcher | implemented; lifecycle tests pass; native package checks in progress, macOS signing and Windows pending |
+| 9 | `feat/workshop-launcher` | Downloadable native runtime and a simple local-chat launcher | implemented; lifecycle tests pass; Linux package relocation and real-model checks pass; hosted Mac CPU/Metal builds pass; macOS signing and Windows pending |
 | 10 | `feat/hf-distribution` | Static Hugging Face download page and versioned model distribution | model and static Space published in faruk-zahiragic namespace; runtime downloads remain gated on validation |
-| 11 | `chore/workshop-validation` | Automated checks and fresh-install/offline rehearsal | planned; participant hardware checks pending |
+| 11 | `chore/workshop-validation` | Automated checks and fresh-install/offline rehearsal | local Bash 3.2 and download-page checks pass; extracted Linux package passes document Q&A and 50 requests; native CI follow-up and network-disabled hardware rehearsal pending |
 
 ## Phase details
 
@@ -75,7 +75,7 @@ The working configuration is `scripts/serve.sh`: Q4_K_M, CPU, 4 threads, F16 KV 
    reliability check. A localhost smoke test alone does not prove offline operation.
 2. Continue phase 4 on a new `perf/cpu-tuning-followup` branch from `main`. Close other
    applications, use AC power, and run `scripts/bench_matrix.sh`; record hardware,
-   memory/background load, and each row in `benchmarks/cpu-tuning.md`.
+   memory/background load, and each new row in `benchmarks/results.md`.
 3. Compare Q4_0 and Q4_K_M under the same conditions, then threads, KV cache and filled
    contexts. Check answer quality before selecting a faster configuration. Update
    `benchmarks/cpu-tuning.md` and the defaults only when the results support a change.
