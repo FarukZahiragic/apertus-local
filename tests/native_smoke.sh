@@ -18,6 +18,16 @@ backends=(cpu)
 if [[ "$(ap_os)" == Darwin ]]; then backends+=(metal); fi
 for backend in "${backends[@]}"; do
   export BACKEND="$backend"
+  # The hosted M1 VM has 7 GB RAM and a limited Metal working set.
+  # Partial offload exercises Metal without treating full-offload OOM as a
+  # model compatibility result. Physical 16 GB+ Macs still need full validation.
+  # Avoid mmap: sparse GPU tensors (early output head/rope plus last layers)
+  # otherwise map almost the entire GGUF into Metal even at partial offload.
+  if [[ "$backend" == metal ]]; then
+    export GPU_LAYERS=8 LOAD_MODE=none
+  else
+    export GPU_LAYERS=0 LOAD_MODE=auto
+  fi
   if [[ "$backend" == cpu ]]; then export BUILD_DIR="$PWD/vendor/llama.cpp/build-portable"; else export BUILD_DIR="$PWD/vendor/llama.cpp/build-metal-portable"; fi
   if [[ "$backend" == metal ]] && ! ap_device_available "$BUILD_DIR/bin/llama-server" metal; then
     echo 'Hosted Mac VM exposes no Metal device; Metal build passed, inference requires a physical Mac.'
@@ -33,7 +43,10 @@ for backend in "${backends[@]}"; do
     sleep 1
   done
   [[ "$ready" -eq 1 ]] || { cat "dist/launcher-$backend.log"; exit 1; }
-  scripts/validate_local.sh --repeat 1 --max-tokens 16 --report "dist/validation-$backend.json"
+  if ! scripts/validate_local.sh --repeat 1 --max-tokens 16 --report "dist/validation-$backend.json"; then
+    tail -n 50 ".apertus-state/server-$PORT-$backend.log"
+    exit 1
+  fi
   scripts/launch.sh --stop
   wait "$launcher"
   launcher=''
