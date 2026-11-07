@@ -102,12 +102,19 @@ if [[ "$platform" == macos-arm64 ]]; then
   plist="$app/Contents/Info.plist"
   /usr/libexec/PlistBuddy -c 'Delete :NSAppleEventsUsageDescription' "$plist" >/dev/null 2>&1 || true
   /usr/libexec/PlistBuddy -c 'Add :NSAppleEventsUsageDescription string Apertus Local opens Terminal to run the model and show startup messages.' "$plist"
-  /usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier io.github.FarukZahiragic.apertus-local' "$plist"
+  /usr/libexec/PlistBuddy -c 'Delete :CFBundleIdentifier' "$plist" >/dev/null 2>&1 || true
+  /usr/libexec/PlistBuddy -c 'Add :CFBundleIdentifier string io.github.FarukZahiragic.apertus-local' "$plist"
   mkdir -p "$app/Contents/Resources/apertus-local"
   cp -R "$payload/." "$app/Contents/Resources/apertus-local/"
   rm -rf "$payload"
   if [[ "$sign" -eq 1 ]]; then
     "$REPO_ROOT/scripts/sign_macos.sh" "$app"
+  else
+    # osacompile's original ad-hoc seal is invalid after adding app resources.
+    # Development builds still need a consistent bundle; public releases use
+    # Developer ID and notarization through --sign instead.
+    codesign --force --sign - "$app"
+    codesign --verify --deep --strict "$app"
   fi
   archive="$output/$name.zip"
   ditto -c -k --sequesterRsrc --keepParent "$app" "$archive"
