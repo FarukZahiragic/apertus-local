@@ -11,7 +11,7 @@ dependent stack; `main` is not changed until they are reviewed and merged.
 | Same laptop | Extract native archive into a separate directory and run without build-directory loader paths | pass |
 | Same laptop, Apertus Q4_K_M, CPU, 4 threads, 4K context | Start through extracted launcher; health, embedded UI assets, streamed final usage, document Q&A | pass; document answer `Sarajevo` |
 | Same configuration | 50 streamed requests, maximum 16 generated tokens each | 50/50 pass |
-| Linux, actual Bash 3.2 | Download corruption/resumption/completed-part recovery; Darwin detection; runtime overrides/auto gating; launcher ownership, readiness, startup failure, Metal-to-CPU retry and archive contents | 13 tests pass |
+| Linux, actual Bash 3.2 | Download corruption/resumption/completed-part recovery; Darwin detection; runtime overrides/auto gating; launcher ownership, readiness, startup failure, Metal-to-CPU retry and archive contents | 16 tests pass |
 | Node | Download availability, required checksums and safe URLs | 3 tests pass |
 | GitHub-hosted Apple M1 VM, 7 GB RAM, macOS 15 | Portable CPU build, Metal build and relocated app packaging | pass in initial CI; hosted VM is not a participant laptop |
 
@@ -57,8 +57,14 @@ Follow [MACOS.md](MACOS.md), [OFFLINE.md](OFFLINE.md) and
 ## Metal correctness investigation
 
 The hosted Mac CPU run passes real Apertus chat, streamed usage and document Q&A.
-The initial Metal inference run returns an empty streamed answer. This is a failed
-correctness check, not a performance result or proof of a VM limitation. Metal
-remains experimental and auto-selection stays gated. The diagnostic workflow
-compares attention, fusion and offload profiles using a previously built Mac
-artifact, retaining raw responses and server logs for investigation.
+All five full-offload diagnostic profiles show explicit Metal out-of-memory
+errors before the server advertises readiness. Later requests fail with a compute
+error, which the earlier streaming validator incorrectly described as an empty
+answer. The validator now reports the actual server error, and the launcher
+checks a real decode before opening chat.
+
+Eight-layer offload with `LOAD_MODE=none` is the CI profile for the 7 GB VM.
+Packed loading avoids mapping the entire GGUF into Metal through sparse early
+tensors. Full offload on physical 16 GB+ Macs remains unvalidated; Metal stays
+experimental and auto-selection remains gated. The manual diagnostic workflow
+accepts a previous Mac artifact run ID and retains raw responses/server logs.
