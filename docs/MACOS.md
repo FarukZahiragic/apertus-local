@@ -48,7 +48,7 @@ cd apertus-1.5-local
 scripts/setup_llamacpp.sh --cpu
 ```
 
-The implementation is currently in stacked PRs #16–#21. The command above checks
+The implementation and standalone setup are currently in stacked PRs #16–#22. The command above checks
 out the full implementation branch while review is pending; after those PRs merge,
 the same deployment will be available from `main`.
 
@@ -83,7 +83,10 @@ BACKEND=metal scripts/serve.sh
 
 Metal uses the integrated GPU. CPU support does not require Metal. Check the server
 log for actual offloaded layers and coherent answers before comparing throughput.
-Mac inference and performance remain pending until measured on the actual hardware.
+The owner reports that source setup, manual chat and an offline restart passed
+on the friend's physical Mac. Chip/RAM/OS/backend details and controlled speed
+measurements were not retained. This accepts the source/offline rehearsal; formal
+CPU/Metal comparisons can follow later and do not block packaging.
 `BACKEND=auto` keeps CPU until you explicitly set `APERTUS_METAL_VALIDATED=1`
 after the Apertus offline, quality and performance checks pass on your machine.
 Then auto mode selects an enumerated Metal device, or reports CPU fallback.
@@ -112,6 +115,10 @@ does not establish interactive latency or correctness. Recheck after sustained u
 to expose thermal throttling. No Mac speed claim is made before these checks.
 
 ## Release builds
+
+Use [MACOS_RELEASE.md](MACOS_RELEASE.md) to prepare signing credentials and run the
+build on GitHub's Mac runner without borrowing a physical Mac. The signed app's
+download/open rehearsal remains a separate distribution check.
 
 `scripts/setup_llamacpp.sh --cpu --portable` uses `build-portable/` with runtime
 CPU dispatch. `--metal --portable` uses `build-metal-portable/`. Release packaging
