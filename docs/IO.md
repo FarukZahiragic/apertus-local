@@ -192,3 +192,13 @@ Each run appends one row to [benchmarks/results.md](../benchmarks/results.md):
 | Draft accept | Speculative draft acceptance rate, `-` when not used |
 | llama.cpp | llama.cpp build (release tag and short commit) |
 | Notes | Anything needed to interpret the row |
+
+## GPU memory controls
+
+`GPU_LAYERS` selects a positive offload count for explicit GPU backends; CPU always
+uses zero layers. It is honored by serving and `bench.sh` (including `bench_mac.sh`).
+`LOAD_MODE` accepts `auto`, `none`, `mmap`, `mlock`, `mmap+mlock`, or `dio` and is
+passed explicitly to both tools. Benchmark Settings records the effective layer
+count and load mode; these final flags take precedence over extra arguments.
+For the 7 GB hosted Mac VM, native CI uses `GPU_LAYERS=8 LOAD_MODE=none`, not full
+offload. Its reports include the configuration and a VM label.

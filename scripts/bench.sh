@@ -49,12 +49,21 @@ for value in "$threads" "$n_prompt" "$n_gen" "$reps"; do
   [[ "$value" =~ ^[1-9][0-9]*$ ]] || { echo 'error: benchmark sizes and threads must be positive integers' >&2; exit 1; }
 done
 gpu_layers=0 build_dir=build label=CPU
+load_mode="${LOAD_MODE:-auto}"
+case "$load_mode" in
+  auto|none|mmap|mlock|mmap+mlock|dio) ;;
+  *) echo 'error: invalid LOAD_MODE' >&2; exit 1 ;;
+esac
 case "$backend" in
   cpu) ;;
   metal) gpu_layers=99 build_dir=build-metal label=Metal ;;
   vulkan) gpu_layers=99 build_dir=build-vulkan label=Vulkan ;;
   *) echo 'error: --backend must be cpu, metal, or vulkan' >&2; exit 1 ;;
 esac
+if [[ "$backend" != cpu ]]; then
+  gpu_layers="${GPU_LAYERS:-$gpu_layers}"
+  [[ "$gpu_layers" =~ ^[1-9][0-9]*$ ]] || { echo 'error: GPU_LAYERS must be positive' >&2; exit 1; }
+fi
 BUILD_DIR="${BUILD_DIR:-$LLAMA_CPP_DIR/$build_dir}"
 BENCH="$BUILD_DIR/bin/llama-bench"
 
@@ -69,14 +78,14 @@ if [[ -z "$hw" ]]; then
   hw="$(ap_hardware)"
 fi
 
-cmd=("$BENCH" -m "$model" -t "$threads" -p "$n_prompt" -n "$n_gen" -r "$reps" -o json "${extra[@]+"${extra[@]}"}" -ngl "$gpu_layers")
+cmd=("$BENCH" -m "$model" -t "$threads" -p "$n_prompt" -n "$n_gen" -r "$reps" -o json "${extra[@]+"${extra[@]}"}" -ngl "$gpu_layers" --load-mode "$load_mode")
 echo "+ ${cmd[*]}" >&2
 json="$("${cmd[@]}")"
 
-row="$(BENCH_JSON="$json" python3 - "$model" "$hw" "$name" "$notes" "$reps" "${extra[*]:-}" "$label" "$gpu_layers" <<'EOF'
+row="$(BENCH_JSON="$json" python3 - "$model" "$hw" "$name" "$notes" "$reps" "${extra[*]:-}" "$label" "$gpu_layers" "$load_mode" <<'EOF'
 import json, os, re, sys, datetime
 
-model_path, hw, name, notes, reps, extra, backend, gpu_layers = sys.argv[1:9]
+model_path, hw, name, notes, reps, extra, backend, gpu_layers, load_mode = sys.argv[1:10]
 runs = json.loads(os.environ["BENCH_JSON"])
 pp = next((r for r in runs if r["n_prompt"] > 0 and r["n_gen"] == 0), None)
 tg = next((r for r in runs if r["n_gen"] > 0 and r["n_prompt"] == 0), None)
@@ -94,7 +103,7 @@ def ts(r):
     return f'{r["avg_ts"]:.2f} ± {r["stddev_ts"]:.2f}' if r else "-"
 
 settings = [f'pp{pp["n_prompt"] if pp else 0}', f'tg{tg["n_gen"] if tg else 0}', f"r{reps}",
-            f'kv={first["type_k"]}/{first["type_v"]}', f'ngl={gpu_layers}']
+            f'kv={first["type_k"]}/{first["type_v"]}', f'ngl={gpu_layers}', f'load={load_mode}']
 if any(int(r['n_gpu_layers']) != int(gpu_layers) for r in runs):
     raise SystemExit('error: benchmark offload does not match requested backend')
 if extra:

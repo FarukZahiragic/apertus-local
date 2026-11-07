@@ -31,8 +31,9 @@ unmeasured; a newer memory generation alone does not establish an inference spee
 - Iris Xe Vulkan shares system RAM. In the recorded full-offload server tests it
   was slower: 3.55 tok/s without a draft, at best 4.58 with EAGLE k=1, and about
   11 to 12 tok/s prompt processing. CPU stays the default.
-- A machine with faster memory (LPDDR5x on Intel Lunar Lake, or Apple M-series at
-  100 GB/s or more) would likely reach 10 tok/s or more without speculative decoding.
+- Faster memory may improve generation, but a newer memory generation alone does
+  not establish a speed. Measure CPU and Metal on each Mac; the 10 tok/s target
+  remains tentative until the actual hardware results support it.
 
 ## Cloud VM (conversion and script testing only)
 

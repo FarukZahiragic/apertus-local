@@ -81,6 +81,8 @@ The script signs nested Mach-O files, updates the package hash manifest, seals t
 app with hardened runtime, submits to Apple, staples the ticket and checks
 Gatekeeper. Credentials are never written into the repository or package. A real
 signed download/open test is still required; signing cannot be validated on Linux.
+Development apps get an ad-hoc seal after resources are installed; that seal is
+checked but does not establish an identified publisher or notarization.
 [Apple's distribution guide](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution).
 
 ## Release readiness
@@ -128,3 +130,24 @@ its checksum under a fixed release version, then set `available`, `url`,
 `checksum_url`, `status` and the top-level `version` in `hf-space/config.json`.
 Publish with `--space-only`. Never enable Mac downloads before signing and actual
 Mac checks pass. GitHub CI artifacts are development builds, not workshop releases.
+
+## Automated and recorded checks
+
+`python3 -m unittest discover -s tests -v` and
+`node --test tests/test_download_page.cjs` exercise the portable control paths.
+GitHub Actions builds native Linux and Apple Silicon packages, downloads the exact
+GGUF and runs real-model UI/API checks. The Mac VM may expose no usable Metal
+GPU; that case is reported as unavailable rather than counted as a GPU test.
+
+`scripts/validate_local.sh --repeat 50 --report dist/local-check.json` checks a
+running localhost server without installing the OpenAI SDK. It is a functional
+check, not a benchmark or a network-isolation tool. Current results and preview
+limitations are listed in [VALIDATION.md](VALIDATION.md). The source workspace can
+be renamed; rerunning setup refreshes CMake's generated paths when needed.
+
+The launcher also performs one real token decode before opening the UI. Some
+backends can return a healthy HTTP response after a warmup compute failure; the
+inference check detects that case and lets auto mode retry CPU. Explicit GPU mode
+reports the error. `GPU_LAYERS` and `LOAD_MODE` allow a tested memory profile to be
+selected; see [MACOS.md](MACOS.md). Streamed validation preserves server error
+messages rather than reporting an empty answer for a compute error.

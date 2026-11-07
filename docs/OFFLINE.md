@@ -80,3 +80,34 @@ Chat and document Q&A. Native tool calling with Apertus 1.5 is unreliable (see t
 reference in [ARCHITECTURE.md](ARCHITECTURE.md#references)), so do not demo agents.
 Recorded prompt processing is roughly 18 to 23 tok/s on the laptop: allow about
 1.5 to 2 minutes for a 2,000-token document before the first answer token appears.
+
+## Native participant checks
+
+On macOS, use the Wi-Fi menu to turn Wi-Fi off and disconnect Ethernet and other
+network adapters. Start the launcher again and reload the local page. Ubuntu's
+`nmcli`, `ss` and network namespaces above are Linux-specific; on macOS use
+`lsof -nP -iTCP:8080` to inspect local listening connections.
+
+For a prepared package or checkout, use the dependency-free maintainer check:
+
+```bash
+scripts/validate_local.sh --repeat 50 --max-tokens 16 --report dist/offline-check.json
+```
+
+It checks health, the embedded UI and its assets, document Q&A, streaming and final
+usage. It does not turn networking off or claim network isolation. The Nov 7 local
+extracted-package run passed all 50 requests at a 4K context; the network-disabled
+browser rehearsal remains pending. See [VALIDATION.md](VALIDATION.md).
+
+Linux native CI also starts the server from local weights inside a fresh network
+namespace with only loopback enabled. It rejects external connectivity, runs the
+UI/API/document checks and renders the real UI in the runner's existing headless
+browser. This verifies software behavior in a hosted VM; participant laptop and
+physical Mac rehearsals remain separate acceptance checks. It does not disconnect
+the CI host or the user's machine.
+
+The browser harness (`tests/browser_smoke.cjs`) uses only Node's built-in modules
+and the runner's installed Chrome. It polls the actual rendered chat input and
+model name through the DevTools pipe; it does not assume a virtual-time DOM dump
+has waited for asynchronous application startup. Browser diagnostics and the
+rendered DOM are retained in the CI artifact alongside the API validation report.

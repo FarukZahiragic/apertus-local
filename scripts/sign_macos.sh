@@ -7,10 +7,11 @@ set -euo pipefail
 : "${MACOS_SIGN_IDENTITY:?Set a Developer ID Application signing identity}"
 : "${MACOS_NOTARY_PROFILE:?Set a notarytool keychain profile}"
 app="$1"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 echo "Signing $app"
 while IFS= read -r -d '' binary; do
   codesign --force --options runtime --timestamp --sign "$MACOS_SIGN_IDENTITY" "$binary"
-done < <(find "$app/Contents/Resources/apertus-local/runtime" -type f \( -name '*.dylib' -o -name 'llama-*' \) -print0)
+done < <(find "$app/Contents/Resources/apertus-local/runtime" -type f \( -name '*.dylib' -o -name '*.so' -o -name 'llama-*' \) -print0)
 python3 - "$app/Contents/Resources/apertus-local" <<'PY'
 import hashlib, json, sys
 from pathlib import Path
@@ -22,7 +23,7 @@ manifest['files'] = {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).he
                      if p.is_file() and not p.is_symlink() and p.name != 'release.json'}
 (root/'release.json').write_text(json.dumps(manifest, indent=2)+'\n')
 PY
-codesign --force --options runtime --timestamp --sign "$MACOS_SIGN_IDENTITY" "$app"
+codesign --force --options runtime --timestamp --entitlements "$REPO_ROOT/packaging/macos-entitlements.plist" --sign "$MACOS_SIGN_IDENTITY" "$app"
 codesign --verify --deep --strict "$app"
 work="$(mktemp -d "${TMPDIR:-/tmp}/apertus-notary.XXXXXX")"
 trap 'rm -rf "$work"' EXIT

@@ -19,8 +19,10 @@ async function render(config, agent = 'Linux') {
 }
 const config = JSON.parse(fs.readFileSync('hf-space/config.json','utf8'));
 test('unreleased platforms have no active download links', async()=>{
+  const unreleased = structuredClone(config);
+  for (const release of Object.values(unreleased.platforms)) release.available = false;
   for (const agent of ['Linux','Macintosh','Windows']) {
-    const page = await render(config, agent);
+    const page = await render(unreleased, agent);
     assert.equal(page.get('#download').attrs['aria-disabled'], 'true');
     assert.equal(page.get('#download').href, undefined);
   }
