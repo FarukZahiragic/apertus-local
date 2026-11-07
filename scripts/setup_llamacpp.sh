@@ -101,6 +101,11 @@ for patch in "$REPO_ROOT"/patches/*.patch; do
 done
 
 # Examples stay configured so tools like llama-debug can be built on demand.
+cache="$LLAMA_CPP_DIR/$build_dir/CMakeCache.txt"
+if [[ -f "$cache" ]] && ! grep -Fqx "CMAKE_HOME_DIRECTORY:INTERNAL=$LLAMA_CPP_DIR" "$cache"; then
+  echo 'Workspace moved: refreshing generated CMake cache for the new path.'
+  rm -f "$cache"
+fi
 cmake -S "$LLAMA_CPP_DIR" -B "$LLAMA_CPP_DIR/$build_dir" \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_C_COMPILER="$CC" \
