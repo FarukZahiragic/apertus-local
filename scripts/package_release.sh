@@ -99,6 +99,10 @@ PY
 if [[ "$platform" == macos-arm64 ]]; then
   app="$stage/Apertus Local.app"
   osacompile -o "$app" "$REPO_ROOT/packaging/Launch.applescript"
+  plist="$app/Contents/Info.plist"
+  /usr/libexec/PlistBuddy -c 'Delete :NSAppleEventsUsageDescription' "$plist" >/dev/null 2>&1 || true
+  /usr/libexec/PlistBuddy -c 'Add :NSAppleEventsUsageDescription string Apertus Local opens Terminal to run the model and show startup messages.' "$plist"
+  /usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier io.github.FarukZahiragic.apertus-local' "$plist"
   mkdir -p "$app/Contents/Resources/apertus-local"
   cp -R "$payload/." "$app/Contents/Resources/apertus-local/"
   rm -rf "$payload"
