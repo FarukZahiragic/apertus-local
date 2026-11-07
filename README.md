@@ -33,6 +33,13 @@ check also waits for the embedded chat to render in a real browser.
 
 ## Quickstart
 
+For a fresh Apple Silicon Mac, send the standalone [setup.sh](setup.sh) file and
+run `bash ~/Downloads/setup.sh` in Terminal. It installs missing prerequisites,
+clones the implementation branch into `~/apertus-1.5-local`, builds CPU and Metal,
+verifies the model download and opens CPU chat. Complete any macOS/Homebrew
+installation prompts. Use `bash ~/Downloads/setup.sh --no-start` to prepare before
+an offline session. See [docs/MACOS.md](docs/MACOS.md) for logs and Metal testing.
+
 Apple Silicon: follow [docs/MACOS.md](docs/MACOS.md) to build natively and compare
 CPU with Metal. The same GGUF works on both platforms; Mac performance is not yet
 measured. CPU serving remains supported.
