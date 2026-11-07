@@ -24,6 +24,8 @@ prompt processing (the 1 November 2026 row in `benchmarks/results.md`).
 Apple Silicon: follow [docs/MACOS.md](docs/MACOS.md) to build natively and compare
 CPU with Metal. The same GGUF works on both platforms; Mac performance is not yet
 measured. CPU serving remains supported.
+`scripts/bench_mac.sh` records a controlled CPU/Metal comparison after both builds
+are available; every row identifies the hardware and backend.
 
 Prerequisites (Ubuntu 24.04):
 
