@@ -25,10 +25,10 @@ repository. No conversion is needed on the Mac. Verify an existing copy offline:
 scripts/get_model.sh --apertus
 ```
 
-To download instead, set `APERTUS_MODEL_REPO` to the Hugging Face repository that
-contains our GGUF and run the same command. `MODEL_URL` also accepts a direct model
-download URL. Downloads resume into `.part` and are installed after SHA-256 checks.
-The repository does not yet configure a public GGUF download location.
+The same command downloads from the pinned public GGUF repository if the file is
+missing. No Hugging Face account is required. `APERTUS_MODEL_REPO` and `MODEL_URL`
+allow alternate locations. Downloads resume into `.part` and are installed after
+SHA-256 checks.
 
 ## CPU baseline
 
