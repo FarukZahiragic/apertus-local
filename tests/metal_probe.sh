@@ -44,7 +44,9 @@ def post(path, body):
  with opener.open(request,timeout=300) as response: return json.load(response)
 chat=post('/v1/chat/completions',dict(model=model,messages=[{'role':'user','content':'Document: The workshop takes place in Sarajevo. Question: Which city hosts the workshop? Answer with only the city name.'}],max_tokens=64,temperature=0))
 raw=post('/completion',dict(prompt='The capital of Switzerland is',n_predict=8,temperature=0,n_probs=3))
-result={'profile':sys.argv[1],'hardware':os.environ['HARDWARE_KIND'],'chat':chat,'raw':raw}
+result={'profile':sys.argv[1],'hardware':os.environ['HARDWARE_KIND'],
+        'gpu_layers':os.environ.get('GPU_LAYERS','99'),'load_mode':os.environ.get('LOAD_MODE','auto'),
+        'chat':chat,'raw':raw}
 Path('dist/metal-probe.json').write_text(json.dumps(result,indent=2)+'\n')
 message=chat.get('choices',[{}])[0].get('message',{})
 print(json.dumps({'profile':sys.argv[1],'message':message,'usage':chat.get('usage'), 'raw_content':raw.get('content'),'raw_stop_type':raw.get('stop_type')},indent=2))
