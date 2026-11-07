@@ -23,7 +23,7 @@ for value in "$repeat" "$tokens" "${PORT:-8080}"; do
 done
 hardware="$(ap_hardware)"
 python3 - "$repeat" "$tokens" "$report" "$hardware" <<'PY'
-import datetime, json, os, sys, urllib.parse, urllib.request
+import datetime, gzip, json, os, sys, urllib.parse, urllib.request
 from html.parser import HTMLParser
 from pathlib import Path
 repeat, tokens = map(int, sys.argv[1:3])
@@ -31,11 +31,15 @@ base = 'http://127.0.0.1:' + os.environ.get('PORT','8080')
 opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 timeout = float(os.environ.get('VALIDATION_TIMEOUT','300'))
 def get(path):
-    return opener.open(base + path, timeout=timeout)
+    request = urllib.request.Request(base + path, headers={'Accept-Encoding':'gzip'})
+    return opener.open(request, timeout=timeout)
+def read(response):
+    body = response.read()
+    return gzip.decompress(body) if response.headers.get('Content-Encoding') == 'gzip' else body
 with get('/health') as response:
     assert json.load(response)['status'] == 'ok', 'server not healthy'
 with get('/') as response:
-    html = response.read().decode()
+    html = read(response).decode()
     assert '<html' in html.lower(), 'missing chat UI'
 class Assets(HTMLParser):
     paths = []
@@ -51,8 +55,9 @@ for path in assets.paths:
         continue
     absolute = urllib.parse.urljoin(base + '/', path)
     assert urllib.parse.urlsplit(absolute).netloc == urllib.parse.urlsplit(base).netloc, 'UI loads external asset: ' + path
-    with opener.open(absolute, timeout=timeout) as response:
-        assert response.read(), 'empty UI asset'
+    request = urllib.request.Request(absolute, headers={'Accept-Encoding':'gzip'})
+    with opener.open(request, timeout=timeout) as response:
+        assert read(response), 'empty UI asset'
 with get('/v1/models') as response:
     model = json.load(response)['data'][0]['id']
 def ask(prompt):
