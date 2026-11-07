@@ -20,7 +20,7 @@ generation (tentative, not reached on the reference laptop).
 | Cleanup | `chore/repo-cleanup` | Consolidate phase 5, fix benchmark lifecycle and build selection, sync measured results and handoff docs | merged; serving smoke and benchmark failure-path checks pass; remaining validation is listed below |
 | 6 | `feat/macos-support` | Portable builds, downloads and benchmark scripts on macOS and Linux | implemented; download and simulated Darwin checks pass, Mac hardware validation pending |
 | 7 | `perf/apple-silicon` | Reproducible CPU/Metal comparison on an Apple Silicon Mac | harness implemented; Mac inference, latency, quality and sustained-load measurements pending |
-| 8 | `feat/hardware-defaults` | Detect hardware, choose conservative settings, allow explicit overrides | planned |
+| 8 | `feat/hardware-defaults` | Detect hardware, choose conservative settings, allow explicit overrides | implemented; Bash 3.2 selection and override checks pass; automatic Metal remains gated on hardware validation |
 | 9 | `feat/workshop-launcher` | Downloadable native runtime and a simple local-chat launcher | planned |
 | 10 | `feat/hf-distribution` | Static Hugging Face download page and versioned model distribution | planned |
 | 11 | `chore/workshop-validation` | Automated checks and fresh-install/offline rehearsal | planned; participant hardware checks pending |
