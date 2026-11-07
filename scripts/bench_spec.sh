@@ -53,6 +53,13 @@ if [[ "$vulkan" -eq 1 ]]; then backend=Vulkan build_dir=build-vulkan gpu_layers=
 export BUILD_DIR="${BUILD_DIR:-$LLAMA_CPP_DIR/$build_dir}"
 server_args=(--n-gpu-layers "$gpu_layers" --n-gpu-layers-draft "$gpu_layers")
 [[ -x "$BUILD_DIR/bin/llama-server" ]] || { echo "error: $BUILD_DIR/bin/llama-server missing; run scripts/setup_llamacpp.sh" >&2; exit 1; }
+if [[ "$vulkan" -eq 1 ]]; then
+  devices="$("$BUILD_DIR/bin/llama-server" --list-devices 2>&1)"
+  [[ "$devices" =~ Vulkan[0-9]+: ]] || {
+    echo "error: no Vulkan device available in $BUILD_DIR; run scripts/setup_llamacpp.sh --vulkan and check the driver" >&2
+    exit 1
+  }
+fi
 for model in "$MODEL" "$DRAFT"; do
   [[ -f "$model" ]] || { echo "error: model not found: $model" >&2; exit 1; }
 done
