@@ -15,6 +15,9 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/scripts/platform.sh"
+# Speculative runs keep their measured CPU default; acceleration remains explicit.
+export BACKEND="${BACKEND:-cpu}" THREADS="${THREADS:-$(ap_threads)}"
 DRAFT="${DRAFT:-$REPO_ROOT/models/apertus-v1.5-8b-eagle3.1-e10-Q4_0.gguf}"
 K="${K:-3}"
 if [[ -z "${SPEC_TYPE:-}" ]]; then
