@@ -9,11 +9,16 @@
 #        THREADS  (default: 4, one per physical core on the i5-1135G7)
 #        CTX      context size in tokens (default: 4096; 8192 for longer documents)
 #        THINKING 1 to let Apertus deliberate before answering (default: 0, off)
+#        LLAMA_CPP_DIR checkout location (default: vendor/llama.cpp)
+#        BUILD_DIR build location (default: $LLAMA_CPP_DIR/build)
+# CPU-only by default. For Iris Xe use BUILD_DIR=vendor/llama.cpp/build-vulkan
+# and pass -- --n-gpu-layers 99 (after building with setup_llamacpp.sh --vulkan).
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LLAMA_CPP_DIR="${LLAMA_CPP_DIR:-$REPO_ROOT/vendor/llama.cpp}"
-SERVER="$LLAMA_CPP_DIR/build/bin/llama-server"
+BUILD_DIR="${BUILD_DIR:-$LLAMA_CPP_DIR/build}"
+SERVER="$BUILD_DIR/bin/llama-server"
 
 MODEL="${MODEL:-$REPO_ROOT/models/apertus-v1.5-8b-Q4_K_M.gguf}"
 HOST="${HOST:-127.0.0.1}"
@@ -42,6 +47,7 @@ exec "$SERVER" \
   --threads "$THREADS" \
   --ctx-size "$CTX" \
   --parallel 1 \
+  --n-gpu-layers 0 \
   --jinja \
   --chat-template-kwargs "{\"enable_thinking\":$enable_thinking}" \
   --offline \
