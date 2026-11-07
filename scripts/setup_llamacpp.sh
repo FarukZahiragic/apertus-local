@@ -9,7 +9,10 @@
 # The checkout is reset to the pin and patches/*.patch are applied in order on every
 # run (small fixes for Apertus speculative decoding; see patches/README.md).
 #
-# Usage: scripts/setup_llamacpp.sh [--vulkan]
+# Usage: scripts/setup_llamacpp.sh [--cpu|--metal|--vulkan] [--portable]
+#   --cpu     CPU-only build (default), with Accelerate on macOS
+#   --metal   Apple Silicon integrated GPU, built into build-metal/
+#   --portable disable build-host instruction tuning for release packages
 #   --vulkan  also enable the Vulkan backend (Iris Xe iGPU), built into build-vulkan/
 #             next to the CPU build. Needs: sudo apt install -y libvulkan-dev glslc
 #             spirv-headers mesa-vulkan-drivers vulkan-tools
@@ -22,6 +25,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/scripts/platform.sh"
 
 # Pinned llama.cpp. Bump deliberately and re-run the baseline benchmark.
 PINNED_REPO="https://github.com/MichelRosselli/llama.cpp"
@@ -32,26 +36,49 @@ LLAMA_CPP_DIR="${LLAMA_CPP_DIR:-$REPO_ROOT/vendor/llama.cpp}"
 LLAMA_CPP_REPO="${LLAMA_CPP_REPO:-$PINNED_REPO}"
 LLAMA_CPP_BRANCH="${LLAMA_CPP_BRANCH:-$PINNED_BRANCH}"
 LLAMA_CPP_COMMIT="${LLAMA_CPP_COMMIT:-$PINNED_COMMIT}"
-JOBS="${JOBS:-$(nproc)}"
-# Exported so sub-builds (the Vulkan shader generator) use the same compilers.
-export CC="${CC:-gcc}" CXX="${CXX:-g++}"
-
-build_dir="build" extra_cmake=(-DGGML_VULKAN=OFF)
-case "${1:-}" in
-  -h|--help) sed -n '2,/^set -euo pipefail/{ /^set -euo pipefail/!p; }' "$0"; exit 0 ;;
-  --vulkan) build_dir="build-vulkan" extra_cmake=(-DGGML_VULKAN=ON); shift ;;
-esac
-[[ $# -eq 0 ]] || { echo "error: unknown argument: $1 (see --help)" >&2; exit 1; }
-if [[ "$build_dir" == "build-vulkan" ]]; then
+backend=cpu portable=0
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -h|--help) sed -n '2,/^set -euo pipefail/{ /^set -euo pipefail/!p; }' "$0"; exit 0 ;;
+    --cpu) backend=cpu ;;
+    --metal) backend=metal ;;
+    --vulkan) backend=vulkan ;;
+    --portable) portable=1 ;;
+    *) echo "error: unknown argument: $1 (see --help)" >&2; exit 1 ;;
+  esac
+  shift
+done
+JOBS="${JOBS:-$(ap_jobs)}"
+if [[ "$(ap_os)" == Darwin ]]; then
+  export CC="${CC:-clang}" CXX="${CXX:-clang++}"
+else
+  export CC="${CC:-gcc}" CXX="${CXX:-g++}"
+fi
+build_dir=build
+extra_cmake=(-DGGML_VULKAN=OFF -DGGML_METAL=OFF -DGGML_NATIVE=ON)
+if [[ "$backend" != cpu ]]; then build_dir="build-$backend"; fi
+if [[ "$backend" == metal ]]; then
+  [[ "$(ap_os) $(ap_arch)" == 'Darwin arm64' ]] || {
+    echo 'error: --metal requires native Apple Silicon macOS (use an ARM64 terminal, without Rosetta)' >&2; exit 1;
+  }
+  extra_cmake+=(-DGGML_METAL=ON -DGGML_METAL_EMBED_LIBRARY=ON)
+fi
+if [[ "$(ap_os)" == Darwin ]]; then extra_cmake+=(-DGGML_OPENMP=OFF); fi
+if [[ "$portable" -eq 1 ]]; then
+  build_dir="$build_dir-portable"
+  extra_cmake+=(-DGGML_NATIVE=OFF -DGGML_BACKEND_DL=ON -DGGML_CPU_ALL_VARIANTS=ON)
+fi
+if [[ "$backend" == vulkan ]]; then
+  extra_cmake+=(-DGGML_VULKAN=ON)
   command -v glslc >/dev/null || {
     echo "error: glslc not found. On Ubuntu: sudo apt install -y libvulkan-dev glslc spirv-headers mesa-vulkan-drivers vulkan-tools" >&2
     exit 1
   }
 fi
 
-for tool in git cmake g++; do
+for tool in git cmake "$CC" "$CXX"; do
   command -v "$tool" >/dev/null || {
-    echo "error: '$tool' not found. On Ubuntu: sudo apt install -y git cmake build-essential" >&2
+    echo "error: '$tool' not found. Ubuntu: install git cmake build-essential. macOS: install Xcode command line tools and CMake." >&2
     exit 1
   }
 done
@@ -74,7 +101,6 @@ cmake -S "$LLAMA_CPP_DIR" -B "$LLAMA_CPP_DIR/$build_dir" \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_C_COMPILER="$CC" \
   -DCMAKE_CXX_COMPILER="$CXX" \
-  -DGGML_NATIVE=ON \
   -DLLAMA_BUILD_TESTS=OFF \
   "${extra_cmake[@]}"
 
@@ -85,6 +111,5 @@ BIN="$LLAMA_CPP_DIR/$build_dir/bin"
 echo
 echo "llama.cpp $LLAMA_CPP_COMMIT ($LLAMA_CPP_REPO) built in $BIN"
 "$BIN/llama-cli" --version 2>&1 | tail -n 2
-echo "CPU features seen by ggml:"
-grep -o -w -E 'avx2|avx512f|avx512_vnni|avx_vnni' /proc/cpuinfo | sort -u | tr '\n' ' '
-echo
+echo "Backend: $backend; portable: $portable"
+echo "Hardware: $(ap_hardware)"

@@ -18,6 +18,12 @@ generation (tentative, not reached on the reference laptop).
 | 4 | `perf/cpu-tuning` | Benchmark matrix (threads, quant types, KV-cache quant, context, optional Vulkan); pick the fastest acceptable config | merged; full laptop matrix pending, CPU/no-draft retained after the recorded Vulkan and EAGLE comparisons |
 | 5 | `feat/dspark-spec-decoding`, `feat/eagle3-spec-decoding` | Run draft heads (DSpark, EAGLE 3.1) through llama.cpp, measure acceptance rate and tok/s | merged via PRs #13 and #14; reference checks pass, VM gains recorded; laptop CPU EAGLE k=3: 5.38 vs 5.82 tok/s without draft, Vulkan also slower; experimental only |
 | Cleanup | `chore/repo-cleanup` | Consolidate phase 5, fix benchmark lifecycle and build selection, sync measured results and handoff docs | merged; serving smoke and benchmark failure-path checks pass; remaining validation is listed below |
+| 6 | `feat/macos-support` | Portable builds, downloads and benchmark scripts on macOS and Linux | implemented; download and simulated Darwin checks pass, Mac hardware validation pending |
+| 7 | `perf/apple-silicon` | Reproducible CPU/Metal comparison on an Apple Silicon Mac | planned; no Mac measurements yet |
+| 8 | `feat/hardware-defaults` | Detect hardware, choose conservative settings, allow explicit overrides | planned |
+| 9 | `feat/workshop-launcher` | Downloadable native runtime and a simple local-chat launcher | planned |
+| 10 | `feat/hf-distribution` | Static Hugging Face download page and versioned model distribution | planned |
+| 11 | `chore/workshop-validation` | Automated checks and fresh-install/offline rehearsal | planned; participant hardware checks pending |
 
 ## Phase details
 

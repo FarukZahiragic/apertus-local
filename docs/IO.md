@@ -159,7 +159,8 @@ the printed path, and previously completed rows stay in `RESULTS` (default:
 `benchmarks/results.md`). `--dry-run` runs inference and prints rows without saving.
 
 The tuning matrix writes the same row format to
-[benchmarks/cpu-tuning.md](../benchmarks/cpu-tuning.md):
+[benchmarks/results.md](../benchmarks/results.md). Historical tuning rows remain in
+`benchmarks/cpu-tuning.md`:
 
 ```bash
 scripts/bench_matrix.sh [--quick] [--vulkan] [--dry-run] [MODEL.gguf ...]
