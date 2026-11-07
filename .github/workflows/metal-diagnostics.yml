@@ -1,12 +1,18 @@
 name: Metal correctness diagnostics
 on:
-  push:
-    branches: [chore/workshop-validation]
   workflow_dispatch:
     inputs:
       artifact_run:
         description: Run ID containing the native-macOS-ARM64 artifact
         required: true
+      gpu_layers:
+        description: GPU layers (8 for the 7 GB hosted VM; full offload needs more memory)
+        required: true
+        default: '8'
+      load_mode:
+        description: none packs selected GPU weights; mmap may span the whole GGUF
+        required: true
+        default: none
 permissions:
   contents: read
   actions: read
@@ -14,6 +20,9 @@ jobs:
   profile:
     runs-on: macos-15
     timeout-minutes: 20
+    env:
+      GPU_LAYERS: ${{ inputs.gpu_layers }}
+      LOAD_MODE: ${{ inputs.load_mode }}
     strategy:
       fail-fast: false
       matrix:
@@ -26,7 +35,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           github-token: ${{ github.token }}
-          run-id: ${{ inputs.artifact_run || '42379486359' }}
+          run-id: ${{ inputs.artifact_run }}
           name: native-macOS-ARM64
           path: .metal-artifact
       - name: Extract previously built runtime
