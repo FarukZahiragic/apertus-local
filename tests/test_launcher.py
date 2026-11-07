@@ -32,6 +32,12 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.send_response(200)
         self.end_headers()
         self.wfile.write(b'{"status":"ok"}')
+    def do_POST(self):
+        self.rfile.read(int(self.headers.get('Content-Length', '0')))
+        failure = os.environ.get('TEST_COMPUTE_FAILURE') == os.environ.get('BACKEND')
+        self.send_response(500 if failure else 200)
+        self.end_headers()
+        self.wfile.write(b'{"error":"Compute error"}' if failure else b'{"content":"Hello"}')
     def log_message(self, *args): pass
 class Server(http.server.HTTPServer):
     def server_bind(self):
@@ -85,6 +91,12 @@ server.serve_forever()
         self.exercise_start_stop()
 
     def test_auto_metal_start_failure_retries_cpu(self):
+        self.exercise_auto_retry('TEST_START_FAILURE')
+
+    def test_auto_metal_compute_failure_retries_cpu(self):
+        self.exercise_auto_retry('TEST_COMPUTE_FAILURE')
+
+    def exercise_auto_retry(self, failure):
         shims = self.root/'shims'
         shims.mkdir()
         for name, code in {
@@ -101,7 +113,8 @@ server.serve_forever()
             (destination/'llama-server').symlink_to(self.root/'bin/llama-server')
         self.env.pop('BUILD_DIR')
         self.env.update(BACKEND='auto', LLAMA_CPP_DIR=str(self.root), APERTUS_METAL_VALIDATED='1',
-                        TEST_START_FAILURE='metal', PATH=str(shims)+os.pathsep+os.environ['PATH'])
+                        PATH=str(shims)+os.pathsep+os.environ['PATH'])
+        self.env[failure] = 'metal'
         log = self.exercise_start_stop()
         self.assertIn('Selected: metal', log)
         self.assertIn('retrying on CPU', log)
