@@ -13,3 +13,4 @@ __pycache__/
 # Participant packages and local launcher state
 dist/
 .apertus-state/
+.metal-artifact/
