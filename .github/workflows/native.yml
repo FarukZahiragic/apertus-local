@@ -1,0 +1,66 @@
+name: Native deployment checks
+on:
+  pull_request:
+  push:
+    branches: [main, chore/workshop-validation]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: native-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  scripts:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, macos-15]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check syntax with system Bash
+        run: /bin/bash -n scripts/*.sh Start.command Stop.command Start.sh Stop.sh
+      - name: Test downloads and launcher lifecycle with system Bash
+        env:
+          TEST_BASH: /bin/bash
+        run: python3 -m unittest discover -s tests -v
+      - name: Check download page behavior
+        run: node --test tests/test_download_page.cjs
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, macos-15]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    env:
+      JOBS: '2'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build portable CPU runtime
+        run: scripts/setup_llamacpp.sh --cpu --portable
+      - name: Build portable Metal runtime
+        if: runner.os == 'macOS'
+        run: scripts/setup_llamacpp.sh --metal --portable
+      - name: Package and verify relocated binaries
+        run: scripts/package_release.sh --version ci
+      - name: Download exact Apertus model
+        run: scripts/get_model.sh --apertus
+      - name: Smoke-test actual Apertus on each available backend
+        run: /bin/bash tests/native_smoke.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-${{ runner.os }}-${{ runner.arch }}
+          path: |
+            dist/
+            .apertus-state/*.log
+          if-no-files-found: warn
+          retention-days: 7
