@@ -33,10 +33,10 @@ class RuntimeTests(unittest.TestCase):
                               env=dict(self.env, **env), text=True, capture_output=True)
 
     def test_cpu_settings_preserve_explicit_overrides(self):
-        result = self.serve(CTX='2048', THINKING='1')
+        result = self.serve(CTX='2048', THINKING='1', LOAD_MODE='none')
         self.assertEqual(result.returncode, 0, result.stderr)
         args = json.loads(result.stdout.splitlines()[-1])
-        for flag, value in [('--threads', '2'), ('--ctx-size', '2048'), ('--n-gpu-layers', '0')]:
+        for flag, value in [('--threads', '2'), ('--ctx-size', '2048'), ('--n-gpu-layers', '0'), ('--load-mode','none')]:
             self.assertEqual(args[args.index(flag) + 1], value)
         self.assertIn('--offline', args)
         self.assertIn('Runtime:    cpu', result.stdout)
@@ -47,13 +47,13 @@ class RuntimeTests(unittest.TestCase):
         self.assertIn('no metal device', result.stderr)
 
     def test_explicit_metal_selects_offload(self):
-        result = self.serve(BACKEND='metal', TEST_DEVICES='MTL0: Apple M2')
+        result = self.serve(BACKEND='metal', TEST_DEVICES='MTL0: Apple M2', GPU_LAYERS='8')
         self.assertEqual(result.returncode, 0, result.stderr)
         args = json.loads(result.stdout.splitlines()[-1])
-        self.assertEqual(args[args.index('--n-gpu-layers') + 1], '99')
+        self.assertEqual(args[args.index('--n-gpu-layers') + 1], '8')
 
     def test_invalid_runtime_settings_fail_before_start(self):
-        for setting in [{'BACKEND': 'unknown'}, {'THREADS': '0'}, {'CTX': '-1'}, {'PORT': '99999'}, {'THINKING': 'yes'}]:
+        for setting in [{'BACKEND': 'unknown'}, {'THREADS': '0'}, {'CTX': '-1'}, {'PORT': '99999'}, {'THINKING': 'yes'}, {'LOAD_MODE':'bad'}, {'BACKEND':'metal','GPU_LAYERS':'0'}]:
             with self.subTest(setting=setting):
                 result = self.serve(**setting)
                 self.assertNotEqual(result.returncode, 0)
