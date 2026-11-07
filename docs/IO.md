@@ -65,8 +65,8 @@ fetch `speculators.patch` from the same repo.)
 EAGLE 3.1 check against the TorchSpec / vLLM math (no extra checkout needed):
 
 ```bash
-.venv-ref/bin/python scripts/check_eagle3.py --target-hf models/hf/Apertus-v1.5-8B \\
-  --draft-hf models/hf/Apertus-v1.5-8B-EAGLE3.1-e10-thinking-off \\
+.venv-ref/bin/python scripts/check_eagle3.py --target-hf models/hf/Apertus-v1.5-8B \
+  --draft-hf models/hf/Apertus-v1.5-8B-EAGLE3.1-e10-thinking-off \
   --target-gguf models/apertus-v1.5-8b-F16.gguf --draft-gguf models/apertus-v1.5-8b-eagle3.1-e10-F16.gguf
 ```
 
@@ -83,15 +83,14 @@ All model files live in `models/` (ignored by git).
 | `apertus-v1.5-8b-dspark-e10-F16.gguf` | 3.2 GiB | DSpark draft, reference checks | `4023e2278a0de0fea57ecd72b668ae20a6bde46bf6e4bd00cefaa099821ed696` |
 | `apertus-v1.5-8b-dspark-e10-Q4_K_M.gguf` | 0.96 GiB | DSpark draft, comparison | `eb53928d1625ecf342ab659579747f6c57b7a7e9110e73db0ab2fc4ea01431d9` |
 | `apertus-v1.5-8b-dspark-e10-Q4_0.gguf` | 0.91 GiB | DSpark draft, comparison (faster than Q4_K_M on CPU at the same acceptance) | `a0025139277aaa3a02eebab2183d2876d10498a2e43bb9a0ccb60151c26a4318` |
-
 | `apertus-v1.5-8b-eagle3.1-e10-F16.gguf` | 1.6 GiB | EAGLE 3.1 draft, reference checks | `137e9466f73296f051fe6702db55aa72f0daf52892dfa5ef5547b46e1ed5c67f` |
-| `apertus-v1.5-8b-eagle3.1-e10-Q4_0.gguf` | 0.45 GiB | EAGLE 3.1 draft for the laptop (default; output head Q4_0) | `244903daa6dc2218daef08c84d5b4d2377019e4283108646d0d7c62a3dc0695d` |
+| `apertus-v1.5-8b-eagle3.1-e10-Q4_0.gguf` | 0.45 GiB | Default experimental draft; output head Q4_0 | `244903daa6dc2218daef08c84d5b4d2377019e4283108646d0d7c62a3dc0695d` |
 
 The draft GGUFs (llama.cpp `442b0444` + `patches/`) hold no token embedding, and the
 DSpark ones no output head either: they borrow the target's at load time, so they only
 work next to an Apertus v1.5 target.
 
-The output head and token embedding are Q6_K in every variant (see
+The target's output head and token embedding are Q6_K in every quantized variant (see
 [ARCHITECTURE.md](ARCHITECTURE.md#quantization-choices)). The laptop has about 11 GB of
 free disk: copy only the Q4 file(s) it needs, never the F16 file or the HF download.
 
@@ -104,18 +103,27 @@ free disk: copy only the Q4 file(s) it needs, never the F16 file or the HF downl
 - Health: `http://127.0.0.1:8080/health`
 - Model name in the API: the GGUF file name without `.gguf`, e.g. `apertus-v1.5-8b-Q4_K_M`.
 - Flags set by `scripts/serve.sh`: `--threads 4`, `--ctx-size 4096`, `--parallel 1`,
+  `--n-gpu-layers 0` (CPU only),
   `--jinja` (Apertus 1.5 chat template from the GGUF),
   `--chat-template-kwargs '{"enable_thinking":false}'` (no deliberation before answers;
   `THINKING=1` turns it back on), `--offline` (no downloads).
   Override with `MODEL`, `HOST`, `PORT`, `THREADS`, `CTX`, `THINKING`, or pass extra flags
   after `--`.
+- `LLAMA_CPP_DIR` defaults to `vendor/llama.cpp`; `BUILD_DIR` defaults to its `build/`.
+  To use Iris Xe after `scripts/setup_llamacpp.sh --vulkan`:
+  `BUILD_DIR=vendor/llama.cpp/build-vulkan scripts/serve.sh -- --n-gpu-layers 99`.
 - KV cache: about 0.13 MB per token at F16 (32 layers x 8 KV heads x 128 x 2), so
   0.5 GB at 4,096 tokens and 1 GB at 8,192.
 - Client example: `examples/openai_client.py` (official `openai` package; `--file` for
-  document Q&A, `--repeat N` for a reliability run).
+  document Q&A, `--repeat N` for a reliability run). Streamed token counts come from
+  the API's final usage event; a response without usage is reported without a token count.
 - `scripts/serve_spec.sh` adds a draft head: `--model-draft $DRAFT`,
   `--spec-type $SPEC_TYPE` (from the draft file name), `--spec-draft-n-max $K` (default 3), `--threads-draft`.
-  Same endpoint and flags otherwise; the default EAGLE 3.1 draft adds 0.45 GB of weights.
+  The draft also defaults to CPU (`--n-gpu-layers-draft 0`). For Vulkan, select the
+  Vulkan build and pass both `--n-gpu-layers 99` and `--n-gpu-layers-draft 99` after `--`.
+  Same endpoint and flags otherwise; the default EAGLE 3.1 draft adds 0.45 GiB of weights.
+  Plain CPU serving remains the laptop default because the recorded draft and Vulkan
+  runs were slower.
 
 ## Benchmarks
 
@@ -130,10 +138,25 @@ It runs `llama-bench -o json` and turns the result into one table row. Extra
 `llama-bench` flags (for example `-ctk q8_0 -ctv q8_0`) are recorded in Settings.
 `BUILD_DIR=vendor/llama.cpp/build-vulkan` selects the Vulkan build.
 
-`scripts/bench_spec.sh [--k "3 5"] [-n 256] [--hw LABEL] [--dry-run]` measures speculative
+`scripts/bench_spec.sh [--k "3 5"] [-n 256] [--hw LABEL] [--vulkan] [--dry-run]` measures speculative
 decoding end to end through `llama-server` (6 chat prompts, thinking off, greedy): a
-no-draft baseline, then one run per draft length. Its rows fill the Draft accept column
-as `acceptance rate (τ mean tokens per target step, including the target's own token)`.
+no-draft baseline, then one run per draft length. CPU is the default; `--vulkan` selects
+`build-vulkan/`, labels rows `Vulkan`, and offloads both target and draft with 99 layers.
+It fails before inference if the selected build lists no Vulkan device, so a CPU
+fallback cannot be recorded as a Vulkan result. `BUILD_DIR` overrides the build path.
+Context and target/draft offload settings are
+recorded in Settings. The llama.cpp source commit is read from `LLAMA_CPP_DIR`, with
+`+ local changes` when tracked files differ (including our patches).
+
+Its Draft accept column contains `acceptance rate (τ≈1 + k × acceptance rate)`.
+This estimates tokens per target step assuming full-length drafts; it is not a measured
+step count. Older rows labelled `τ` use the same estimate and are kept as recorded.
+
+The benchmark forces localhost, thinking off, and direct local HTTP requests. `PORT`
+defaults to 8097 and must be free; `STARTUP_TIMEOUT` defaults to 300 seconds. Each run
+has its own temporary directory. On failure the server is stopped, logs are kept at
+the printed path, and previously completed rows stay in `RESULTS` (default:
+`benchmarks/results.md`). `--dry-run` runs inference and prints rows without saving.
 
 The tuning matrix writes the same row format to
 [benchmarks/cpu-tuning.md](../benchmarks/cpu-tuning.md):

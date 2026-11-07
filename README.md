@@ -24,7 +24,7 @@ prompt processing (the 1 November 2026 row in `benchmarks/results.md`).
 Prerequisites (Ubuntu 24.04):
 
 ```bash
-sudo apt install -y git cmake build-essential python3 curl
+sudo apt install -y git cmake build-essential python3 python3-venv curl
 git clone https://github.com/FarukZahiragic/apertus-local && cd apertus-local
 ```
 
@@ -65,7 +65,9 @@ python3 -m venv .venv-client && .venv-client/bin/pip install openai   # once, wh
 
 Defaults: 4 threads, 4,096-token context (`CTX=8192 scripts/serve.sh` for longer
 documents), one slot, thinking off (`THINKING=1 scripts/serve.sh` to let Apertus
-deliberate first, which is much slower on a CPU). How to prove it works with networking disabled:
+deliberate first, which is much slower on a CPU), CPU only. `BUILD_DIR` selects an
+alternative build; GPU offload requires explicit flags after `--`. The client reports
+the server's token usage, including for streamed answers. How to prove it works with networking disabled:
 [docs/OFFLINE.md](docs/OFFLINE.md).
 
 ### 4. Tune for the laptop (optional)
@@ -92,12 +94,27 @@ scripts/bench_spec.sh --k "3 4"       # no draft vs k=3 vs k=4, rows go to bench
 scripts/serve_spec.sh                 # same as serve.sh, plus the draft (K=3 by default)
 ```
 
-The draft only helps with thinking off. On the cloud VM the EAGLE 3.1 draft at k=3 gave
-about 1.4x (DSpark about 1.2x; see [benchmarks/results.md](benchmarks/results.md)); keep
-`scripts/serve.sh` as the default unless the laptop rows show a gain too. For the DSpark
-draft: `DRAFT=models/apertus-v1.5-8b-dspark-e10-Q4_0.gguf scripts/serve_spec.sh`.
+The drafts were trained with thinking off. On the cloud VM EAGLE 3.1 at k=3 gave about
+1.4x and DSpark about 1.2x. On the laptop, EAGLE k=3 slowed generation from 5.82 to
+5.38 tokens/s. Iris Xe Vulkan was slower too: 3.55 tokens/s without a draft and at best
+4.58 with EAGLE k=1. Keep `scripts/serve.sh` as the laptop default. These are the
+6 November 2026 rows in [benchmarks/results.md](benchmarks/results.md).
 
-Further steps are added as each phase lands (see [docs/ROADMAP.md](docs/ROADMAP.md)).
+For the DSpark draft:
+`DRAFT=models/apertus-v1.5-8b-dspark-e10-Q4_0.gguf scripts/serve_spec.sh`.
+To repeat an Iris Xe comparison after building with `scripts/setup_llamacpp.sh --vulkan`:
+
+```bash
+scripts/bench_spec.sh --vulkan --k "1 2 3"   # explicitly offloads both target and draft
+BUILD_DIR=vendor/llama.cpp/build-vulkan scripts/serve_spec.sh -- \
+  --n-gpu-layers 99 --n-gpu-layers-draft 99
+```
+
+The benchmark uses localhost port 8097 (`PORT` overrides it), keeps logs on failure,
+and appends each completed configuration immediately. `--dry-run` still runs inference
+but only prints the rows.
+
+Remaining validation and the next speed work are tracked in [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Docs
 

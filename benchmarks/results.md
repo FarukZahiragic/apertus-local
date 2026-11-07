@@ -1,6 +1,6 @@
 # Benchmark results
 
-One row per run, appended by `scripts/bench.sh`. Column meanings are in
+One row per run, appended by `scripts/bench.sh` or `scripts/bench_spec.sh`. Column meanings are in
 [docs/IO.md](../docs/IO.md#benchmarks). Always check the Hardware column: cloud VM rows
 are not laptop numbers. The CPU tuning matrix has its own file:
 [cpu-tuning.md](cpu-tuning.md).

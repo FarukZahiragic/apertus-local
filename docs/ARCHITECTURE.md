@@ -9,7 +9,7 @@
 | `apertus-v1.5-8b-Q4_K_M.gguf` | The single file copied to the laptop (about 5 GB) | laptop |
 | `llama-server` (llama.cpp) | Built-in chat web UI and OpenAI-compatible API on localhost | laptop, offline |
 | `llama-bench` + `scripts/bench.sh` | Speed measurements, one row per run in `benchmarks/results.md` | laptop (and VM, labelled) |
-| DSpark head (phase 5) | Speculative drafter running on the target model's hidden states | laptop, inside llama.cpp |
+| EAGLE 3.1 / DSpark heads (phase 5, experimental) | Speculative drafters running on the target model's hidden states | laptop, inside llama.cpp; plain CPU serving is faster in the recorded laptop comparison |
 
 ## Data flow
 
@@ -18,14 +18,16 @@ flowchart LR
   HF["swiss-ai/Apertus-v1.5-8B HF weights"] --> Conv["convert_hf_to_gguf + llama-quantize on cloud VM"]
   Conv --> GGUF["apertus-v1.5-8b-Q4_K_M.gguf"]
   GGUF --> Server["llama-server on laptop, offline"]
-  DSpark["DSpark head, phase 5"] -.-> Server
+  Draft["Optional EAGLE 3.1 / DSpark head"] -.-> Server
   Server --> WebUI["Built-in chat web UI"]
   Server --> API["OpenAI-compatible API localhost"]
-  Server --> Bench["bench.sh to benchmarks/results.md"]
+  GGUF --> Bench["llama-bench / bench.sh to benchmarks/results.md"]
+  Server --> SpecBench["bench_spec.sh to benchmarks/results.md"]
 ```
 
-Only the GGUF file crosses from the VM to the laptop. Everything on the laptop runs
-from local files; after setup, no network access is needed.
+Only the target GGUF and, for experiments, a draft GGUF cross from the VM to the
+laptop. Everything on the laptop runs from local files; after setup, no network
+access is needed.
 
 ## Why llama.cpp
 
@@ -59,12 +61,13 @@ Compared with the reference implementation (Swiss AI transformers fork
 
 ### How it is handled
 
-We build from a community branch instead of patching llama.cpp ourselves:
+We build from a community branch, then apply the three speculative decoding patches
+in `patches/`:
 [`MichelRosselli/llama.cpp` @ `model/apertus-v1.5-refresh-20260914`](https://github.com/MichelRosselli/llama.cpp/tree/model/apertus-v1.5-refresh-20260914),
 pinned at commit `442b0444` in `scripts/setup_llamacpp.sh`. It is 7 commits on top of
 upstream `b11347`, which already contains the DSpark drafter (`--spec-type draft-dspark`,
-upstream #25173), so the same build serves phases 2 to 5. The upstream PR for the split
-vocabulary (ggml-org/llama.cpp#26226) is still open. The branch:
+upstream #25173), so the same build serves phases 2 to 5. Split-vocabulary work is
+tracked in ggml-org/llama.cpp#26226. The pinned branch:
 
 - registers `Apertus1p5ForConditionalGeneration` in the converter, reads `text_config`,
   maps `model.language_model.*`, and ignores the vision and audio tokenizers for the
@@ -74,8 +77,8 @@ vocabulary (ggml-org/llama.cpp#26226) is still open. The branch:
 - adds the v1.5 chat template and tool-call parser, and sets `<|assistant_end|>` as
   EOS/EOT.
 
-Not used here: its vision/audio (`mtmd`) support. Missing for phase 5: the Apertus graph
-does not expose `t_layer_inp` hidden states yet, which DSpark needs.
+Not used here: its vision/audio (`mtmd`) support. Patch 0001 exposes the Apertus
+`t_layer_inp` hidden states needed by both draft heads.
 
 ### Validation against the reference
 
@@ -106,7 +109,7 @@ every variant. The head is read for every generated token, and the reference pos
 measured a 6 to 11% quality loss from 4-bit embedding and head. The embedding costs disk
 space only: rows are looked up, not multiplied.
 
-## Speculative decoding (DSpark and EAGLE 3.1)
+## Speculative decoding (DSpark and EAGLE 3.1, experimental)
 
 A draft head reads the target model's hidden states and proposes the next few tokens;
 the target verifies them in one batched forward pass and keeps the matching prefix. The
@@ -146,11 +149,19 @@ and the draft is cheap next to the target, so these heads reach 2.4x to 2.7x. On
 cores, verifying 4 tokens costs about 1.4 target steps, and one draft round costs about
 one more: DSpark reads its 1 GB of layers plus the 0.44 GB output head once; EAGLE reads
 its small layer plus its own copy of the head once per drafted token. With about 2.5
-tokens accepted per round, both land at about 1.2x to 1.3x on the cloud VM (see
-`benchmarks/results.md`).
+tokens accepted per round, DSpark reached about 1.2x on the cloud VM; EAGLE reached
+about 1.4x after quantizing its own output head to Q4_0 (see `benchmarks/results.md`).
+
+These gains do not hold on the reference laptop. The 6 November CPU chat comparison
+measured 5.82 tok/s without a draft and 5.38 with EAGLE k=3 (about 8% slower).
+Full-offload Iris Xe Vulkan measured 3.55 without a draft and at best 4.58 with
+EAGLE k=1. The working default remains Q4_K_M on CPU with 4 threads and no draft.
+Cloud VM results describe that machine only.
 
 The serving path stays the same: `scripts/serve_spec.sh` is `scripts/serve.sh` plus the
-draft (`--model-draft`, `--spec-type`, `--spec-draft-n-max`).
+draft (`--model-draft`, `--spec-type`, `--spec-draft-n-max`). Both target and draft
+default to zero GPU layers. `BUILD_DIR` selects a different build, and explicit
+`--n-gpu-layers` / `--n-gpu-layers-draft` flags enable the optional Vulkan path.
 
 ## References
 

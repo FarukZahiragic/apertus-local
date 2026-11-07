@@ -7,7 +7,9 @@
 # Env:   DRAFT      draft GGUF (default: models/apertus-v1.5-8b-eagle3.1-e10-Q4_0.gguf)
 #        SPEC_TYPE  draft-eagle3 or draft-dspark (default: from the DRAFT file name)
 #        K          tokens drafted per step (default: 3)
-#        plus everything scripts/serve.sh reads (MODEL, HOST, PORT, THREADS, CTX, THINKING)
+#        plus everything scripts/serve.sh reads, including BUILD_DIR
+# CPU-only by default. Pass -- --n-gpu-layers 99 --n-gpu-layers-draft 99
+# with the Vulkan build to offload both models to Iris Xe.
 #
 # The drafts were trained on thinking-off answers; with THINKING=1 acceptance drops.
 set -euo pipefail
@@ -32,4 +34,5 @@ exec "$REPO_ROOT/scripts/serve.sh" -- \
   --spec-type "$SPEC_TYPE" \
   --spec-draft-n-max "$K" \
   --threads-draft "${THREADS:-4}" \
+  --n-gpu-layers-draft 0 \
   "$@"

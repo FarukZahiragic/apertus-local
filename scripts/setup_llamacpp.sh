@@ -36,9 +36,13 @@ JOBS="${JOBS:-$(nproc)}"
 # Exported so sub-builds (the Vulkan shader generator) use the same compilers.
 export CC="${CC:-gcc}" CXX="${CXX:-g++}"
 
-build_dir="build" extra_cmake=()
-if [[ "${1:-}" == "--vulkan" ]]; then
-  build_dir="build-vulkan" extra_cmake=(-DGGML_VULKAN=ON)
+build_dir="build" extra_cmake=(-DGGML_VULKAN=OFF)
+case "${1:-}" in
+  -h|--help) sed -n '2,/^set -euo pipefail/{ /^set -euo pipefail/!p; }' "$0"; exit 0 ;;
+  --vulkan) build_dir="build-vulkan" extra_cmake=(-DGGML_VULKAN=ON); shift ;;
+esac
+[[ $# -eq 0 ]] || { echo "error: unknown argument: $1 (see --help)" >&2; exit 1; }
+if [[ "$build_dir" == "build-vulkan" ]]; then
   command -v glslc >/dev/null || {
     echo "error: glslc not found. On Ubuntu: sudo apt install -y libvulkan-dev glslc spirv-headers mesa-vulkan-drivers vulkan-tools" >&2
     exit 1
