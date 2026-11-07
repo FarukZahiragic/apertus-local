@@ -144,3 +144,10 @@ running localhost server without installing the OpenAI SDK. It is a functional
 check, not a benchmark or a network-isolation tool. Current results and preview
 limitations are listed in [VALIDATION.md](VALIDATION.md). The source workspace can
 be renamed; rerunning setup refreshes CMake's generated paths when needed.
+
+The launcher also performs one real token decode before opening the UI. Some
+backends can return a healthy HTTP response after a warmup compute failure; the
+inference check detects that case and lets auto mode retry CPU. Explicit GPU mode
+reports the error. `GPU_LAYERS` and `LOAD_MODE` allow a tested memory profile to be
+selected; see [MACOS.md](MACOS.md). Streamed validation preserves server error
+messages rather than reporting an empty answer for a compute error.
