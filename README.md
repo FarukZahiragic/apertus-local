@@ -28,6 +28,8 @@ it down. See [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md) for native packages,
 resumable first-run downloads and macOS signing. The [Hugging Face download page](https://huggingface.co/spaces/faruk-zahiragic/apertus-local)
 tracks model and platform availability. A Linux Ubuntu 24.04 preview is available there; Mac downloads await hardware
 validation and signing. See [validation status](docs/VALIDATION.md) before a workshop.
+Native CI checks actual inference on Linux and Apple Silicon; the Linux offline
+check also waits for the embedded chat to render in a real browser.
 
 ## Quickstart
 
