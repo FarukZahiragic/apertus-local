@@ -4,6 +4,7 @@
 
 | Model | Source | Access |
 | --- | --- | --- |
+| Apertus Q4_K_M (participant download) | [`faruk-zahiragic/Apertus-v1.5-8B-GGUF`](https://huggingface.co/faruk-zahiragic/Apertus-v1.5-8B-GGUF) @ `c40df29efdea4f0dd59ccf73635574918405561b` | Public; `scripts/get_model.sh --apertus` verifies the pinned SHA-256 |
 | Apertus-v1.5-8B (target) | [`swiss-ai/Apertus-v1.5-8B`](https://huggingface.co/swiss-ai/Apertus-v1.5-8B), BF16 safetensors | Gated: accept the terms on the model page, then export `HF_TOKEN` (a read token of that account) |
 | Qwen2.5-1.5B-Instruct (smoke test) | [`Qwen/Qwen2.5-1.5B-Instruct-GGUF`](https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF) | Public |
 | DSpark draft for Apertus-v1.5-8B (thinking off, epoch 10) | `faruk-zahiragic/Apertus-v1.5-8B-DSpark-e10-thinking-off` @ `f1741d68`, BF16 safetensors (3.4 GB) | Private: `HF_TOKEN` of that account |
