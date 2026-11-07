@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
-# Measure DSpark speculative decoding through llama-server (chat template, thinking off,
+# Measure speculative decoding through llama-server (chat template, thinking off,
 # greedy) against plain decoding, and append one row per configuration to
 # benchmarks/results.md. Each configuration answers the same 6 chat prompts.
 #
-# Usage: scripts/bench_dspark.sh [--k "3 5"] [-n 256] [--hw LABEL] [--dry-run]
+# Usage: scripts/bench_spec.sh [--k "3 5"] [-n 256] [--hw LABEL] [--dry-run]
 #   --k        draft lengths to test (default: "3 5"); a no-draft baseline always runs first
 #   -n         max tokens per answer (default: 256)
 #   --hw       hardware label (default: "laptop i5-1135G7" on the laptop, else the CPU name)
 #   --dry-run  print rows instead of appending them
-# Env: MODEL, DRAFT, THREADS, CTX as in scripts/serve.sh and scripts/serve_dspark.sh
+# Env: MODEL, DRAFT, SPEC_TYPE, THREADS, CTX as in scripts/serve.sh and scripts/serve_spec.sh
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RESULTS="${RESULTS:-$REPO_ROOT/benchmarks/results.md}"
 MODEL="${MODEL:-$REPO_ROOT/models/apertus-v1.5-8b-Q4_K_M.gguf}"
-DRAFT="${DRAFT:-$REPO_ROOT/models/apertus-v1.5-8b-dspark-e10-Q4_0.gguf}"
+DRAFT="${DRAFT:-$REPO_ROOT/models/apertus-v1.5-8b-eagle3.1-e10-Q4_0.gguf}"
 export MODEL DRAFT PORT=8097 THINKING=0
 
 ks="3 5" n_predict=256 hw="" dry_run=0
@@ -39,11 +39,11 @@ stop_server() { [[ -n "$server_pid" ]] && kill "$server_pid" 2>/dev/null && wait
 trap stop_server EXIT
 
 run_config() {  # run_config K   (K=0: no draft)
-  local k="$1" log="/tmp/bench_dspark_server_$1.log"
+  local k="$1" log="/tmp/bench_spec_server_$1.log"
   if [[ "$k" == 0 ]]; then
     "$REPO_ROOT/scripts/serve.sh" > "$log" 2>&1 &
   else
-    K="$k" "$REPO_ROOT/scripts/serve_dspark.sh" > "$log" 2>&1 &
+    K="$k" "$REPO_ROOT/scripts/serve_spec.sh" > "$log" 2>&1 &
   fi
   server_pid=$!
   for _ in $(seq 300); do
@@ -80,7 +80,8 @@ def ms(xs):
 if k:
     rate = n_accepted / n_drafted if n_drafted else 0.0
     accept = f"{rate:.2f} (τ {1 + k * rate:.2f})"
-    settings = f"server chat, thinking off, greedy, 6 prompts ≤{os.environ['N_PREDICT']} tok, draft-dspark k={k}, " \
+    spec = next((t for t in ("eagle3", "dspark") if t in os.path.basename(os.environ["DRAFT"])), "draft")
+    settings = f"server chat, thinking off, greedy, 6 prompts ≤{os.environ['N_PREDICT']} tok, {spec} k={k}, " \
                f"draft {os.path.basename(os.environ['DRAFT']).removesuffix('.gguf')}"
 else:
     accept = "-"
@@ -92,18 +93,18 @@ quant = os.path.basename(os.environ["MODEL"]).removesuffix(".gguf").rsplit("-", 
 cells = [datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d"), os.environ["HW"], "Apertus-v1.5-8B",
          quant, "CPU", os.environ.get("THREADS", "4"), settings, ms(pp), ms(gen), accept,
          f"{build} + patches", f"{n_tokens} tokens generated"]
-with open("/tmp/bench_dspark_rows.md", "a") as f:
+with open("/tmp/bench_spec_rows.md", "a") as f:
     f.write("| " + " | ".join(cells) + " |\n")
 EOF
   stop_server
 }
 
-rm -f /tmp/bench_dspark_rows.md
+rm -f /tmp/bench_spec_rows.md
 run_config 0
 for k in $ks; do run_config "$k"; done
 
-cat /tmp/bench_dspark_rows.md
+cat /tmp/bench_spec_rows.md
 if [[ "$dry_run" -eq 0 ]]; then
-  cat /tmp/bench_dspark_rows.md >> "$RESULTS"
+  cat /tmp/bench_spec_rows.md >> "$RESULTS"
   echo "appended to $RESULTS" >&2
 fi

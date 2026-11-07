@@ -7,14 +7,15 @@
 | Apertus-v1.5-8B (target) | [`swiss-ai/Apertus-v1.5-8B`](https://huggingface.co/swiss-ai/Apertus-v1.5-8B), BF16 safetensors | Gated: accept the terms on the model page, then export `HF_TOKEN` (a read token of that account) |
 | Qwen2.5-1.5B-Instruct (smoke test) | [`Qwen/Qwen2.5-1.5B-Instruct-GGUF`](https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF) | Public |
 | DSpark draft for Apertus-v1.5-8B (thinking off, epoch 10) | `faruk-zahiragic/Apertus-v1.5-8B-DSpark-e10-thinking-off` @ `f1741d68`, BF16 safetensors (3.4 GB) | Private: `HF_TOKEN` of that account |
+| EAGLE 3.1 draft for Apertus-v1.5-8B (thinking off, epoch 10) | `faruk-zahiragic/Apertus-v1.5-8B-EAGLE3.1-e10-thinking-off` @ `4c9d4c9e`, BF16 safetensors (1.7 GB) | Private: `HF_TOKEN` of that account |
 
 `HF_TOKEN` is only read from the environment and only needed on the machine that
 downloads the gated weights (the cloud VM). Never commit it.
 
 The Apertus revision is pinned in `scripts/convert_quantize.sh` (`HF_REVISION`, default
 `0be762a6`, the `main` head on 2026-11-01). The DSpark drafter was trained against
-revision `a411d838`; the weights, config and tokenizer files are identical at both
-revisions (same LFS hashes).
+revision `a411d838`, like the EAGLE 3.1 drafter; the weights, config and tokenizer files
+are identical at both revisions (same LFS hashes).
 
 ## Conversion (cloud VM)
 
@@ -28,10 +29,11 @@ Needs about 40 GB of disk and 8 GB of free RAM. Only the language model is conve
 the vision and audio tokenizers are skipped. `models/SHA256SUMS` gets one line per
 output file.
 
-DSpark draft (needs the target's config and tokenizer files, not its weights):
+Draft heads (need the target's config and tokenizer files, not its weights):
 
 ```bash
-scripts/convert_dspark.sh                 # F16 + Q4_0 (default draft); add Q4_K_M etc. as arguments
+scripts/convert_draft.sh --head eagle3   # F16 + Q4_0 (output head Q4_0), the default draft
+scripts/convert_draft.sh --head dspark   # F16 + Q4_0; add Q4_K_M etc. as arguments
 ```
 
 Logit check against the reference implementation (separate venv, because the
@@ -57,8 +59,16 @@ git -C /tmp/speculators apply models/hf/Apertus-v1.5-8B-DSpark-e10-thinking-off/
   --target-gguf models/apertus-v1.5-8b-F16.gguf --draft-gguf models/apertus-v1.5-8b-dspark-e10-F16.gguf
 ```
 
-(`convert_dspark.sh` downloads only `config.json`, `model.safetensors` and `SHA256SUMS`;
+(`convert_draft.sh` downloads only `config.json`, `model.safetensors` and `SHA256SUMS`;
 fetch `speculators.patch` from the same repo.)
+
+EAGLE 3.1 check against the TorchSpec / vLLM math (no extra checkout needed):
+
+```bash
+.venv-ref/bin/python scripts/check_eagle3.py --target-hf models/hf/Apertus-v1.5-8B \\
+  --draft-hf models/hf/Apertus-v1.5-8B-EAGLE3.1-e10-thinking-off \\
+  --target-gguf models/apertus-v1.5-8b-F16.gguf --draft-gguf models/apertus-v1.5-8b-eagle3.1-e10-F16.gguf
+```
 
 ## GGUF files
 
@@ -72,10 +82,14 @@ All model files live in `models/` (ignored by git).
 | `apertus-v1.5-8b-IQ4_XS.gguf` | 4.8 GiB | Tuning comparison | `999946833b89d5b6f9bf2ddd93a56af7fc58a728a359537db0a84bb6e2ac757e` |
 | `apertus-v1.5-8b-dspark-e10-F16.gguf` | 3.2 GiB | DSpark draft, reference checks | `4023e2278a0de0fea57ecd72b668ae20a6bde46bf6e4bd00cefaa099821ed696` |
 | `apertus-v1.5-8b-dspark-e10-Q4_K_M.gguf` | 0.96 GiB | DSpark draft, comparison | `eb53928d1625ecf342ab659579747f6c57b7a7e9110e73db0ab2fc4ea01431d9` |
-| `apertus-v1.5-8b-dspark-e10-Q4_0.gguf` | 0.91 GiB | DSpark draft for the laptop (faster than Q4_K_M on CPU at the same acceptance) | `a0025139277aaa3a02eebab2183d2876d10498a2e43bb9a0ccb60151c26a4318` |
+| `apertus-v1.5-8b-dspark-e10-Q4_0.gguf` | 0.91 GiB | DSpark draft, comparison (faster than Q4_K_M on CPU at the same acceptance) | `a0025139277aaa3a02eebab2183d2876d10498a2e43bb9a0ccb60151c26a4318` |
 
-The draft GGUFs (llama.cpp `442b0444` + `patches/`) hold no embedding or output head:
-they borrow the target's at load time, so they only work next to an Apertus v1.5 target.
+| `apertus-v1.5-8b-eagle3.1-e10-F16.gguf` | 1.6 GiB | EAGLE 3.1 draft, reference checks | `137e9466f73296f051fe6702db55aa72f0daf52892dfa5ef5547b46e1ed5c67f` |
+| `apertus-v1.5-8b-eagle3.1-e10-Q4_0.gguf` | 0.45 GiB | EAGLE 3.1 draft for the laptop (default; output head Q4_0) | `244903daa6dc2218daef08c84d5b4d2377019e4283108646d0d7c62a3dc0695d` |
+
+The draft GGUFs (llama.cpp `442b0444` + `patches/`) hold no token embedding, and the
+DSpark ones no output head either: they borrow the target's at load time, so they only
+work next to an Apertus v1.5 target.
 
 The output head and token embedding are Q6_K in every variant (see
 [ARCHITECTURE.md](ARCHITECTURE.md#quantization-choices)). The laptop has about 11 GB of
@@ -99,9 +113,9 @@ free disk: copy only the Q4 file(s) it needs, never the F16 file or the HF downl
   0.5 GB at 4,096 tokens and 1 GB at 8,192.
 - Client example: `examples/openai_client.py` (official `openai` package; `--file` for
   document Q&A, `--repeat N` for a reliability run).
-- `scripts/serve_dspark.sh` adds the DSpark draft: `--model-draft $DRAFT`,
-  `--spec-type draft-dspark`, `--spec-draft-n-max $K` (default 3), `--threads-draft`.
-  Same endpoint and flags otherwise; the draft adds about 1 GB of weights.
+- `scripts/serve_spec.sh` adds a draft head: `--model-draft $DRAFT`,
+  `--spec-type $SPEC_TYPE` (from the draft file name), `--spec-draft-n-max $K` (default 3), `--threads-draft`.
+  Same endpoint and flags otherwise; the default EAGLE 3.1 draft adds 0.45 GB of weights.
 
 ## Benchmarks
 
@@ -116,7 +130,7 @@ It runs `llama-bench -o json` and turns the result into one table row. Extra
 `llama-bench` flags (for example `-ctk q8_0 -ctv q8_0`) are recorded in Settings.
 `BUILD_DIR=vendor/llama.cpp/build-vulkan` selects the Vulkan build.
 
-`scripts/bench_dspark.sh [--k "3 5"] [-n 256] [--hw LABEL] [--dry-run]` measures speculative
+`scripts/bench_spec.sh [--k "3 5"] [-n 256] [--hw LABEL] [--dry-run]` measures speculative
 decoding end to end through `llama-server` (6 chat prompts, thinking off, greedy): a
 no-draft baseline, then one run per draft length. Its rows fill the Draft accept column
 as `acceptance rate (τ mean tokens per target step, including the target's own token)`.

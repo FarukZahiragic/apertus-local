@@ -81,21 +81,21 @@ F16 vs Q8_0 KV cache, and filled contexts, and writes rows to
 with `scripts/setup_llamacpp.sh --vulkan` (see the script header for packages) and add
 `--vulkan`. With 11 GB of free disk, test one extra quant file at a time.
 
-### 5. Speculative decoding with DSpark (experimental)
+### 5. Speculative decoding (experimental)
 
 Re-run `scripts/setup_llamacpp.sh` first: it applies the patches in `patches/`. Put the
-draft GGUF (about 1 GB, converted with `scripts/convert_dspark.sh` on the VM) into
-`models/` next to the target, then:
+draft GGUF (EAGLE 3.1, 0.45 GB, converted with `scripts/convert_draft.sh --head eagle3`
+on the VM) into `models/` next to the target, then:
 
 ```bash
-scripts/bench_dspark.sh               # no draft vs k=3 vs k=5, rows go to benchmarks/results.md
-scripts/serve_dspark.sh               # same as serve.sh, plus the draft (K=3 by default)
+scripts/bench_spec.sh --k "3 4"       # no draft vs k=3 vs k=4, rows go to benchmarks/results.md
+scripts/serve_spec.sh                 # same as serve.sh, plus the draft (K=3 by default)
 ```
 
-The draft only helps with thinking off, and only if the laptop verifies a few tokens
-almost as fast as one. On the cloud VM it was break-even (see
-[benchmarks/results.md](benchmarks/results.md)); keep `scripts/serve.sh` as the
-default unless the laptop rows show a gain.
+The draft only helps with thinking off. On the cloud VM the EAGLE 3.1 draft at k=3 gave
+about 1.4x (DSpark about 1.2x; see [benchmarks/results.md](benchmarks/results.md)); keep
+`scripts/serve.sh` as the default unless the laptop rows show a gain too. For the DSpark
+draft: `DRAFT=models/apertus-v1.5-8b-dspark-e10-Q4_0.gguf scripts/serve_spec.sh`.
 
 Further steps are added as each phase lands (see [docs/ROADMAP.md](docs/ROADMAP.md)).
 

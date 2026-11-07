@@ -1,0 +1,166 @@
+diff --git a/conversion/llama.py b/conversion/llama.py
+index 67d0b0f3..31e41490 100644
+--- a/conversion/llama.py
++++ b/conversion/llama.py
+@@ -104,6 +104,23 @@ class LlamaModel(TextModel):
+             logger.info(f"EAGLE-3: norm_before_fc = {norm_before_fc}")
+             self.gguf_writer.add_norm_before_fc(norm_before_fc)
+ 
++            # EAGLE 3.1: fc_norm = one RMSNorm per target hidden state before fc,
++            # norm_output = the next draft step reads the post-norm hidden state
++            arch_name = gguf.MODEL_ARCH_NAMES[self.model_arch]
++            self.gguf_writer.add_bool(f"{arch_name}.fc_norm", bool(eagle3_raw_config.get("fc_norm", False)))
++            self.gguf_writer.add_bool(f"{arch_name}.norm_output", bool(eagle3_raw_config.get("norm_output", False)))
++            self._eagle3_n_targets = len(target_layers)
++
++            # split-vocabulary targets (e.g. Apertus v1.5): the draft vocab is the first
++            # output_vocab_size tokens, so the draft-to-target map is the identity
++            draft_vocab_size = eagle3_raw_config.get("draft_vocab_size", self.target_vocab_size)
++            self._eagle3_identity_d2t = (draft_vocab_size < self.target_vocab_size
++                                         and draft_vocab_size == target_config.get("output_vocab_size"))
++            self._eagle3_draft_vocab_size = draft_vocab_size
++            if self._eagle3_identity_d2t:
++                # the draft reads target token ids: tokenize with the full target vocabulary
++                self.hparams["vocab_size"] = self.target_vocab_size
++
+     def set_vocab(self):
+         # eagle3: use tokenizer from target model if provided
+         original_dir_model = None
+@@ -239,6 +256,15 @@ class LlamaModel(TextModel):
+             if name == "input_norm.weight":
+                 yield (self.format_tensor_name(gguf.MODEL_TENSOR.ENC_OUTPUT_NORM), data_torch)
+                 return
++            if name.startswith("fc_norm.") and name.endswith(".weight"):
++                # stack the per-target norms into one [n_targets, n_embd_tgt] tensor
++                if not hasattr(self, "_eagle3_fc_norm"):
++                    self._eagle3_fc_norm = {}
++                self._eagle3_fc_norm[int(name.split(".")[1])] = data_torch
++                if len(self._eagle3_fc_norm) == self._eagle3_n_targets:
++                    stacked = torch.stack([self._eagle3_fc_norm[i] for i in range(self._eagle3_n_targets)])
++                    yield (self.format_tensor_name(gguf.MODEL_TENSOR.ENC_OUTPUT_NORM), stacked)
++                return
+             if name == "d2t":
+                 # store for manual int64 handling in prepare_tensors (avoid F32 conversion)
+                 if not hasattr(self, '_eagle3_int_tensors'):
+@@ -334,6 +360,10 @@ class LlamaModel(TextModel):
+                 if name == "d2t":
+                     eagle3_original_dtypes[name] = data_torch.dtype
+ 
++        if getattr(self, '_eagle3_identity_d2t', False) and "d2t" not in getattr(self, '_eagle3_int_tensors', {}):
++            self._eagle3_int_tensors = {**getattr(self, '_eagle3_int_tensors', {}),
++                                        "d2t": torch.zeros(self._eagle3_draft_vocab_size, dtype=torch.int64)}
++
+         super().prepare_tensors()
+ 
+         # eagle3: write d2t as absolute target token ids
+diff --git a/src/llama-arch.cpp b/src/llama-arch.cpp
+index 0afc6555..285dbc08 100644
+--- a/src/llama-arch.cpp
++++ b/src/llama-arch.cpp
+@@ -371,6 +371,8 @@ static const std::map<llm_kv, const char *> LLM_KV_NAMES = {
+     { LLM_KV_TARGET_HIDDEN_SIZE,    "%s.target_hidden_size"   },
+     { LLM_KV_NORM_BEFORE_RESIDUAL,  "%s.norm_before_residual" },
+     { LLM_KV_NORM_BEFORE_FC,        "%s.norm_before_fc"       },
++    { LLM_KV_FC_NORM,               "%s.fc_norm"              },
++    { LLM_KV_NORM_OUTPUT,           "%s.norm_output"          },
+ 
+     { LLM_KV_DFLASH_BLOCK_SIZE,       "%s.block_size"       },
+     { LLM_KV_DFLASH_CONV_KERNEL_SIZE, "%s.conv_kernel_size" },
+diff --git a/src/llama-arch.h b/src/llama-arch.h
+index b30e9feb..0c00120d 100644
+--- a/src/llama-arch.h
++++ b/src/llama-arch.h
+@@ -422,6 +422,8 @@ enum llm_kv {
+     LLM_KV_DFLASH_SELECTOR_TOP_K,
+     LLM_KV_NORM_BEFORE_RESIDUAL,
+     LLM_KV_NORM_BEFORE_FC,
++    LLM_KV_FC_NORM,
++    LLM_KV_NORM_OUTPUT,
+ 
+     LLM_KV_SHORTCONV_L_CACHE,
+ 
+diff --git a/src/llama-hparams.h b/src/llama-hparams.h
+index 1ef9f941..0f97b9cf 100644
+--- a/src/llama-hparams.h
++++ b/src/llama-hparams.h
+@@ -60,6 +60,8 @@ struct llama_hparams {
+     bool swin_norm;
+     bool norm_before_residual = false;
+     bool norm_before_fc       = false;
++    bool fc_norm              = false; // eagle3.1: one RMSNorm per target hidden state before fc
++    bool norm_output          = false; // eagle3.1: feed the post-norm state to the next draft step
+ 
+     uint32_t n_ctx_train; // context size the model was trained on
+     uint32_t n_embd;
+diff --git a/src/models/eagle3.cpp b/src/models/eagle3.cpp
+index bfde35e4..dd305f54 100644
+--- a/src/models/eagle3.cpp
++++ b/src/models/eagle3.cpp
+@@ -32,6 +32,13 @@ void llama_model_eagle3::load_arch_hparams(llama_model_loader & ml) {
+     // compatible with eagle3.1 (e.g. nvidia/gpt-oss-120b-Eagle3-v3)
+     ml.get_key(LLM_KV_NORM_BEFORE_FC, hparams.norm_before_fc, false);
+ 
++    // eagle3.1 fc_norm / norm_output (optional, default false)
++    ml.get_key(LLM_KV_FC_NORM,     hparams.fc_norm,     false);
++    ml.get_key(LLM_KV_NORM_OUTPUT, hparams.norm_output, false);
++    if (hparams.fc_norm && hparams.norm_before_fc) {
++        throw std::runtime_error("EAGLE3: fc_norm and norm_before_fc are mutually exclusive");
++    }
++
+     type = LLM_TYPE_UNKNOWN;
+ }
+ 
+@@ -61,6 +68,11 @@ void llama_model_eagle3::load_arch_tensors(llama_model_loader &) {
+     if (hparams.norm_before_fc) {
+         output_norm_enc = create_tensor(tn(LLM_TENSOR_ENC_OUTPUT_NORM, "weight"), {n_embd_inp}, 0);
+     }
++    // fc_norm: one RMSNorm per target hidden state, stored as [n_embd_tgt, n_targets]
++    if (hparams.fc_norm) {
++        const int64_t n_targets = (int64_t) target_layer_ids.size();
++        output_norm_enc = create_tensor(tn(LLM_TENSOR_ENC_OUTPUT_NORM, "weight"), {n_embd_inp / n_targets, n_targets}, 0);
++    }
+ 
+     // Output layer (uses draft vocab size)
+     output_norm = create_tensor(tn(LLM_TENSOR_OUTPUT_NORM, "weight"), {n_embd}, 0);
+@@ -133,6 +145,16 @@ llama_model_eagle3::graph<true>::graph(const llama_model & model, const llm_grap
+         cb(cur, "enc_input_norm", -1);
+     }
+ 
++    // fc_norm: normalize each target hidden state on its own
++    if (hparams.fc_norm) {
++        const int64_t n_embd_tgt = model.output_norm_enc->ne[0];
++        const int64_t n_targets  = model.output_norm_enc->ne[1];
++        cur = ggml_reshape_3d(ctx0, cur, n_embd_tgt, n_targets, n_tokens);
++        cur = build_norm(cur, model.output_norm_enc, NULL, LLM_NORM_RMS, -1);
++        cur = ggml_reshape_2d(ctx0, cur, n_embd_tgt * n_targets, n_tokens);
++        cb(cur, "enc_fc_norm", -1);
++    }
++
+     // Feature fusion layer
+     cur = build_lora_mm(model.fc, cur);
+     cb(cur, "fc_out", -1);
+@@ -284,14 +306,22 @@ llama_model_eagle3::graph<false>::graph(const llama_model & model, const llm_gra
+     cur = inpL;
+ 
+     // Output prenorm state (for next token's g_embeddings in autoregressive generation)
+-    ggml_set_output(cur);
+-    res->t_h_nextn = cur;
++    if (!hparams.norm_output) {
++        ggml_set_output(cur);
++        res->t_h_nextn = cur;
++    }
+ 
+     cur = build_norm(cur,
+             model.output_norm, NULL,
+             LLM_NORM_RMS, -1);
+     cb(cur, "result_norm", -1);
+ 
++    // norm_output (eagle3.1): the next draft step reads the post-norm state instead
++    if (hparams.norm_output) {
++        ggml_set_output(cur);
++        res->t_h_nextn = cur;
++    }
++
+     // lm_head - projects to draft vocabulary
+     // if the draft has no own output projection, inherit the target model's lm_head
+     auto * output = model.output;
