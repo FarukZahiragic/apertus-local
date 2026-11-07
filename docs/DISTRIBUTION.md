@@ -81,6 +81,8 @@ The script signs nested Mach-O files, updates the package hash manifest, seals t
 app with hardened runtime, submits to Apple, staples the ticket and checks
 Gatekeeper. Credentials are never written into the repository or package. A real
 signed download/open test is still required; signing cannot be validated on Linux.
+Development apps get an ad-hoc seal after resources are installed; that seal is
+checked but does not establish an identified publisher or notarization.
 [Apple's distribution guide](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution).
 
 ## Release readiness
