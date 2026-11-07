@@ -94,6 +94,10 @@ ap_runtime() {
     vulkan) candidate=build-vulkan; AP_GPU_LAYERS=99 ;;
     *) echo 'error: BACKEND must be auto, cpu, metal, or vulkan' >&2; return 1 ;;
   esac
+  if [[ "$AP_BACKEND" != cpu && -n "${GPU_LAYERS:-}" ]]; then
+    [[ "$GPU_LAYERS" =~ ^[1-9][0-9]*$ ]] || { echo 'error: GPU_LAYERS must be positive; use BACKEND=cpu for CPU-only' >&2; return 1; }
+    AP_GPU_LAYERS="$GPU_LAYERS"
+  fi
   if [[ -z "${BUILD_DIR:-}" ]]; then
     if [[ -x "$root/runtime/$AP_BACKEND/bin/llama-server" ]]; then
       BUILD_DIR="$root/runtime/$AP_BACKEND"
