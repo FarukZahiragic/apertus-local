@@ -185,3 +185,13 @@ default to zero GPU layers. `BUILD_DIR` selects a different build, and explicit
     workshop demo shows chat and document Q&A.
   - They hit a server deadlock likely caused by a dependency mismatch: pin the
     llama.cpp commit and test a long run of requests before the workshop.
+
+## Participant distribution
+
+`launch.sh` manages a single local `serve.sh` child and opens the embedded UI only
+after readiness. Packaged binaries and CPU backend modules live in
+`runtime/<backend>/bin/`; model files remain separate. macOS/Linux share Bash 3.2
+compatible detection, checksum and lifecycle code. The Mac app is a small native
+entry point that keeps models/logs outside its signed bundle. See
+[DISTRIBUTION.md](DISTRIBUTION.md). Auto Metal remains gated on actual Apertus
+validation; CPU is the baseline.

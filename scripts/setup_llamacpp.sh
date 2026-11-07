@@ -66,7 +66,11 @@ fi
 if [[ "$(ap_os)" == Darwin ]]; then extra_cmake+=(-DGGML_OPENMP=OFF); fi
 if [[ "$portable" -eq 1 ]]; then
   build_dir="$build_dir-portable"
-  extra_cmake+=(-DGGML_NATIVE=OFF -DGGML_BACKEND_DL=ON -DGGML_CPU_ALL_VARIANTS=ON)
+  extra_cmake+=(-DGGML_NATIVE=OFF -DGGML_BACKEND_DL=ON -DGGML_CPU_ALL_VARIANTS=ON
+    -DGGML_OPENMP=OFF -DLLAMA_OPENSSL=OFF -DCMAKE_BUILD_RPATH_USE_ORIGIN=ON)
+  if [[ "$(ap_os)" == Darwin ]]; then
+    extra_cmake+=('-DCMAKE_BUILD_RPATH=@loader_path')
+  fi
 fi
 if [[ "$backend" == vulkan ]]; then
   extra_cmake+=(-DGGML_VULKAN=ON)
@@ -106,6 +110,10 @@ cmake -S "$LLAMA_CPP_DIR" -B "$LLAMA_CPP_DIR/$build_dir" \
 
 cmake --build "$LLAMA_CPP_DIR/$build_dir" -j "$JOBS" \
   --target llama-cli llama-bench llama-server llama-quantize
+if [[ "$portable" -eq 1 ]]; then
+  # Dynamically loaded backend modules are not link dependencies of llama-server.
+  cmake --build "$LLAMA_CPP_DIR/$build_dir" -j "$JOBS" --target ggml
+fi
 
 BIN="$LLAMA_CPP_DIR/$build_dir/bin"
 echo
