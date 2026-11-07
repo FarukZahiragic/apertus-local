@@ -64,7 +64,7 @@ ap_device_available() {
   local devices pattern
   devices="$("$1" --list-devices 2>&1)" || return 1
   case "$2" in
-    metal) pattern='(Metal|MTL)([0-9]+)?:'; [[ "$devices" =~ $pattern ]] ;;
+    metal) pattern="(Metal|MTL)([0-9]+)?:"; [[ "$devices" =~ $pattern ]] ;;
     vulkan) [[ "$devices" =~ Vulkan[0-9]+: ]] ;;
     *) return 1 ;;
   esac
