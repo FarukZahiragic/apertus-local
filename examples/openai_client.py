@@ -15,19 +15,21 @@ import time
 from openai import OpenAI
 
 
-def ask(client: OpenAI, model: str, messages: list[dict], max_tokens: int, stream: bool) -> tuple[str, int]:
+def ask(client: OpenAI, model: str, messages: list[dict], max_tokens: int, stream: bool) -> tuple[str, int | None]:
     if not stream:
         r = client.chat.completions.create(model=model, messages=messages, max_tokens=max_tokens)
-        return r.choices[0].message.content or "", r.usage.completion_tokens if r.usage else 0
-    parts, n = [], 0
+        return r.choices[0].message.content or "", r.usage.completion_tokens if r.usage else None
+    parts, n = [], None
     for chunk in client.chat.completions.create(
-        model=model, messages=messages, max_tokens=max_tokens, stream=True
+        model=model, messages=messages, max_tokens=max_tokens, stream=True,
+        stream_options={"include_usage": True},
     ):
         delta = chunk.choices[0].delta.content if chunk.choices else None
         if delta:
             parts.append(delta)
-            n += 1
             print(delta, end="", flush=True)
+        if chunk.usage:
+            n = chunk.usage.completion_tokens
     print(flush=True)
     return "".join(parts), n
 
@@ -64,7 +66,8 @@ def main() -> None:
             print(f"[{i + 1}/{args.repeat}] error: {e}", file=sys.stderr)
             continue
         dt = time.time() - start
-        print(f"[{i + 1}/{args.repeat}] {model}: {n} tokens in {dt:.1f} s", file=sys.stderr)
+        count = f"{n} tokens" if n is not None else "response"
+        print(f"[{i + 1}/{args.repeat}] {model}: {count} in {dt:.1f} s", file=sys.stderr)
 
     if args.repeat > 1:
         print(f"{args.repeat - failures}/{args.repeat} requests succeeded", file=sys.stderr)
