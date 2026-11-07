@@ -2,7 +2,7 @@
 
 One row per run, appended by `scripts/bench.sh` or `scripts/bench_spec.sh`. Column meanings are in
 [docs/IO.md](../docs/IO.md#benchmarks). Always check the Hardware column: cloud VM rows
-are not laptop numbers. The CPU tuning matrix has its own file:
+are not laptop numbers. New CPU tuning matrix runs use this table. Historical tuning rows remain in
 [cpu-tuning.md](cpu-tuning.md).
 
 | Date | Hardware | Model | Quant | Backend | Threads | Settings | Prompt tok/s | Gen tok/s | Draft accept | llama.cpp | Notes |
