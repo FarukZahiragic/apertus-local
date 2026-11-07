@@ -102,14 +102,18 @@ free disk: copy only the Q4 file(s) it needs, never the F16 file or the HF downl
   `/v1/models`); any API key string is accepted.
 - Health: `http://127.0.0.1:8080/health`
 - Model name in the API: the GGUF file name without `.gguf`, e.g. `apertus-v1.5-8b-Q4_K_M`.
-- Flags set by `scripts/serve.sh`: `--threads 4`, `--ctx-size 4096`, `--parallel 1`,
-  `--n-gpu-layers 0` (CPU only),
+- Flags set by `scripts/serve.sh`: detected physical/performance-core `--threads`
+  (4 on the reference laptop), `--ctx-size 4096`, `--parallel 1`,
+  `--n-gpu-layers 0` (CPU) or `99` (explicit Metal/Vulkan),
   `--jinja` (Apertus 1.5 chat template from the GGUF),
   `--chat-template-kwargs '{"enable_thinking":false}'` (no deliberation before answers;
   `THINKING=1` turns it back on), `--offline` (no downloads).
-  Override with `MODEL`, `HOST`, `PORT`, `THREADS`, `CTX`, `THINKING`, or pass extra flags
+  Override with `MODEL`, `HOST`, `PORT`, `THREADS`, `CTX`, `THINKING`, `BACKEND`, or pass extra flags
   after `--`.
 - `LLAMA_CPP_DIR` defaults to `vendor/llama.cpp`; `BUILD_DIR` defaults to its `build/`.
+  `BACKEND=metal` selects `build-metal/`; `BACKEND=vulkan` selects `build-vulkan/`.
+  Packaged launches prefer `runtime/<backend>/`. Auto mode uses CPU unless
+  `APERTUS_METAL_VALIDATED=1` on Apple Silicon and Metal device enumeration succeeds.
   To use Iris Xe after `scripts/setup_llamacpp.sh --vulkan`:
   `BUILD_DIR=vendor/llama.cpp/build-vulkan scripts/serve.sh -- --n-gpu-layers 99`.
 - KV cache: about 0.13 MB per token at F16 (32 layers x 8 KV heads x 128 x 2), so
