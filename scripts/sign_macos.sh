@@ -11,7 +11,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 echo "Signing $app"
 while IFS= read -r -d '' binary; do
   codesign --force --options runtime --timestamp --sign "$MACOS_SIGN_IDENTITY" "$binary"
-done < <(find "$app/Contents/Resources/apertus-local/runtime" -type f \( -name '*.dylib' -o -name 'llama-*' \) -print0)
+done < <(find "$app/Contents/Resources/apertus-local/runtime" -type f \( -name '*.dylib' -o -name '*.so' -o -name 'llama-*' \) -print0)
 python3 - "$app/Contents/Resources/apertus-local" <<'PY'
 import hashlib, json, sys
 from pathlib import Path
