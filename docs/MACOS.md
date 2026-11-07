@@ -51,6 +51,26 @@ Metal uses the integrated GPU. CPU support does not require Metal. Check the ser
 log for actual offloaded layers and coherent answers before comparing throughput.
 Mac inference and performance remain pending until measured on the actual hardware.
 
+## Record a comparable CPU/Metal run
+
+```bash
+NOTES='AC power; other apps closed; memory pressure green' scripts/bench_mac.sh --quick
+NOTES='AC power; other apps closed; memory pressure green' scripts/bench_mac.sh
+```
+
+Both configurations use the same GGUF, token lengths, repetitions and CPU threads.
+Every run appends a hardware-labelled row to `benchmarks/results.md`; keep quick
+checks separate from full pp512/tg128 comparisons. `THREADS` overrides the detected
+performance-core count. `scripts/bench_matrix.sh --metal` adds a Metal comparison
+to the existing CPU quantization/context matrix. The benchmark refuses Metal if
+the selected build cannot enumerate a Metal device and fixes the offload setting
+for each backend. Examine stderr/server logs to confirm actual offload as well.
+
+Also compare short chat and a fixed pasted document in the web UI, recording time
+to first token, generation speed, memory pressure and answer quality. A raw benchmark
+does not establish interactive latency or correctness. Recheck after sustained use
+to expose thermal throttling. No Mac speed claim is made before these checks.
+
 ## Release builds
 
 `scripts/setup_llamacpp.sh --cpu --portable` uses `build-portable/` with runtime
