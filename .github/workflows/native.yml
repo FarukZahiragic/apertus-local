@@ -2,7 +2,7 @@ name: Native deployment checks
 on:
   pull_request:
   push:
-    branches: [main, chore/workshop-validation]
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
