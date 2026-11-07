@@ -108,9 +108,10 @@ gh workflow run native.yml --repo FarukZahiragic/apertus-local \
   -f sign_macos_release=true
 ```
 
-Use `--ref main` after the implementation PRs merge. GitHub requires dispatchable
-workflows on the default branch; if dispatch is unavailable before merge, merge
-the PR stack first. No signing secrets are used by pull-request CI jobs.
+Use `--ref main` after the implementation PRs merge. Dispatch of the registered
+native workflow on `feat/macos-release` has been verified while the PR stack is
+under review. If the web UI does not show its new inputs yet, use the CLI command
+above. No signing secrets are used by pull-request CI jobs.
 
 In the GitHub UI, open **Actions > Native deployment checks > Run workflow**, select
 the implementation branch (or `main` after merge), enter the version, and leave
