@@ -59,6 +59,27 @@ class RuntimeTests(unittest.TestCase):
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn('error:', result.stderr)
 
+    def test_auto_metal_requires_validation_and_available_device(self):
+        shims = self.root / 'shims'
+        shims.mkdir()
+        for name, content in {
+            'uname': 'case "$1" in -s) echo Darwin;; -m) echo arm64;; esac',
+        }.items():
+            path = shims / name
+            path.write_text('#!/bin/sh\n'+content+'\n')
+            path.chmod(0o755)
+        overrides = dict(PATH=str(shims)+os.pathsep+os.environ['PATH'], TEST_DEVICES='MTL0: Apple M2')
+        result = self.serve(**overrides, APERTUS_METAL_VALIDATED='0')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('Runtime:    cpu', result.stdout)
+        result = self.serve(**overrides, APERTUS_METAL_VALIDATED='1')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('Runtime:    metal', result.stdout)
+        overrides['TEST_DEVICES'] = 'Available devices: (none)'
+        result = self.serve(**overrides, APERTUS_METAL_VALIDATED='1')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('auto mode selected CPU', result.stderr)
+
 
 if __name__ == '__main__':
     unittest.main()
