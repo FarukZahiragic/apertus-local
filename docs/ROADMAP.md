@@ -23,7 +23,7 @@ generation (tentative, not reached on the reference laptop).
 | 8 | `feat/hardware-defaults` | Detect hardware, choose conservative settings, allow explicit overrides | implemented; Bash 3.2 selection and override checks pass; automatic Metal remains gated on hardware validation |
 | 9 | `feat/workshop-launcher` | Downloadable native runtime and a simple local-chat launcher | implemented; lifecycle tests pass; Linux package relocation and real-model checks pass; hosted Mac CPU/Metal builds pass; macOS signing and Windows pending |
 | 10 | `feat/hf-distribution` | Static Hugging Face download page and versioned model distribution | model and static Space published in faruk-zahiragic namespace; runtime downloads remain gated on validation |
-| 11 | `chore/workshop-validation` | Automated checks and fresh-install/offline rehearsal | local Bash 3.2 and download-page checks pass; extracted Linux package passes document Q&A and 50 requests; native CI follow-up and network-disabled hardware rehearsal pending |
+| 11 | `chore/workshop-validation` | Automated checks and fresh-install/offline rehearsal | local Bash 3.2 and download-page checks pass; extracted Linux package passes document Q&A and 50 requests; native build/smoke checks tracked in Actions, network-disabled hardware rehearsal pending |
 
 ## Phase details
 
