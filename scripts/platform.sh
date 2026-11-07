@@ -61,13 +61,52 @@ ap_verify() {
 }
 ap_device_available() {
   # Device enumeration alone does not prove that model inference is supported.
-  local devices
+  local devices pattern
   devices="$("$1" --list-devices 2>&1)" || return 1
   case "$2" in
-    metal) [[ "$devices" =~ (Metal|MTL)[0-9]+: ]] ;;
+    metal) pattern='(Metal|MTL)([0-9]+)?:'; [[ "$devices" =~ $pattern ]] ;;
     vulkan) [[ "$devices" =~ Vulkan[0-9]+: ]] ;;
     *) return 1 ;;
   esac
+}
+
+ap_runtime() {
+  # Set AP_BACKEND, BUILD_DIR and THREADS. Auto Metal is gated on real Apertus
+  # validation, rather than assuming that an enumerated device is sufficient.
+  local requested="${BACKEND:-auto}" root="$1" candidate
+  AP_BACKEND="$requested"
+  if [[ "$requested" == auto ]]; then
+    AP_BACKEND=cpu
+    if [[ "$(ap_os) $(ap_arch)" == 'Darwin arm64' && "${APERTUS_METAL_VALIDATED:-0}" == 1 ]]; then
+      candidate="${BUILD_DIR:-$root/runtime/metal}"
+      [[ -x "$candidate/bin/llama-server" ]] || candidate="${BUILD_DIR:-${LLAMA_CPP_DIR:-$root/vendor/llama.cpp}/build-metal}"
+      if [[ -x "$candidate/bin/llama-server" ]] && ap_device_available "$candidate/bin/llama-server" metal; then
+        AP_BACKEND=metal
+        BUILD_DIR="$candidate"
+      else
+        echo 'Metal unavailable; auto mode selected CPU.' >&2
+      fi
+    fi
+  fi
+  case "$AP_BACKEND" in
+    cpu) candidate=build; AP_GPU_LAYERS=0 ;;
+    metal) candidate=build-metal; AP_GPU_LAYERS=99 ;;
+    vulkan) candidate=build-vulkan; AP_GPU_LAYERS=99 ;;
+    *) echo 'error: BACKEND must be auto, cpu, metal, or vulkan' >&2; return 1 ;;
+  esac
+  if [[ -z "${BUILD_DIR:-}" ]]; then
+    if [[ -x "$root/runtime/$AP_BACKEND/bin/llama-server" ]]; then
+      BUILD_DIR="$root/runtime/$AP_BACKEND"
+    else
+      BUILD_DIR="${LLAMA_CPP_DIR:-$root/vendor/llama.cpp}/$candidate"
+    fi
+  fi
+  THREADS="${THREADS:-$(ap_threads)}"
+  [[ "$THREADS" =~ ^[1-9][0-9]*$ ]] || { echo 'error: THREADS must be a positive integer' >&2; return 1; }
+  if [[ "$AP_BACKEND" != cpu ]] && ! ap_device_available "$BUILD_DIR/bin/llama-server" "$AP_BACKEND"; then
+    echo "error: no $AP_BACKEND device in $BUILD_DIR; use BACKEND=cpu or build the requested backend" >&2
+    return 1
+  fi
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
