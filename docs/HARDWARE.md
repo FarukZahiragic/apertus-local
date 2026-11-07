@@ -14,16 +14,19 @@
 
 ## What this means for speed
 
-- Generation on CPU is limited by memory bandwidth: every generated token reads the
-  whole model once. Apertus-v1.5-8B at Q4_K_M is about 4.9 GB, so expect **about 6 to
-  8 tok/s** generation without speculative decoding.
-- Reaching about 10 tok/s on this laptop needs speculative decoding (the DSpark head,
-  phase 5 in [ROADMAP.md](ROADMAP.md)).
-- Prompt processing is compute bound: expect roughly 30 to 60 tok/s. A long pasted
-  document takes tens of seconds before the first token appears.
-- Memory: about 5 GB of weights plus the KV cache fits comfortably in 16 GB.
-- The Iris Xe GPU (llama.cpp Vulkan backend) may speed up prompt processing, but not
-  generation much, because it shares the same RAM bandwidth.
+- Generation on CPU is limited by memory bandwidth. The Q4_K_M file is 5.3 GiB;
+  measured generation is **about 5.8 to 5.9 tok/s** in the fair baseline and server
+  chat runs. Prompt processing measured about 18 to 23 tok/s. See the laptop rows in
+  [benchmarks/results.md](../benchmarks/results.md).
+- The 10 tok/s target is not reached. EAGLE k=3 measured 5.38 tok/s against 5.82
+  without a draft on the laptop; the cloud VM's gain did not transfer.
+- A long pasted document takes over a minute before the first token appears. Keep
+  the default 4K context unless the document needs more room.
+- Memory: the model and F16 KV cache (about 0.5 GiB at 4K) fit in 16 GB, but leave
+  room by closing other applications before measuring.
+- Iris Xe Vulkan shares system RAM. In the recorded full-offload server tests it
+  was slower: 3.55 tok/s without a draft, at best 4.58 with EAGLE k=1, and about
+  11 to 12 tok/s prompt processing. CPU stays the default.
 - A machine with faster memory (LPDDR5x on Intel Lunar Lake, or Apple M-series at
   100 GB/s or more) would likely reach 10 tok/s or more without speculative decoding.
 

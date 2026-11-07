@@ -14,8 +14,16 @@ decides the wait before the first token on pasted documents.
 
 ## Chosen configuration
 
-Not chosen yet: fill in after the laptop run (fastest settings whose quality is
-acceptable), then update the defaults in `scripts/serve.sh`.
+Working default: Q4_K_M, CPU, 4 threads, F16 KV cache, 4,096-token context, thinking
+off, no draft (`scripts/serve.sh`). The 6 November server comparison in
+[results.md](results.md) measured 5.82 tok/s without a draft versus 5.38 with EAGLE
+k=3; all recorded Iris Xe Vulkan configurations were slower than plain CPU too.
+
+This is provisional: the full thread/quant/KV/context matrix below has not been run.
+The earlier Q4_0 baseline reached 6.08 tok/s versus 5.89 for Q4_K_M under different
+background load, so it is a candidate for a controlled comparison, not a selected
+replacement. Run the matrix under the same conditions and check answer quality
+before changing the serving defaults.
 
 ## Laptop results (i5-1135G7)
 

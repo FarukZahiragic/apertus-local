@@ -78,5 +78,5 @@ nmcli networking on
 
 Chat and document Q&A. Native tool calling with Apertus 1.5 is unreliable (see the
 reference in [ARCHITECTURE.md](ARCHITECTURE.md#references)), so do not demo agents.
-Prompt processing runs at roughly 30 to 60 tok/s on the laptop: a 2,000-token document
-takes about a minute before the first token appears.
+Recorded prompt processing is roughly 18 to 23 tok/s on the laptop: allow about
+1.5 to 2 minutes for a 2,000-token document before the first answer token appears.
