@@ -67,6 +67,15 @@ subdirectory with the verified GGUF before the workshop starts.
 
 ## Sign macOS releases
 
+The source setup and offline rehearsal have passed on a physical Apple Silicon
+Mac (reported by the owner; hardware details and formal benchmarks can follow).
+Those benchmarks do not block packaging. [MACOS_RELEASE.md](MACOS_RELEASE.md)
+provides the exact one-time credential setup and the hosted build/signing workflow,
+so the friend's Mac is not required to prepare a signed draft. The workflow keeps
+unsigned candidates in Actions and creates a GitHub release draft only after
+signing, notarization and delivered-runtime inference checks pass. A downloaded-app
+opening check is still required before publishing that draft.
+
 Unsigned archives are development artifacts. On a Mac with an installed Developer
 ID Application identity and an existing `notarytool` keychain profile:
 
