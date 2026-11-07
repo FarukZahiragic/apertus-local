@@ -71,6 +71,8 @@ def ask(prompt):
             if not line.startswith('data:') or line == 'data: [DONE]':
                 continue
             event = json.loads(line[5:])
+            if event.get('error'):
+                raise RuntimeError('server inference error: ' + json.dumps(event['error']))
             if event.get('choices'):
                 text += event['choices'][0].get('delta',{}).get('content') or ''
             if event.get('usage'):
@@ -86,6 +88,7 @@ for index in range(repeat):
     print(f'Reliability {index+1}/{repeat} passed', flush=True)
 result = {'date':datetime.datetime.now(datetime.timezone.utc).isoformat(), 'hardware':sys.argv[4],
           'model':model, 'repeat':repeat, 'max_tokens':tokens, 'ui_assets_checked':len(assets.paths),
+          'settings':{key:os.environ[key] for key in ['BACKEND','GPU_LAYERS','LOAD_MODE','THREADS','CTX'] if key in os.environ},
           'document_answer':answer, 'network_isolation':'not established by this script', 'status':'passed'}
 if sys.argv[3]:
     path = Path(sys.argv[3]); path.parent.mkdir(parents=True, exist_ok=True)
