@@ -23,7 +23,10 @@ jobs:
         with:
           python-version: '3.12'
       - name: Check syntax with system Bash
-        run: /bin/bash -n scripts/*.sh Start.command Stop.command Start.sh Stop.sh
+        run: |
+          for script in setup.sh scripts/*.sh Start.command Stop.command Start.sh Stop.sh; do
+            /bin/bash -n "$script"
+          done
       - name: Test downloads and launcher lifecycle with system Bash
         env:
           TEST_BASH: /bin/bash
