@@ -69,10 +69,12 @@ python3 -m venv .venv-client && .venv-client/bin/pip install openai   # once, wh
 .venv-client/bin/python examples/openai_client.py "What is Apertus?"
 ```
 
-Defaults: 4 threads, 4,096-token context (`CTX=8192 scripts/serve.sh` for longer
+Defaults: physical CPU cores (4 on the reference laptop; performance cores on
+Apple Silicon), 4,096-token context (`CTX=8192 scripts/serve.sh` for longer
 documents), one slot, thinking off (`THINKING=1 scripts/serve.sh` to let Apertus
 deliberate first, which is much slower on a CPU), CPU only. `BUILD_DIR` selects an
-alternative build; GPU offload requires explicit flags after `--`. The client reports
+alternative build; `BACKEND=cpu|metal|vulkan` selects a backend. Auto mode keeps CPU
+until Metal is validated on the Mac (see [MACOS.md](docs/MACOS.md)). The client reports
 the server's token usage, including for streamed answers. How to prove it works with networking disabled:
 [docs/OFFLINE.md](docs/OFFLINE.md).
 
