@@ -6,6 +6,9 @@
 # vocabulary, chat template) on top of upstream b11347, which already has the DSpark
 # drafter (--spec-type draft-dspark). See docs/ARCHITECTURE.md.
 #
+# The checkout is reset to the pin and patches/*.patch are applied in order on every
+# run (small fixes for Apertus speculative decoding; see patches/README.md).
+#
 # Usage: scripts/setup_llamacpp.sh [--vulkan]
 #   --vulkan  also enable the Vulkan backend (Iris Xe iGPU), built into build-vulkan/
 #             next to the CPU build. Needs: sudo apt install -y libvulkan-dev glslc
@@ -54,7 +57,13 @@ if [[ ! -d "$LLAMA_CPP_DIR/.git" ]]; then
 fi
 git -C "$LLAMA_CPP_DIR" remote set-url origin "$LLAMA_CPP_REPO"
 git -C "$LLAMA_CPP_DIR" fetch --quiet origin "$LLAMA_CPP_BRANCH"
-git -C "$LLAMA_CPP_DIR" checkout --quiet --detach "$LLAMA_CPP_COMMIT"
+git -C "$LLAMA_CPP_DIR" checkout --quiet --force --detach "$LLAMA_CPP_COMMIT"
+git -C "$LLAMA_CPP_DIR" reset --quiet --hard "$LLAMA_CPP_COMMIT"
+for patch in "$REPO_ROOT"/patches/*.patch; do
+  [[ -e "$patch" ]] || continue
+  echo "applying $(basename "$patch")"
+  git -C "$LLAMA_CPP_DIR" apply "$patch"
+done
 
 # Examples stay configured so tools like llama-debug can be built on demand.
 cmake -S "$LLAMA_CPP_DIR" -B "$LLAMA_CPP_DIR/$build_dir" \

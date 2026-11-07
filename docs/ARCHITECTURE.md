@@ -109,17 +109,36 @@ space only: rows are looked up, not multiplied.
 ## Where DSpark plugs in
 
 DSpark is a head-style drafter: it reads the target model's hidden states and proposes
-the next few tokens, which the target then verifies in one batched forward pass.
-llama.cpp's built-in `--model-draft` only supports a separate draft model, so phase 5
-ports the head into llama.cpp:
+the next few tokens, which the target then verifies in one batched forward pass. The
+pinned llama.cpp already implements DSpark (upstream #25173, `--spec-type draft-dspark`),
+so phase 5 adapts it to Apertus instead of porting the head.
 
-1. expose the target model's last hidden states after each forward pass;
-2. run the head as a small ggml graph on those states to draft tokens;
-3. verify the drafted tokens with the target and accept the longest matching prefix.
+The draft (`faruk-zahiragic/Apertus-v1.5-8B-DSpark-e10-thinking-off`, private, trained
+with Speculators on thinking-off answers):
 
-The serving path (`llama-server`) stays the same; the head is an extra file loaded next
-to the GGUF. Before porting, check whether recent llama.cpp already has an EAGLE-style
-head drafter to build on.
+- 5 Qwen3-style layers (hidden 4096, sliding window 2,048), about 1.7B parameters;
+- reads the target's inputs to layers 1, 8, 15, 22 and 29, fuses them (`fc` +
+  `hidden_norm`) and attends to them as extra K/V context;
+- drafts one block of 8 slots, `[last token, mask x 7]`, in a single forward pass, with
+  a low-rank Markov head chaining each slot on the previous draft token and a confidence
+  head (unused by default);
+- shares the target's 266,752-row token embedding and 131,072-row output head; the GGUF
+  holds only the draft's own weights (0.9 GB at Q4_0, the default draft quant).
+
+What was needed on our side (`patches/`, applied by `scripts/setup_llamacpp.sh`):
+
+1. the Apertus graph records its layer inputs (`t_layer_inp`), which the drafter reads;
+2. the converter writes an identity `d2t` for the 131,072-token draft vocabulary, emits
+   the llama3 `rope_freqs` the Qwen3 path dropped, marks the block causal as trained
+   (`sliding_window_non_causal: false`), and can reuse the Apertus vocabulary.
+
+`scripts/check_dspark.py` compares the first draft after a chat prompt with the
+Speculators reference code the draft was trained with. With the F16 target and F16 draft,
+all 8 slots agree, with identical top-3 candidates and at most 6e-4 difference in the
+top-1 probability.
+
+The serving path stays the same: `scripts/serve_dspark.sh` is `scripts/serve.sh` plus the
+draft (`--model-draft`, `--spec-type draft-dspark`, `--spec-draft-n-max`).
 
 ## References
 
