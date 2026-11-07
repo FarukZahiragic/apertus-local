@@ -98,3 +98,10 @@ It checks health, the embedded UI and its assets, document Q&A, streaming and fi
 usage. It does not turn networking off or claim network isolation. The Nov 7 local
 extracted-package run passed all 50 requests at a 4K context; the network-disabled
 browser rehearsal remains pending. See [VALIDATION.md](VALIDATION.md).
+
+Linux native CI also starts the server from local weights inside a fresh network
+namespace with only loopback enabled. It rejects external connectivity, runs the
+UI/API/document checks and renders the real UI in the runner's existing headless
+browser. This verifies software behavior in a hosted VM; participant laptop and
+physical Mac rehearsals remain separate acceptance checks. It does not disconnect
+the CI host or the user's machine.
