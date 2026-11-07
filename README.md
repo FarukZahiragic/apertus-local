@@ -25,8 +25,8 @@ After building and placing the GGUF locally, run `./Start.sh` on Linux or
 `./Start.command` on macOS. The launcher verifies the model, starts local chat,
 and opens the browser after the server is ready. Ctrl+C or the Stop launcher shuts
 it down. See [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md) for native packages,
-resumable first-run downloads and macOS signing. Public workshop packages are not
-yet released.
+resumable first-run downloads and macOS signing. The [Hugging Face download page](https://huggingface.co/spaces/faruk-zahiragic/apertus-local)
+tracks model and platform availability. Native workshop packages are not yet released.
 
 ## Quickstart
 
@@ -58,13 +58,13 @@ laptop the Hardware column is filled in as `laptop i5-1135G7` automatically.
 
 ### 2. Get Apertus-v1.5-8B as a 4-bit GGUF
 
-The conversion runs on a cloud VM, not the laptop (it needs about 40 GB of disk); see
-[docs/IO.md](docs/IO.md#conversion-cloud-vm). On the laptop, put only the Q4_K_M file
-(5.3 GiB) into `models/`, by `scp`, USB stick, or from a private Hugging Face repo:
+Download the verified Q4_K_M file (5.3 GiB) from
+[our Hugging Face repository](https://huggingface.co/faruk-zahiragic/Apertus-v1.5-8B-GGUF).
+It uses a pinned revision and checksum; conversion is needed only when producing a
+new artifact (see [docs/IO.md](docs/IO.md#conversion-cloud-vm)).
 
 ```bash
-HF_TOKEN=... scripts/get_model.sh <hf-user>/apertus-v1.5-8b-GGUF apertus-v1.5-8b-Q4_K_M.gguf
-sha256sum models/apertus-v1.5-8b-Q4_K_M.gguf     # e8ddf308...0a90eb8c (full value in docs/IO.md)
+scripts/get_model.sh --apertus
 vendor/llama.cpp/build/bin/llama-cli -m models/apertus-v1.5-8b-Q4_K_M.gguf \
   -t 4 -c 4096 -n 128 -st -p "Explain in two sentences what Apertus is."
 scripts/bench.sh -m models/apertus-v1.5-8b-Q4_K_M.gguf -t 4 --name Apertus-v1.5-8B
