@@ -1,0 +1,97 @@
+# Workshop packages
+
+The participant path is: download a native package, open its launcher, download the
+GGUF once, then chat locally. Preparation needs internet; inference does not. The
+native runtime serves its embedded UI at `http://127.0.0.1:8080/`.
+
+## Run from a checkout
+
+After building and placing the model in `models/`:
+
+```bash
+./Start.sh                          # Linux; ./Start.command on macOS
+./Stop.sh                           # Linux; ./Stop.command on macOS
+scripts/launch.sh --no-browser       # keep the URL in the terminal
+scripts/launch.sh --check            # hardware/runtime check without downloading
+```
+
+The launcher verifies the pinned model before use, resumes first-run downloads,
+waits for an owned server's health check, and opens the browser. Ctrl+C stops its
+child server. `--stop` requests shutdown through the launcher's state directory;
+it never kills an arbitrary PID from a stale file. One launcher owns each port.
+Logs are retained in `.apertus-state/`. `APERTUS_STATE_DIR` overrides that location.
+If a machine loses power, inspect and remove the stale `port-8080` lock directory
+before restarting. A `MODEL` override is for developer checks; set `MODEL_SHA256`
+to verify that file too. Default participant downloads always require a checksum.
+
+`BACKEND`, `THREADS`, `CTX`, `PORT` and `BUILD_DIR` override detected defaults.
+Auto mode remains CPU until Metal is explicitly validated on the Mac. Once
+`APERTUS_METAL_VALIDATED=1` is set, the launcher can try Metal and report a CPU retry
+if startup fails. Explicit Metal errors remain visible without an automatic retry.
+No draft model or thinking is enabled by default.
+
+## Build a native package
+
+On Linux x86_64:
+
+```bash
+scripts/setup_llamacpp.sh --cpu --portable
+APERTUS_MODEL_REPO=YOUR_ACCOUNT/YOUR_GGUF_REPO \
+  APERTUS_MODEL_REVISION=YOUR_UPLOADED_COMMIT \
+  scripts/package_release.sh --version v0.1.0
+```
+
+On a native Apple Silicon Mac, build both runtime paths:
+
+```bash
+scripts/setup_llamacpp.sh --cpu --portable
+scripts/setup_llamacpp.sh --metal --portable
+APERTUS_MODEL_REPO=YOUR_ACCOUNT/YOUR_GGUF_REPO \
+  APERTUS_MODEL_REVISION=YOUR_UPLOADED_COMMIT \
+  scripts/package_release.sh --version v0.1.0
+```
+
+Outputs are ignored under `dist/`: a Linux `.tar.gz` or a macOS `.zip` containing
+`Apertus Local.app`, plus an archive checksum. Each package includes portable CPU
+backend libraries, runtime binaries, licenses, a model card and a provenance/hash
+manifest. Weights are downloaded separately or copied from USB. The package command
+checks that the binaries can run after relocation. Build on the oldest OS baseline
+you intend to support and test on that OS; portable CPU dispatch does not make
+system libraries compatible with every Linux distribution or macOS release.
+
+The Mac app opens Terminal and launches local chat. Its mutable model and log
+folders live under `~/Library/Application Support/Apertus Local/`, outside the
+signed bundle. macOS may ask to allow the app to control Terminal. Keep that window
+open and use Ctrl+C to stop. For an offline workshop, populate its `models/`
+subdirectory with the verified GGUF before the workshop starts.
+
+## Sign macOS releases
+
+Unsigned archives are development artifacts. On a Mac with an installed Developer
+ID Application identity and an existing `notarytool` keychain profile:
+
+```bash
+MACOS_SIGN_IDENTITY='Developer ID Application: ...' \
+  MACOS_NOTARY_PROFILE=YOUR_KEYCHAIN_PROFILE \
+  APERTUS_MODEL_REPO=YOUR_ACCOUNT/YOUR_GGUF_REPO \
+  scripts/package_release.sh --version v0.1.0 --sign
+```
+
+The script signs nested Mach-O files, updates the package hash manifest, seals the
+app with hardened runtime, submits to Apple, staples the ticket and checks
+Gatekeeper. Credentials are never written into the repository or package. A real
+signed download/open test is still required; signing cannot be validated on Linux.
+[Apple's distribution guide](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution).
+
+## Release readiness
+
+Publishing requires a versioned GGUF location and a tested runtime archive for each
+advertised platform. Keep unsigned or untested platforms unavailable on the download
+page. Windows packaging is a separate pending slice and must not be advertised as
+supported. The same applies to Intel Macs, Linux ARM64 and untested Linux variants.
+
+Before promoting a version, follow [OFFLINE.md](OFFLINE.md), [MACOS.md](MACOS.md) and
+the roadmap hardware checks. The automated suite exercises download corruption,
+resumption, backend selection, launcher readiness and shutdown with fixture servers.
+These fixtures do not prove Apertus quality, macOS performance, or offline hardware
+operation. Record actual benchmark runs in `benchmarks/results.md`.
