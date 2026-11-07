@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # CPU tuning matrix for the laptop. Each run appends one row to
-# benchmarks/cpu-tuning.md through scripts/bench.sh. Close other applications and
+# benchmarks/results.md through scripts/bench.sh. Close other applications and
 # keep the laptop on AC power. A full run takes about 35 to 45 minutes.
 #
 # Usage: scripts/bench_matrix.sh [--quick] [--vulkan] [--dry-run] [MODEL.gguf ...]
@@ -22,7 +22,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LLAMA_CPP_DIR="${LLAMA_CPP_DIR:-$REPO_ROOT/vendor/llama.cpp}"
-export RESULTS="${RESULTS:-$REPO_ROOT/benchmarks/cpu-tuning.md}"
+export RESULTS="${RESULTS:-$REPO_ROOT/benchmarks/results.md}"
 
 quick=0 vulkan=0 dry=() models=()
 while [[ $# -gt 0 ]]; do
@@ -68,11 +68,11 @@ done
 
 for kv in f16 q8_0; do
   run kv "$ref" 4 -fa 1 -ctk "$kv" -ctv "$kv"
-  run kv "$ref" 4 -fa 1 -ctk "$kv" -ctv "$kv" -d "${depths[-1]}"
+  run kv "$ref" 4 -fa 1 -ctk "$kv" -ctv "$kv" -d "${depths[${#depths[@]}-1]}"
 done
 
-for d in "${depths[@]::${#depths[@]}-1}"; do
-  run ctx "$ref" 4 -d "$d"
+for ((i=0; i<${#depths[@]}-1; i++)); do
+  run ctx "$ref" 4 -d "${depths[$i]}"
 done
 
 if [[ "$vulkan" -eq 1 ]]; then
