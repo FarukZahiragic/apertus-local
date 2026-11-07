@@ -61,10 +61,10 @@ ap_verify() {
 }
 ap_device_available() {
   # Device enumeration alone does not prove that model inference is supported.
-  local devices
+  local devices pattern
   devices="$("$1" --list-devices 2>&1)" || return 1
   case "$2" in
-    metal) [[ "$devices" =~ (Metal|MTL)[0-9]+: ]] ;;
+    metal) pattern="(Metal|MTL)([0-9]+)?:"; [[ "$devices" =~ $pattern ]] ;;
     vulkan) [[ "$devices" =~ Vulkan[0-9]+: ]] ;;
     *) return 1 ;;
   esac
