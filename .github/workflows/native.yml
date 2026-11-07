@@ -4,6 +4,15 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      macos_release_version:
+        description: 'Mac release version, e.g. v0.1.0-preview.2; leave empty for normal CI'
+        required: false
+        default: ''
+      sign_macos_release:
+        description: 'Sign/notarize and create a draft release (requires Apple secrets)'
+        type: boolean
+        default: true
 permissions:
   contents: read
 concurrency:
@@ -35,6 +44,7 @@ jobs:
         run: node --test tests/test_download_page.cjs
   native:
     needs: scripts
+    if: github.event_name != 'workflow_dispatch' || inputs.macos_release_version == ''
     strategy:
       fail-fast: false
       matrix:
@@ -73,3 +83,70 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
           include-hidden-files: true
+  macos_release:
+    needs: scripts
+    if: github.event_name == 'workflow_dispatch' && inputs.macos_release_version != ''
+    runs-on: macos-15
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    env:
+      JOBS: '2'
+      RELEASE_VERSION: ${{ inputs.macos_release_version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build and verify versioned Mac archive
+        env:
+          SIGN_RELEASE: ${{ inputs.sign_macos_release }}
+          MACOS_CERTIFICATE_P12_BASE64: ${{ secrets.MACOS_CERTIFICATE_P12_BASE64 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+        run: |
+          arguments=(--version "$RELEASE_VERSION")
+          if [[ "$SIGN_RELEASE" != true ]]; then arguments+=(--unsigned); fi
+          /bin/bash scripts/release_macos.sh "${arguments[@]}"
+      - name: Download exact model for delivered-runtime check
+        run: scripts/get_model.sh --apertus
+      - name: Verify actual inference from delivered app
+        run: |
+          archive="dist/release/apertus-local-$RELEASE_VERSION-macos-arm64.zip"
+          ditto -x -k "$archive" "$RUNNER_TEMP/release-check"
+          export PACKAGED_ROOT="$RUNNER_TEMP/release-check/Apertus Local.app/Contents/Resources/apertus-local"
+          /bin/bash tests/native_smoke.sh
+          codesign --verify --deep --strict "$RUNNER_TEMP/release-check/Apertus Local.app"
+      - name: Retain archive, checksums and inference reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-release-${{ inputs.macos_release_version }}
+          path: |
+            dist/release/
+            dist/validation-*.json
+            dist/launcher-*.log
+          retention-days: 14
+          if-no-files-found: error
+      - name: Create signed release draft
+        if: inputs.sign_macos_release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$RELEASE_VERSION" >/dev/null 2>&1; then
+            echo 'error: release already exists; choose an unused version' >&2
+            exit 1
+          fi
+          cat > "$RUNNER_TEMP/mac-release-notes.md" <<'NOTES'
+          Apple Silicon macOS preview of Apertus Local. The app includes portable CPU and Metal runtimes; no compiler, Homebrew or Python installation is needed by participants.
+
+          Unzip and open Apertus Local.app. Allow Terminal access when asked. The launcher downloads and verifies the 5.3 GiB model once, then opens local chat. Keep Terminal open; Control+C stops the model. CPU is the default; 16 GB RAM is recommended.
+
+          The app is signed, notarized and stapled. Hosted-runner inference checks use CPU and partial Metal; a downloaded-app opening check on a physical Mac is still required before publishing this draft and enabling its Hugging Face download button. Formal laptop performance measurements can follow separately.
+          NOTES
+          archive="dist/release/apertus-local-$RELEASE_VERSION-macos-arm64.zip"
+          gh release create "$RELEASE_VERSION" "$archive" "$archive.sha256" \
+            --draft --prerelease --target "$GITHUB_SHA" \
+            --title "Apertus Local $RELEASE_VERSION — Apple Silicon preview" \
+            --notes-file "$RUNNER_TEMP/mac-release-notes.md"
