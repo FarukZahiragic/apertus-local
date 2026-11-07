@@ -53,3 +53,12 @@ check; CPU dispatch does not remove libc requirements.
 
 Follow [MACOS.md](MACOS.md), [OFFLINE.md](OFFLINE.md) and
 [DISTRIBUTION.md](DISTRIBUTION.md) for the commands and expected behavior.
+
+## Metal correctness investigation
+
+The hosted Mac CPU run passes real Apertus chat, streamed usage and document Q&A.
+The initial Metal inference run returns an empty streamed answer. This is a failed
+correctness check, not a performance result or proof of a VM limitation. Metal
+remains experimental and auto-selection stays gated. The diagnostic workflow
+compares attention, fusion and offload profiles using a previously built Mac
+artifact, retaining raw responses and server logs for investigation.
