@@ -1,5 +1,5 @@
 {
-  "version": null,
+  "version": "v0.1.0-preview.1",
   "model": {
     "repo": "faruk-zahiragic/Apertus-v1.5-8B-GGUF",
     "revision": "c40df29efdea4f0dd59ccf73635574918405561b",
@@ -16,10 +16,10 @@
       "status": "Mac testing and signing pending"
     },
     "linux-x86_64": {
-      "available": false,
-      "url": null,
-      "checksum_url": null,
-      "status": "Release validation in progress"
+      "available": true,
+      "url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.1/apertus-local-v0.1.0-preview.1-linux-x86_64.tar.gz",
+      "checksum_url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.1/apertus-local-v0.1.0-preview.1-linux-x86_64.tar.gz.sha256",
+      "status": "Ubuntu 24.04 preview: local chat and 50 requests verified; offline hardware rehearsal pending."
     },
     "windows-x86_64": {
       "available": false,
