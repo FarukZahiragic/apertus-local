@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Start verified local chat and open the browser after llama-server is ready.
 # Usage: scripts/launch.sh [--no-browser|--stop|--check]
-# Env: BACKEND, THREADS, CTX, PORT, MODEL, MODEL_SHA256, MODELS_DIR, BUILD_DIR,
+# Env: BACKEND, GPU_LAYERS, THREADS, CTX, PORT, MODEL, MODEL_SHA256, MODELS_DIR, BUILD_DIR,
 #      APERTUS_STATE_DIR, STARTUP_TIMEOUT (seconds, default 300).
 # Keep this terminal open. Ctrl+C or the Stop launcher stops only this server.
 set -euo pipefail
@@ -83,7 +83,7 @@ fi
 timeout="${STARTUP_TIMEOUT:-300}"
 [[ "$timeout" =~ ^[1-9][0-9]*$ ]] || { echo 'error: invalid STARTUP_TIMEOUT' >&2; exit 1; }
 start_server() {
-  local deadline ready=0
+  local deadline ready=0 status check_timeout
   log="$state/server-$PORT-$BACKEND.log"
   echo "Loading Apertus; startup log: $log"
   "$REPO_ROOT/scripts/serve.sh" > "$log" 2>&1 &
@@ -97,7 +97,19 @@ start_server() {
     fi
     sleep 1
   done
-  if [[ "$ready" -eq 1 ]]; then return 0; fi
+  if [[ "$ready" -eq 1 ]]; then
+    # Some backends report /health OK after a failed warmup. Check one real
+    # decode before opening chat, so automatic CPU retry can handle that failure.
+    check_timeout="$timeout"
+    if ((check_timeout > 30)); then check_timeout=30; fi
+    status="$(curl --noproxy '*' --connect-timeout 1 --max-time "$check_timeout" -sS \
+      -o "$state/check-$PORT-$BACKEND.json" -w '%{http_code}' \
+      -H 'Content-Type: application/json' \
+      -d '{"prompt":"Hello","n_predict":1,"temperature":0,"cache_prompt":false}' \
+      "http://127.0.0.1:$PORT/completion")" || status=000
+    if [[ "$status" == 200 ]]; then return 0; fi
+    echo "Local inference check failed (HTTP $status); see $state/check-$PORT-$BACKEND.json" >&2
+  fi
   kill "$server_pid" 2>/dev/null || true
   wait "$server_pid" 2>/dev/null || true
   server_pid=''
