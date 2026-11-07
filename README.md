@@ -26,8 +26,10 @@ After building and placing the GGUF locally, run `./Start.sh` on Linux or
 and opens the browser after health and a one-token local inference check. Ctrl+C or the Stop launcher shuts
 it down. See [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md) for native packages,
 resumable first-run downloads and macOS signing. The [Hugging Face download page](https://huggingface.co/spaces/faruk-zahiragic/apertus-local)
-tracks model and platform availability. A Linux Ubuntu 24.04 preview is available there; Mac downloads await hardware
-validation and signing. See [validation status](docs/VALIDATION.md) before a workshop.
+tracks model and platform availability. A Linux Ubuntu 24.04 preview is available there.
+The Mac source setup and offline rehearsal passed on a physical Mac; the downloadable
+app awaits signing and its download/open check. See [validation status](docs/VALIDATION.md)
+and [Mac release steps](docs/MACOS_RELEASE.md). Formal speed measurements can follow later.
 Native CI checks actual inference on Linux and Apple Silicon; the Linux offline
 check also waits for the embedded chat to render in a real browser.
 
