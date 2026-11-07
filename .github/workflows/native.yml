@@ -55,7 +55,11 @@ jobs:
       - name: Download exact Apertus model
         run: scripts/get_model.sh --apertus
       - name: Smoke-test actual Apertus on each available backend
+        if: runner.os == 'macOS'
         run: /bin/bash tests/native_smoke.sh
+      - name: Verify actual Apertus and browser UI with external networking blocked
+        if: runner.os == 'Linux'
+        run: sudo unshare --net /bin/bash tests/offline_smoke.sh
       - uses: actions/upload-artifact@v4
         if: always()
         with:
