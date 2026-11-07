@@ -3,7 +3,7 @@
 # benchmarks/results.md through scripts/bench.sh. Close other applications and
 # keep the laptop on AC power. A full run takes about 35 to 45 minutes.
 #
-# Usage: scripts/bench_matrix.sh [--quick] [--vulkan] [--dry-run] [MODEL.gguf ...]
+# Usage: scripts/bench_matrix.sh [--quick] [--metal|--vulkan] [--dry-run] [MODEL.gguf ...]
 #   MODEL     GGUF files to compare. Default: those of models/apertus-v1.5-8b-{Q4_K_M,
 #             Q4_0,IQ4_XS}.gguf that exist. The first one is the reference model.
 #   --quick   1 repetition, pp256/tg64, context depth 1024 only: checks the setup fast
@@ -24,11 +24,12 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LLAMA_CPP_DIR="${LLAMA_CPP_DIR:-$REPO_ROOT/vendor/llama.cpp}"
 export RESULTS="${RESULTS:-$REPO_ROOT/benchmarks/results.md}"
 
-quick=0 vulkan=0 dry=() models=()
+quick=0 vulkan=0 metal=0 dry=() models=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --quick) quick=1; shift ;;
     --vulkan) vulkan=1; shift ;;
+    --metal) metal=1; shift ;;
     --dry-run) dry=(--dry-run); shift ;;
     -h|--help) sed -n '2,20p' "$0"; exit 0 ;;
     *) models+=("$1"); shift ;;
@@ -55,8 +56,10 @@ run() {  # run AXIS MODEL THREADS [llama-bench args...]
   local axis="$1" model="$2" threads="$3"
   shift 3
   echo "== $axis: $(basename "$model") -t $threads $*" >&2
+  local selected=cpu
+  case "$axis" in metal|vulkan) selected="$axis" ;; esac
   "$REPO_ROOT/scripts/bench.sh" -m "$model" -t "$threads" "${size[@]}" \
-    --notes "matrix: $axis" "${dry[@]}" -- "$@" || failed=$((failed + 1))
+    --backend "$selected" --notes "matrix: $axis" "${dry[@]+"${dry[@]}"}" -- "$@" || failed=$((failed + 1))
 }
 
 run threads "$ref" 4
@@ -81,6 +84,10 @@ if [[ "$vulkan" -eq 1 ]]; then
   else
     echo "skipping vulkan: run scripts/setup_llamacpp.sh --vulkan first" >&2
   fi
+fi
+
+if [[ "$metal" -eq 1 ]]; then
+  run metal "$ref" 4
 fi
 
 echo "done: rows in $RESULTS ($failed failed runs)" >&2
