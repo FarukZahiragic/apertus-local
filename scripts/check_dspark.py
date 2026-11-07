@@ -144,8 +144,11 @@ def run_llamacpp(target_gguf: Path, draft_gguf: Path, prompt: str, n_slots: int,
     slots: dict[int, list] = {}
     for line in log.splitlines():
         m = CANDIDATE.search(line)
-        if m and int(m.group(2)) not in slots or (m and len(slots[int(m.group(2))]) < 3):
-            slots.setdefault(int(m.group(2)), []).append((int(m.group(3)), float(m.group(4))))
+        if not m:
+            continue
+        candidates = slots.setdefault(int(m.group(2)), [])
+        if len(candidates) < 3:
+            candidates.append((int(m.group(3)), float(m.group(4))))
         if len(slots) == n_slots and all(len(v) == 3 for v in slots.values()):
             break
     return [slots.get(i, []) for i in range(n_slots)]
