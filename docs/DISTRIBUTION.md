@@ -128,3 +128,17 @@ its checksum under a fixed release version, then set `available`, `url`,
 `checksum_url`, `status` and the top-level `version` in `hf-space/config.json`.
 Publish with `--space-only`. Never enable Mac downloads before signing and actual
 Mac checks pass. GitHub CI artifacts are development builds, not workshop releases.
+
+## Automated and recorded checks
+
+`python3 -m unittest discover -s tests -v` and
+`node --test tests/test_download_page.cjs` exercise the portable control paths.
+GitHub Actions builds native Linux and Apple Silicon packages, downloads the exact
+GGUF and runs real-model UI/API checks. The Mac VM may expose no usable Metal
+GPU; that case is reported as unavailable rather than counted as a GPU test.
+
+`scripts/validate_local.sh --repeat 50 --report dist/local-check.json` checks a
+running localhost server without installing the OpenAI SDK. It is a functional
+check, not a benchmark or a network-isolation tool. Current results and preview
+limitations are listed in [VALIDATION.md](VALIDATION.md). The source workspace can
+be renamed; rerunning setup refreshes CMake's generated paths when needed.
