@@ -39,6 +39,7 @@ cp "$REPO_ROOT/config/model.env" "$payload/config/"
 cp "$REPO_ROOT"/Start.command "$REPO_ROOT"/Stop.command "$REPO_ROOT"/Start.sh "$REPO_ROOT"/Stop.sh "$payload/"
 cp "$REPO_ROOT/packaging/README.txt" "$payload/README.txt"
 cp "$REPO_ROOT/packaging/MODEL_CARD.md" "$payload/MODEL_CARD.md"
+cp "$REPO_ROOT/packaging/APERTUS-LICENSE.txt" "$payload/licenses/APERTUS-LICENSE.txt"
 cp "$REPO_ROOT/vendor/llama.cpp/LICENSE" "$payload/licenses/llama.cpp-LICENSE"
 # Preserve notices for bundled upstream dependencies and the embedded UI.
 python3 - "$REPO_ROOT/vendor/llama.cpp" "$payload/licenses" <<'PY'
