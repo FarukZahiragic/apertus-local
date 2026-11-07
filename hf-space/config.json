@@ -13,7 +13,7 @@
       "available": false,
       "url": null,
       "checksum_url": null,
-      "status": "Mac testing and signing pending"
+      "status": "Source setup and offline chat tested on a physical Mac. Signed app download is being prepared."
     },
     "linux-x86_64": {
       "available": true,
