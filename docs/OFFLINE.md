@@ -105,3 +105,9 @@ UI/API/document checks and renders the real UI in the runner's existing headless
 browser. This verifies software behavior in a hosted VM; participant laptop and
 physical Mac rehearsals remain separate acceptance checks. It does not disconnect
 the CI host or the user's machine.
+
+The browser harness (`tests/browser_smoke.cjs`) uses only Node's built-in modules
+and the runner's installed Chrome. It polls the actual rendered chat input and
+model name through the DevTools pipe; it does not assume a virtual-time DOM dump
+has waited for asynchronous application startup. Browser diagnostics and the
+rendered DOM are retained in the CI artifact alongside the API validation report.
