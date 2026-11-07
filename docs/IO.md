@@ -131,12 +131,17 @@ Command format:
 
 ```bash
 scripts/bench.sh -m models/<file>.gguf [-t THREADS] [-p 512] [-n 128] [-r 3] \
-  [--hw LABEL] [--notes TEXT] [--dry-run] [-- extra llama-bench args]
+  [--backend cpu|metal|vulkan] [--hw LABEL] [--notes TEXT] [--dry-run] [-- extra llama-bench args]
 ```
 
 It runs `llama-bench -o json` and turns the result into one table row. Extra
 `llama-bench` flags (for example `-ctk q8_0 -ctv q8_0`) are recorded in Settings.
 `BUILD_DIR=vendor/llama.cpp/build-vulkan` selects the Vulkan build.
+`--backend` defaults to CPU and fixes `-ngl 0`; Metal and Vulkan require an
+enumerated device and use `-ngl 99`, recorded in Settings. This final offload flag
+takes precedence over extra arguments. Use `--backend vulkan` for a GPU comparison,
+not just an alternative build path. `scripts/bench_mac.sh` records paired Apple
+Silicon CPU/Metal rows with detected performance-core threads.
 
 `scripts/bench_spec.sh [--k "3 5"] [-n 256] [--hw LABEL] [--vulkan] [--dry-run]` measures speculative
 decoding end to end through `llama-server` (6 chat prompts, thinking off, greedy): a
