@@ -1,10 +1,9 @@
 # apertus-local
 
-This feature branch contains the **image/audio candidate** for Windows, Apple
-Silicon Mac and Linux. It reuses the existing language model and adds separately
-verified encoders. The public Hugging Face downloads remain the text-only release.
-See [candidate setup and local testing](docs/MULTIMODAL.md). Merge is pending the
-project owner's local test.
+The source checkout also includes an **image/audio candidate** for Windows,
+Apple Silicon Mac and Linux with separately verified encoders. The public Hugging
+Face downloads and one-command setup below use the text-only release.
+See [candidate setup and local testing](docs/MULTIMODAL.md).
 
 Run [Apertus-v1.5-8B](https://huggingface.co/swiss-ai/Apertus-v1.5-8B) on a machine
 you control, with no dedicated GPU required and no internet during inference, using
