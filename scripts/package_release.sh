@@ -139,9 +139,8 @@ PY
   if [[ "$sign" -eq 1 ]]; then
     "$REPO_ROOT/scripts/sign_macos.sh" "$app"
   else
-    # osacompile's original ad-hoc seal is invalid after adding app resources.
-    # Unsigned previews still need a consistent bundle. Developer ID signing
-    # and notarization are optional through --sign.
+    # Seal the complete bundle, including the delivered runtimes and metadata.
+    # Developer ID signing and notarization are optional through --sign.
     codesign --force --sign - "$app"
     codesign --verify --deep --strict "$app"
   fi

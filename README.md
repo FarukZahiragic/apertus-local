@@ -21,14 +21,16 @@ prompt processing (the 1 November 2026 row in `benchmarks/results.md`).
 
 ## Participant launcher
 
-After building and placing the GGUF locally, run `./Start.sh` on Linux or
-`./Start.command` on macOS. The launcher verifies the model, starts local chat,
-and opens the browser after health and a one-token local inference check. Ctrl+C or the Stop launcher shuts
-it down. See [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md) for native packages,
-resumable first-run downloads and macOS signing. The [Hugging Face download page](https://huggingface.co/spaces/faruk-zahiragic/apertus-local)
-tracks model and platform availability. Native archives include their runtime;
-participants do not need a compiler or Python. Windows uses `Start.cmd` and
-`Stop.cmd`, macOS opens `Apertus Local.app`, and Linux uses `Start.sh`/`Stop.sh`.
+Download the matching archive from the [Hugging Face download page](https://huggingface.co/spaces/faruk-zahiragic/apertus-local)
+and extract it. Windows users double-click `Start.cmd`, Mac users open
+`Apertus Local.app`, and Linux users run `./Start.sh`. Native archives include
+their runtime; participants do not need a compiler or Python.
+
+The first start downloads and verifies the model, starts local chat, and opens
+the browser after health and a one-token inference check. Later starts reuse the
+verified model offline. Keep the launcher's window open; Ctrl+C or the matching
+Stop launcher shuts it down. See [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md)
+for resumable downloads and offline preparation.
 See [Windows setup](docs/WINDOWS.md) and [compatibility requirements](docs/COMPATIBILITY.md)
 for architecture choices and minimum capabilities across OS releases.
 The Mac source setup and offline rehearsal passed on a physical Mac. An unsigned
@@ -36,7 +38,7 @@ Apple Silicon preview is available without Apple Developer membership; first lau
 may need **System Settings > Privacy & Security > Open Anyway**. Its downloaded-app
 opening rehearsal remains pending. See [validation status](docs/VALIDATION.md)
 and [Mac release steps](docs/MACOS_RELEASE.md). Formal speed measurements can follow later.
-Native CI checks actual inference on Linux and Apple Silicon; the Linux offline
+Native CI checks actual inference on Windows x64/ARM64, Linux and Apple Silicon; the Linux offline
 check also waits for the embedded chat to render in a real browser.
 
 ## Quickstart

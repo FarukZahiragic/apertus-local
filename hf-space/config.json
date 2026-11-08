@@ -1,5 +1,5 @@
 {
-  "version": "v0.1.0-preview.2",
+  "version": "v0.1.0-preview.3",
   "model": {
     "repo": "faruk-zahiragic/Apertus-v1.5-8B-GGUF",
     "revision": "c40df29efdea4f0dd59ccf73635574918405561b",
@@ -11,22 +11,34 @@
   "platforms": {
     "macos-arm64": {
       "available": true,
-      "url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.2/apertus-local-v0.1.0-preview.2-macos-arm64.zip",
-      "checksum_url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.2/apertus-local-v0.1.0-preview.2-macos-arm64.zip.sha256",
-      "signing": "unsigned",
-      "status": "Unsigned macOS 15+ preview. First launch may require Open Anyway; read the Mac guide. Physical downloaded-app opening rehearsal pending."
+      "url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.3/apertus-local-v0.1.0-preview.3-macos-arm64.zip",
+      "checksum_url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.3/apertus-local-v0.1.0-preview.3-macos-arm64.zip.sha256",
+      "minimum_os": "macOS 13.3 or later",
+      "status": "Unsigned Apple Silicon preview. CPU and partial Metal inference checked on a hosted Mac; physical first-open rehearsal remains separate.",
+      "signing": "unsigned"
     },
     "linux-x86_64": {
       "available": true,
-      "url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.1/apertus-local-v0.1.0-preview.1-linux-x86_64.tar.gz",
-      "checksum_url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.1/apertus-local-v0.1.0-preview.1-linux-x86_64.tar.gz.sha256",
-      "status": "Ubuntu 24.04 preview: local chat and 50 requests verified; offline hardware rehearsal pending."
+      "url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.3/apertus-local-v0.1.0-preview.3-linux-x86_64.tar.gz",
+      "checksum_url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.3/apertus-local-v0.1.0-preview.3-linux-x86_64.tar.gz.sha256",
+      "minimum_os": "glibc 2.34+, GLIBCXX 3.4.30+ and CXXABI 1.3.13+",
+      "status": "Same archive checked on Ubuntu 22.04, Ubuntu 24.04 and Debian 12; local inference checked with networking disabled."
     },
     "windows-x86_64": {
-      "available": false,
-      "url": null,
-      "checksum_url": null,
-      "status": "Windows package not yet available"
+      "available": true,
+      "url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.3/apertus-local-v0.1.0-preview.3-windows-x86_64.zip",
+      "checksum_url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.3/apertus-local-v0.1.0-preview.3-windows-x86_64.zip.sha256",
+      "minimum_os": "64-bit Windows 10 or later with Windows PowerShell 5.1",
+      "status": "Intel / AMD preview. Actual model and extracted launcher checked on a native x64 runner with server outbound networking blocked.",
+      "signing": "unsigned"
+    },
+    "windows-arm64": {
+      "available": true,
+      "url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.3/apertus-local-v0.1.0-preview.3-windows-arm64.zip",
+      "checksum_url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.3/apertus-local-v0.1.0-preview.3-windows-arm64.zip.sha256",
+      "minimum_os": "ARM64 Windows 10 or later with Windows PowerShell 5.1",
+      "status": "ARM / Snapdragon preview. Actual model and extracted launcher checked on a native ARM64 runner with server outbound networking blocked.",
+      "signing": "unsigned"
     }
   }
 }

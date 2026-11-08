@@ -39,19 +39,21 @@ browser.stdio[4].on('data', chunk => {
     }
   }
 });
-function call(method, params = {}, sessionId) {
+function call(method, params = {}, sessionId, timeout = 10000) {
   return new Promise((resolve, reject) => {
     const id = ++nextId;
     const timer = setTimeout(() => {
       pending.delete(id);
       reject(new Error(`browser command timed out: ${method}`));
-    }, 10000);
+    }, timeout);
     pending.set(id, { resolve, reject, timer });
     browser.stdio[3].write(JSON.stringify({ id, method, params, sessionId }) + '\0');
   });
 }
 async function main() {
-  const { targetId } = await call('Target.createTarget', { url });
+  // This first command also waits for Chrome's cold process startup. Shared CI
+  // hosts can need longer than the normal command timeout to create a renderer.
+  const { targetId } = await call('Target.createTarget', { url }, undefined, 60000);
   const { sessionId } = await call('Target.attachToTarget', { targetId, flatten: true });
   await call('Runtime.enable', {}, sessionId);
   await call('Runtime.runIfWaitingForDebugger', {}, sessionId);

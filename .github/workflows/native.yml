@@ -205,7 +205,7 @@ jobs:
             exit 1
           fi
           cat > "$RUNNER_TEMP/mac-release-notes.md" <<'NOTES'
-          Apple Silicon macOS 15+ preview of Apertus Local. The app includes portable CPU and Metal runtimes; no Apple Developer membership, compiler, Homebrew or Python installation is needed by participants.
+          Apple Silicon macOS 13.3+ preview of Apertus Local. The app includes portable CPU and Metal runtimes; no Apple Developer membership, compiler, Homebrew or Python installation is needed by participants.
 
           Unzip and open Apertus Local.app. Allow Terminal access when asked. The launcher downloads and verifies the 5.3 GiB model once, then opens local chat. Keep Terminal open; Control+C stops the model. CPU is the default; 16 GB RAM is recommended.
 
