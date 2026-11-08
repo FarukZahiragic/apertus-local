@@ -28,6 +28,7 @@ try {
     $stderr=Join-Path $root 'dist/windows-launcher.err'
     $arguments=ConvertTo-ApertusArguments @('-NoLogo','-NoProfile','-ExecutionPolicy','Bypass','-File',(Join-Path $stage 'scripts/windows/launch.ps1'),'-NoBrowser')
     $launcher=Start-Process (Join-Path $PSHOME 'powershell.exe') -ArgumentList $arguments -PassThru -NoNewWindow -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $null=$launcher.Handle
     $ready=$false
     for($i=0;$i -lt 300;$i++) {
         if((Test-Path $stdout) -and (Get-Content $stdout -Raw) -match 'Ready:') { $ready=$true; break }

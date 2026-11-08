@@ -270,6 +270,7 @@ function Invoke-Apertus {
         $server = Start-Process -FilePath $serverPath -ArgumentList (ConvertTo-ApertusArguments $arguments) `
             -WorkingDirectory (Split-Path -Parent $serverPath) -RedirectStandardOutput $stdout `
             -RedirectStandardError $stderr -NoNewWindow -PassThru
+        $null = $server.Handle
         $deadline = [DateTime]::UtcNow.AddSeconds($timeout)
         $ready = $false
         while ([DateTime]::UtcNow -lt $deadline) {

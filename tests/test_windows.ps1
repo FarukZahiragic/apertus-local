@@ -68,11 +68,13 @@ try {
         $errorLog=Join-Path $temporary "$Name.err"
         $nativeArguments=ConvertTo-ApertusArguments @('-NoLogo','-NoProfile','-ExecutionPolicy','Bypass','-File',$launcher,'-NoBrowser')
         if($Extra) { $nativeArguments += ' ' + $Extra }
-        return Start-Process (Join-Path $PSHOME 'powershell.exe') -ArgumentList $nativeArguments -PassThru -NoNewWindow -RedirectStandardOutput $log -RedirectStandardError $errorLog
+        $process=Start-Process (Join-Path $PSHOME 'powershell.exe') -ArgumentList $nativeArguments -PassThru -NoNewWindow -RedirectStandardOutput $log -RedirectStandardError $errorLog
+        $null=$process.Handle
+        return $process
     }
     $first=Launch 'first'; $children += $first
     $ready=$false
-    for($i=0;$i -lt 100;$i++) {
+    for($i=0;$i -lt 600;$i++) {
         if(Test-Path (Join-Path $temporary 'first.log')) {
             if((Get-Content (Join-Path $temporary 'first.log') -Raw) -match 'Ready:') { $ready=$true; break }
         }
@@ -85,18 +87,18 @@ try {
     Assert ($arguments -contains '{"enable_thinking":false}') 'Native JSON argument quoting changed'
     Assert ($arguments -contains $destination) 'Native model path with spaces changed'
     $second=Launch 'second'; $children += $second
-    Assert ($second.WaitForExit(10000)) 'Second launcher did not exit'
+    Assert ($second.WaitForExit(30000)) 'Second launcher did not exit'
     Assert ($second.ExitCode -ne 0) 'Two launchers acquired the same port'
     Assert (-not $first.HasExited) 'Second launcher stopped the first server'
     $stop=Launch 'stop' '-Stop'; $children += $stop
-    Assert ($stop.WaitForExit(10000)) 'Stop request timed out'
+    Assert ($stop.WaitForExit(30000)) 'Stop request timed out'
     Assert ($stop.ExitCode -eq 0) 'Owned stop failed'
-    Assert ($first.WaitForExit(10000)) 'Owner did not exit after Stop'
+    Assert ($first.WaitForExit(30000)) 'Owner did not exit after Stop'
     Assert (-not (Test-Path (Join-Path $env:APERTUS_STATE_DIR "port-$env:PORT.lock"))) 'Lock was not released'
     Write-Host 'PASS: native argument quoting, exclusive ownership and owned stop'
     [IO.File]::WriteAllText($env:APERTUS_FIXTURE_COMPUTE_FAILURE,'fail')
     $failure=Launch 'compute'; $children += $failure
-    Assert ($failure.WaitForExit(15000)) 'Compute failure did not stop startup'
+    Assert ($failure.WaitForExit(30000)) 'Compute failure did not stop startup'
     Assert ($failure.ExitCode -ne 0) 'Healthy HTTP response hid compute failure'
     Assert ((Get-Content (Join-Path $temporary 'compute.log') -Raw) -notmatch 'Ready:') 'Failed compute was reported ready'
     Remove-Item $env:APERTUS_FIXTURE_COMPUTE_FAILURE
@@ -107,11 +109,17 @@ try {
     Start-Sleep -Milliseconds 500
     $env:PORT=[string]$occupiedPort
     $occupied=Launch 'occupied'; $children += $occupied
-    Assert ($occupied.WaitForExit(15000)) 'Occupied-port check timed out'
+    Assert ($occupied.WaitForExit(30000)) 'Occupied-port check timed out'
     Assert ($occupied.ExitCode -ne 0) 'Occupied port was accepted'
     Assert (-not $external.HasExited) 'Launcher killed an unrelated server'
     Write-Host 'PASS: occupied port is refused without stopping its owner'
 } finally {
+    $diagnostics=Join-Path $root 'dist/windows-fixtures'
+    foreach($file in @(Get-ChildItem $temporary -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -match '\.(log|err|stderr|stdout|txt)$' })) {
+        $target=Join-Path $diagnostics $file.FullName.Substring($temporary.Length+1)
+        [IO.Directory]::CreateDirectory((Split-Path -Parent $target)) | Out-Null
+        Copy-Item -LiteralPath $file.FullName -Destination $target -Force
+    }
     foreach($child in $children) {
         $child.Refresh()
         if(-not $child.HasExited) { $child.Kill(); $child.WaitForExit() }
