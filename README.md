@@ -19,6 +19,15 @@ A split onto a small added GPU is outside this repository. On the reference
 laptop the fair Q4_K_M run is about 5.9 tokens/s generation and 23 tokens/s
 prompt processing (the 1 November 2026 row in `benchmarks/results.md`).
 
+## Participant launcher
+
+After building and placing the GGUF locally, run `./Start.sh` on Linux or
+`./Start.command` on macOS. The launcher verifies the model, starts local chat,
+and opens the browser after the server is ready. Ctrl+C or the Stop launcher shuts
+it down. See [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md) for native packages,
+resumable first-run downloads and macOS signing. Public workshop packages are not
+yet released.
+
 ## Quickstart
 
 Apple Silicon: follow [docs/MACOS.md](docs/MACOS.md) to build natively and compare
