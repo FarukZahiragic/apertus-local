@@ -67,6 +67,15 @@ subdirectory with the verified GGUF before the workshop starts.
 
 ## Sign macOS releases
 
+The source setup and offline rehearsal have passed on a physical Apple Silicon
+Mac (reported by the owner; hardware details and formal benchmarks can follow).
+Those benchmarks do not block packaging. [MACOS_RELEASE.md](MACOS_RELEASE.md)
+provides the exact one-time credential setup and the hosted build/signing workflow,
+so the friend's Mac is not required to prepare a signed draft. The workflow keeps
+unsigned candidates in Actions and creates a GitHub release draft only after
+signing, notarization and delivered-runtime inference checks pass. A downloaded-app
+opening check is still required before publishing that draft.
+
 Unsigned archives are development artifacts. On a Mac with an installed Developer
 ID Application identity and an existing `notarytool` keychain profile:
 
@@ -134,7 +143,7 @@ Mac checks pass. GitHub CI artifacts are development builds, not workshop releas
 ## Automated and recorded checks
 
 `python3 -m unittest discover -s tests -v` and
-`node --test tests/test_download_page.cjs` exercise the portable control paths.
+`node --test tests/test_*.cjs` exercise the portable control paths and browser cleanup.
 GitHub Actions builds native Linux and Apple Silicon packages, downloads the exact
 GGUF and runs real-model UI/API checks. The Mac VM may expose no usable Metal
 GPU; that case is reported as unavailable rather than counted as a GPU test.

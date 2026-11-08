@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
 # Real-model native CI smoke check. Hosted-runner results are VM checks, not laptop benchmarks.
+# PACKAGED_ROOT checks a delivered app's launch scripts and runtimes instead of builds.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 source scripts/platform.sh
+launch_root="${PACKAGED_ROOT:-$PWD}"
+export APERTUS_STATE_DIR="$PWD/.apertus-state"
+if [[ -n "${PACKAGED_ROOT:-}" ]]; then
+  export MODEL="$PWD/models/apertus-v1.5-8b-Q4_K_M.gguf"
+fi
 export HARDWARE_KIND='GitHub-hosted VM (NOT laptop)' PORT=18087 CTX=512 THREADS=2
 launcher=''
 cleanup() {
@@ -28,13 +34,19 @@ for backend in "${backends[@]}"; do
   else
     export GPU_LAYERS=0 LOAD_MODE=auto
   fi
-  if [[ "$backend" == cpu ]]; then export BUILD_DIR="$PWD/vendor/llama.cpp/build-portable"; else export BUILD_DIR="$PWD/vendor/llama.cpp/build-metal-portable"; fi
+  if [[ -n "${PACKAGED_ROOT:-}" ]]; then
+    export BUILD_DIR="$launch_root/runtime/$backend"
+  elif [[ "$backend" == cpu ]]; then
+    export BUILD_DIR="$PWD/vendor/llama.cpp/build-portable"
+  else
+    export BUILD_DIR="$PWD/vendor/llama.cpp/build-metal-portable"
+  fi
   if [[ "$backend" == metal ]] && ! ap_device_available "$BUILD_DIR/bin/llama-server" metal; then
     echo 'Hosted Mac VM exposes no Metal device; Metal build passed, inference requires a physical Mac.'
     echo '{"status":"unavailable","reason":"hosted VM exposes no Metal device"}' > dist/validation-metal.json
     continue
   fi
-  scripts/launch.sh --no-browser > "dist/launcher-$backend.log" 2>&1 &
+  /bin/bash "$launch_root/scripts/launch.sh" --no-browser > "dist/launcher-$backend.log" 2>&1 &
   launcher=$!
   ready=0
   for ((i=0; i<300; i++)); do
@@ -54,7 +66,7 @@ for backend in "${backends[@]}"; do
     node tests/browser_smoke.cjs "$chrome" "http://127.0.0.1:$PORT/" dist/offline-ui.html
     echo 'Actual browser rendered the Apertus UI with external networking blocked.'
   fi
-  scripts/launch.sh --stop
+  /bin/bash "$launch_root/scripts/launch.sh" --stop
   wait "$launcher"
   launcher=''
 done
