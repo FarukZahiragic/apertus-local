@@ -178,3 +178,30 @@ deleting Chrome's profile before Chrome had finished writing it. The harness now
 waits for its owned browser to exit and removes the profile asynchronously. A
 delayed-write regression fixture fails against the old cleanup and passes with
 the fix. This cleanup failure was separate from inference and Mac packaging.
+
+## One-command participant setup
+
+The standalone `run.sh` and `run.ps1` reuse the published text-only native
+archives, verify their pinned SHA-256 checksums, reuse existing weights and save
+local entry points. No compiler or Python is installed on participant machines.
+The Mac route extracts only the runtime payload and starts it in Terminal.
+
+On the physical reference laptop (Intel i5-1135G7, 16 GB, Ubuntu 24.04), the
+published Linux archive passed actual-model first launch, streamed usage,
+document Q&A (`Sarajevo`), owned stop and cached restart through the bootstrap.
+The existing model was reused without another weight download. Networking was
+available; this run does not establish a new network-disabled hardware rehearsal.
+
+The [initial cross-platform run](https://github.com/FarukZahiragic/apertus-local/actions/runs/42529713427)
+passed the same actual-model first-launch/restart checks on hosted Linux x86_64,
+Windows x64 and Windows ARM64 VMs. On the 7 GB hosted M1 Mac, first launch and
+chat passed, but cached restart exceeded the runtime's 30-second decode probe.
+The log shows slow prompt evaluation; memory pressure is a possible explanation,
+not an established cause. This VM is below the recommended 16 GB RAM, and 8 GB
+participant machines remain outside the validated contract.
+
+After integrating the source candidate, all 46 local Python checks and nine Node
+checks pass, including verification that both bootstraps leave optional image/audio
+encoders off. The cross-platform workflow checks the actual published runtime,
+model, stop and saved entry point rather than substituting a small model.
+These are functional checks; no new performance benchmark is inferred.
