@@ -23,10 +23,13 @@ prompt processing (the 1 November 2026 row in `benchmarks/results.md`).
 
 After building and placing the GGUF locally, run `./Start.sh` on Linux or
 `./Start.command` on macOS. The launcher verifies the model, starts local chat,
-and opens the browser after the server is ready. Ctrl+C or the Stop launcher shuts
+and opens the browser after health and a one-token local inference check. Ctrl+C or the Stop launcher shuts
 it down. See [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md) for native packages,
 resumable first-run downloads and macOS signing. The [Hugging Face download page](https://huggingface.co/spaces/faruk-zahiragic/apertus-local)
-tracks model and platform availability. Native workshop packages are not yet released.
+tracks model and platform availability. A Linux Ubuntu 24.04 preview is available there; Mac downloads await hardware
+validation and signing. See [validation status](docs/VALIDATION.md) before a workshop.
+Native CI checks actual inference on Linux and Apple Silicon; the Linux offline
+check also waits for the embedded chat to render in a real browser.
 
 ## Quickstart
 
@@ -82,7 +85,7 @@ Defaults: physical CPU cores (4 on the reference laptop; performance cores on
 Apple Silicon), 4,096-token context (`CTX=8192 scripts/serve.sh` for longer
 documents), one slot, thinking off (`THINKING=1 scripts/serve.sh` to let Apertus
 deliberate first, which is much slower on a CPU), CPU only. `BUILD_DIR` selects an
-alternative build; `BACKEND=cpu|metal|vulkan` selects a backend. Auto mode keeps CPU
+alternative build; `BACKEND=cpu|metal|vulkan` selects a backend. `GPU_LAYERS` and `LOAD_MODE` control GPU memory use. Auto mode keeps CPU
 until Metal is validated on the Mac (see [MACOS.md](docs/MACOS.md)). The client reports
 the server's token usage, including for streamed answers. How to prove it works with networking disabled:
 [docs/OFFLINE.md](docs/OFFLINE.md).

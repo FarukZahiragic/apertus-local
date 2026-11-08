@@ -4,6 +4,7 @@ import http.server
 import os
 from pathlib import Path
 import subprocess
+import socketserver
 import tempfile
 import threading
 import unittest
@@ -30,10 +31,18 @@ class RangeServer(http.server.BaseHTTPRequestHandler):
         pass
 
 
+class LocalHTTPServer(http.server.ThreadingHTTPServer):
+    def server_bind(self):
+        # Avoid HTTPServer's reverse DNS lookup on a disconnected/cold Mac.
+        socketserver.TCPServer.server_bind(self)
+        self.server_name = 'localhost'
+        self.server_port = self.server_address[1]
+
+
 class PortabilityTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), RangeServer)
+        cls.server = LocalHTTPServer(('127.0.0.1', 0), RangeServer)
         cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
         cls.thread.start()
 
@@ -71,6 +80,16 @@ class PortabilityTests(unittest.TestCase):
             self.assertIn('checksum mismatch', result.stderr)
             self.assertFalse((Path(directory) / 'fixture.gguf').exists())
             self.assertFalse((Path(directory) / 'fixture.gguf.download-lock').exists())
+
+    def test_completed_partial_recovers_without_network(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory = Path(directory)
+            (directory / 'fixture.gguf.part').write_bytes(PAYLOAD)
+            count = RangeServer.requests
+            result = self.download(directory)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(RangeServer.requests, count)
+            self.assertEqual((directory / 'fixture.gguf').read_bytes(), PAYLOAD)
 
     def test_darwin_hardware_without_proc_or_nproc(self):
         with tempfile.TemporaryDirectory() as directory:

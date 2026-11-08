@@ -1,0 +1,56 @@
+name: Metal correctness diagnostics
+on:
+  workflow_dispatch:
+    inputs:
+      artifact_run:
+        description: Run ID containing the native-macOS-ARM64 artifact
+        required: true
+      gpu_layers:
+        description: GPU layers (8 for the 7 GB hosted VM; full offload needs more memory)
+        required: true
+        default: '8'
+      load_mode:
+        description: none packs selected GPU weights; mmap may span the whole GGUF
+        required: true
+        default: none
+permissions:
+  contents: read
+  actions: read
+jobs:
+  profile:
+    runs-on: macos-15
+    timeout-minutes: 20
+    env:
+      GPU_LAYERS: ${{ inputs.gpu_layers }}
+      LOAD_MODE: ${{ inputs.load_mode }}
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [default, flash-off, no-fusion, no-kv, no-op-offload]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.artifact_run }}
+          name: native-macOS-ARM64
+          path: .metal-artifact
+      - name: Extract previously built runtime
+        run: |
+          archive="$(find .metal-artifact -name 'apertus-local-ci-macos-arm64.zip' -print -quit)"
+          test -n "$archive"
+          ditto -x -k "$archive" "$RUNNER_TEMP/metal-runtime"
+      - name: Download verified model
+        run: scripts/get_model.sh --apertus
+      - name: Compare correctness profile
+        run: |
+          /bin/bash tests/metal_probe.sh '${{ matrix.profile }}' "$RUNNER_TEMP/metal-runtime/Apertus Local.app/Contents/Resources/apertus-local/runtime/metal"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: metal-probe-${{ matrix.profile }}
+          path: dist/metal-probe*
+          retention-days: 7

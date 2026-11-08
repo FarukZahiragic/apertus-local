@@ -13,10 +13,14 @@ The build uses Apple Clang, the pinned Apertus-compatible llama.cpp fork and the
 same patches as Linux. A stock Homebrew llama.cpp is not a substitute for this pin.
 
 ```bash
-git clone https://github.com/FarukZahiragic/apertus-local
-cd apertus-local
+git clone --branch chore/workshop-validation https://github.com/FarukZahiragic/apertus-local apertus-1.5-local
+cd apertus-1.5-local
 scripts/setup_llamacpp.sh --cpu
 ```
+
+The implementation is currently in stacked PRs #16–#21. The command above checks
+out the full implementation branch while review is pending; after those PRs merge,
+the same deployment will be available from `main`.
 
 Copy `apertus-v1.5-8b-Q4_K_M.gguf` into `models/` using USB or an authorized model
 repository. No conversion is needed on the Mac. Verify an existing copy offline:
@@ -84,3 +88,27 @@ CPU dispatch. `--metal --portable` uses `build-metal-portable/`. Release packagi
 must include the backend libraries and embedded Metal resources; copying only the
 server executable is insufficient. Native builds without `--portable` are for
 local measurements, not redistribution to arbitrary CPUs.
+
+## Limited GPU memory
+
+The hosted Apple M1 VM has 7 GB RAM. Full GPU offload exceeded its Metal memory
+budget even though the server advertised readiness. This does not establish a
+numerical/model compatibility bug. CPU inference passed. A partial-offload CI
+profile uses eight GPU layers and packed weight loading:
+
+```bash
+BACKEND=metal GPU_LAYERS=8 LOAD_MODE=none ./Start.command
+GPU_LAYERS=8 LOAD_MODE=none scripts/bench_mac.sh --quick
+```
+
+Use this as an experimental memory profile, not an 8 GB laptop certification.
+With this GGUF, mmap can map almost the whole file into Metal even when only a
+few layers are offloaded, because the output head and RoPE tensors are early in
+the file. `LOAD_MODE=none` packs only the selected GPU tensors. It also changes
+CPU memory use; compare profiles under the same conditions. Normal 16 GB+ Mac
+full-offload measurements and offline checks remain pending.
+
+The launcher performs a one-token local inference check after `/health`. It can
+therefore retry CPU in auto mode if a backend becomes unhealthy during warmup.
+Explicit Metal keeps its error visible; use CPU or a smaller GPU profile if memory
+is insufficient. Startup check responses are retained in the launcher state folder.

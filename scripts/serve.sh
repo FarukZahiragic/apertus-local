@@ -9,6 +9,8 @@
 #        THREADS  (default: physical cores, performance cores on Apple Silicon)
 #        BACKEND  auto|cpu|metal|vulkan (auto: CPU until Metal is validated)
 #        APERTUS_METAL_VALIDATED=1 enables automatic Metal on Apple Silicon
+#        GPU_LAYERS positive GPU layer count (default: 99; ignored for CPU)
+#        LOAD_MODE auto|none|mmap|mlock|mmap+mlock|dio (default: auto)
 #        CTX      context size in tokens (default: 4096; 8192 for longer documents)
 #        THINKING 1 to let Apertus deliberate before answering (default: 0, off)
 #        LLAMA_CPP_DIR checkout location (default: vendor/llama.cpp)
@@ -31,6 +33,11 @@ HOST="${HOST:-127.0.0.1}"
 PORT="${PORT:-8080}"
 CTX="${CTX:-4096}"
 THINKING="${THINKING:-0}"
+LOAD_MODE="${LOAD_MODE:-auto}"
+case "$LOAD_MODE" in
+  auto|none|mmap|mlock|mmap+mlock|dio) ;;
+  *) echo 'error: invalid LOAD_MODE' >&2; exit 1 ;;
+esac
 for value in "$PORT" "$CTX"; do
   [[ "$value" =~ ^[1-9][0-9]*$ ]] || { echo 'error: PORT and CTX must be positive integers' >&2; exit 1; }
 done
@@ -47,8 +54,9 @@ if [[ "$THINKING" == "1" ]]; then enable_thinking=true; else enable_thinking=fal
 
 echo "Web UI:     http://$HOST:$PORT/"
 echo "OpenAI API: http://$HOST:$PORT/v1  (any API key)"
-echo "Runtime:    $AP_BACKEND; $THREADS threads; context $CTX; thinking $THINKING"
+echo "Runtime:    $AP_BACKEND; $THREADS threads; context $CTX; thinking $THINKING; GPU layers $AP_GPU_LAYERS"
 echo "Build:      $BUILD_DIR"
+echo "Load mode:  $LOAD_MODE"
 
 # The chat template comes from the GGUF (Apertus 1.5 format, rendered with jinja).
 # One slot: a single local user gets the whole context and all cores.
@@ -60,6 +68,7 @@ exec "$SERVER" \
   --ctx-size "$CTX" \
   --parallel 1 \
   --n-gpu-layers "$AP_GPU_LAYERS" \
+  --load-mode "$LOAD_MODE" \
   --jinja \
   --chat-template-kwargs "{\"enable_thinking\":$enable_thinking}" \
   --offline \

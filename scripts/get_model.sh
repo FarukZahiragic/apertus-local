@@ -62,6 +62,13 @@ trap 'rmdir "$lock" 2>/dev/null || true' EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 partial="$DEST.part"
+# A download may have finished immediately before an interruption. Recover it
+# without sending a Range request beyond EOF (which some servers reject).
+if [[ -f "$partial" ]] && ap_verify "$partial" "$expected"; then
+  mv -f "$partial" "$DEST"
+  echo "recovered completed download: $DEST"
+  exit 0
+fi
 if [[ -n "${MODEL_BYTES:-}" ]]; then
   [[ "$MODEL_BYTES" =~ ^[1-9][0-9]*$ ]] || { echo 'error: invalid MODEL_BYTES' >&2; exit 1; }
   received=0

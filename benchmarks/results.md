@@ -2,7 +2,7 @@
 
 One row per run, appended by `scripts/bench.sh` or `scripts/bench_spec.sh`. Column meanings are in
 [docs/IO.md](../docs/IO.md#benchmarks). Always check the Hardware column: cloud VM rows
-are not laptop numbers. The CPU tuning matrix has its own file:
+are not laptop numbers. New CPU tuning matrix runs use this table. Historical tuning rows remain in
 [cpu-tuning.md](cpu-tuning.md).
 
 | Date | Hardware | Model | Quant | Backend | Threads | Settings | Prompt tok/s | Gen tok/s | Draft accept | llama.cpp | Notes |
@@ -42,3 +42,4 @@ are not laptop numbers. The CPU tuning matrix has its own file:
 | 2026-11-06 | laptop i5-1135G7 | Apertus-v1.5-8B | Q4_K_M | Vulkan | 4 | server chat, thinking off, greedy, 6 prompts ≤256 tok, eagle3 k=2, draft apertus-v1.5-8b-eagle3.1-e10-Q4_0, Iris Xe ngl 99 | 12.19 ± 4.42 | 2.43 ± 0.29 | 0.65 (τ 2.31) | 442b0444 + patches | 664 tokens generated |
 | 2026-11-06 | laptop i5-1135G7 | Apertus-v1.5-8B | Q4_K_M | Vulkan | 4 | server chat, thinking off, greedy, 6 prompts ≤256 tok, eagle3 k=3, draft apertus-v1.5-8b-eagle3.1-e10-Q4_0, Iris Xe ngl 99 | 12.18 ± 4.28 | 1.53 ± 0.17 | 0.53 (τ 2.60) | 442b0444 + patches | 664 tokens generated |
 | 2026-11-07 | laptop i5-1135G7 | qwen2.5-1.5b-instruct | Q4_K_M | CPU | 4 | pp32 tg8 r1 kv=f16/f16 ngl=0 | 109.78 ± 0.00 | 24.65 ± 0.00 | - | b11360 (442b0444) | macOS portability regression on reference laptop; short CPU smoke, background apps open |
+| 2026-11-07 | laptop i5-1135G7 | qwen2.5-1.5b-instruct | Q4_K_M | CPU | 4 | pp32 tg8 r1 kv=f16/f16 ngl=0 load=none | 138.03 ± 0.00 | 33.73 ± 0.00 | - | b11360 (442b0444) | load-mode configuration regression; short CPU smoke only, not a performance comparison |
