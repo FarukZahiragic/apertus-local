@@ -92,7 +92,7 @@ if not model_only:
         (stage/'config.json').write_text(json.dumps(config, indent=2)+'\n')
         api.create_repo(space_repo, repo_type='space', space_sdk='static', private=private, exist_ok=True)
         commit = api.upload_folder(repo_id=space_repo, repo_type='space', folder_path=str(stage),
-                                   allow_patterns=['README.md','index.html','macos-first-start.html','windows-first-start.html','style.css','app.js','config.json'],
+                                   allow_patterns=['README.md','index.html','macos-first-start.html','windows-first-start.html','style.css','app.js','config.json','assets/*'],
                                    commit_message='Publish native Apertus Local download page')
         space_commit = commit.oid
 result = {'model_repo': model_repo, 'model_revision': revision,
