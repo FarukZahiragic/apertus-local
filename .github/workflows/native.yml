@@ -5,6 +5,10 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
+      package_version:
+        description: 'Version for native Linux/Mac archives (normal CI by default)'
+        required: false
+        default: ci
       macos_release_version:
         description: 'Mac release version, e.g. v0.1.0-preview.2; leave empty for normal CI'
         required: false
@@ -53,6 +57,7 @@ jobs:
     timeout-minutes: 60
     env:
       JOBS: '2'
+      PACKAGE_VERSION: ${{ inputs.package_version || 'ci' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -64,7 +69,17 @@ jobs:
         if: runner.os == 'macOS'
         run: scripts/setup_llamacpp.sh --metal --portable
       - name: Package and verify relocated binaries
-        run: scripts/package_release.sh --version ci
+        run: scripts/package_release.sh --version "$PACKAGE_VERSION"
+      - name: Extract delivered package for runtime checks
+        run: |
+          mkdir -p "$RUNNER_TEMP/apertus-delivered"
+          if [[ "$RUNNER_OS" == macOS ]]; then
+            ditto -x -k "dist/apertus-local-$PACKAGE_VERSION-macos-arm64.zip" "$RUNNER_TEMP/apertus-delivered"
+            echo "PACKAGED_ROOT=$RUNNER_TEMP/apertus-delivered/Apertus Local.app/Contents/Resources/apertus-local" >> "$GITHUB_ENV"
+          else
+            tar -xzf "dist/apertus-local-$PACKAGE_VERSION-linux-x86_64.tar.gz" -C "$RUNNER_TEMP/apertus-delivered"
+            echo "PACKAGED_ROOT=$RUNNER_TEMP/apertus-delivered/apertus-local-$PACKAGE_VERSION-linux-x86_64" >> "$GITHUB_ENV"
+          fi
       - name: Download exact Apertus model
         run: scripts/get_model.sh --apertus
       - name: Smoke-test actual Apertus on each available backend
@@ -72,7 +87,7 @@ jobs:
         run: /bin/bash tests/native_smoke.sh
       - name: Verify actual Apertus and browser UI with external networking blocked
         if: runner.os == 'Linux'
-        run: sudo unshare --net /bin/bash tests/offline_smoke.sh
+        run: sudo --preserve-env=PACKAGED_ROOT unshare --net /bin/bash tests/offline_smoke.sh
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -83,6 +98,56 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
           include-hidden-files: true
+  linux_compatibility:
+    needs: native
+    if: github.event_name != 'workflow_dispatch' || inputs.macos_release_version == ''
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ['ubuntu:24.04', 'debian:12-slim']
+    env:
+      PACKAGE_VERSION: ${{ inputs.package_version || 'ci' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: native-Linux-X64
+          path: .compat-artifact
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prepare the exact Linux archive and model
+        run: |
+          mkdir -p dist/compat-runtime
+          archive="$(find .compat-artifact -name "apertus-local-$PACKAGE_VERSION-linux-x86_64.tar.gz" -print -quit)"
+          test -n "$archive"
+          tar -xzf "$archive" -C dist/compat-runtime
+          scripts/get_model.sh --apertus
+      - name: Prepare consumer distribution without a compiler
+        run: |
+          docker build -t "apertus-compat:$GITHUB_RUN_ID" --build-arg 'BASE=${{ matrix.image }}' - <<'DOCKER'
+          ARG BASE
+          FROM ${BASE}
+          RUN apt-get update && apt-get install -y --no-install-recommends bash python3 curl ca-certificates gawk libstdc++6 && rm -rf /var/lib/apt/lists/*
+          DOCKER
+      - name: Run the delivered archive with networking disabled
+        run: |
+          docker run --rm --network none -v "$PWD:/src" -w /src \
+            -e "PACKAGED_ROOT=/src/dist/compat-runtime/apertus-local-$PACKAGE_VERSION-linux-x86_64" \
+            -e 'HARDWARE_KIND=GitHub-hosted VM container ${{ matrix.image }} (NOT laptop)' \
+            "apertus-compat:$GITHUB_RUN_ID" /bin/bash tests/native_smoke.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: compatibility-${{ strategy.job-index }}
+          path: |
+            dist/validation-*.json
+            dist/launcher-*.log
+            .apertus-state/*.log
+          include-hidden-files: true
+          retention-days: 7
   macos_release:
     needs: scripts
     if: github.event_name == 'workflow_dispatch' && inputs.macos_release_version != ''
@@ -93,7 +158,7 @@ jobs:
     env:
       JOBS: '2'
       RELEASE_VERSION: ${{ inputs.macos_release_version }}
-      MACOSX_DEPLOYMENT_TARGET: '15.0'
+      MACOSX_DEPLOYMENT_TARGET: '13.3'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

@@ -21,7 +21,7 @@ class PackageTests(unittest.TestCase):
             root = Path(directory)
             for folder in ['scripts','config','packaging']:
                 (root/folder).mkdir()
-            for name in ['package_release.sh','platform.sh','get_model.sh','serve.sh','launch.sh']:
+            for name in ['package_release.sh','platform.sh','get_model.sh','serve.sh','launch.sh','runtime_requirements.py']:
                 shutil.copy2(ROOT/'scripts'/name, root/'scripts'/name)
             shutil.copy2(ROOT/'config/model.env', root/'config/model.env')
             for source in (ROOT/'packaging').iterdir():
@@ -36,6 +36,13 @@ class PackageTests(unittest.TestCase):
                 subprocess.run(['git','init','-q',str(repo)],check=True)
                 subprocess.run(['git','-C',str(repo),'-c','user.name=Test','-c','user.email=test@example.invalid',
                                 'commit','-q','--allow-empty','-m','Fixture'],check=True)
+            source = root/'fixture.c'
+            source.write_text('#include <stdio.h>\nint main(void) { puts("fixture executable"); return 0; }\n')
+            binary = root/'fixture'
+            compiler = [shutil.which('cc') or 'clang']
+            if sys.platform == 'darwin':
+                compiler.append('-mmacosx-version-min=13.3')
+            subprocess.run([*compiler,str(source),'-o',str(binary)],check=True)
             for backend in ['build-portable','build-metal-portable']:
                 build = vendor/backend
                 (build/'bin').mkdir(parents=True)
@@ -43,9 +50,10 @@ class PackageTests(unittest.TestCase):
                                                   f'GGML_METAL:BOOL={"ON" if "metal" in backend else "OFF"}\n')
                 for name in ['llama-server','llama-bench','llama-cli']:
                     path = build/'bin'/name
-                    path.write_text('#!/bin/sh\necho "fixture executable"\n')
-                    path.chmod(0o755)
+                    shutil.copy2(binary,path)
             env = dict(os.environ, OUTPUT_DIR=str(root/'dist'))
+            if sys.platform == 'darwin':
+                env['MACOSX_DEPLOYMENT_TARGET']='13.3'
             # Keep this fixture independent of developer overrides.
             for name in ['CPU_BUILD_DIR','METAL_BUILD_DIR','MODEL_URL','APERTUS_MODEL_REPO','APERTUS_MODEL_REVISION']:
                 env.pop(name,None)
@@ -60,6 +68,8 @@ class PackageTests(unittest.TestCase):
                     self.assertIn('Open Anyway', instructions)
                     info = plistlib.loads(handle.read('Apertus Local.app/Contents/Info.plist'))
                     self.assertEqual(info['CFBundleIdentifier'],'io.github.FarukZahiragic.apertus-local')
+                    self.assertEqual(info['CFBundleExecutable'],'ApertusLocal')
+                    self.assertEqual(info['LSMinimumSystemVersion'],'13.3')
                     self.assertIn('Terminal',info['NSAppleEventsUsageDescription'])
                     manifest = json.loads(handle.read('Apertus Local.app/Contents/Resources/apertus-local/release.json'))
             else:
@@ -67,6 +77,8 @@ class PackageTests(unittest.TestCase):
                 with tarfile.open(archive) as handle:
                     manifest = json.load(handle.extractfile('apertus-local-fixture-linux-x86_64/release.json'))
             self.assertEqual(manifest['version'],'fixture')
+            self.assertGreater(manifest['compatibility']['checked_binaries'],0)
+            self.assertIn('compatibility.json',manifest['files'])
             self.assertIn('scripts/launch.sh',manifest['files'])
             self.assertTrue(Path(str(archive)+'.sha256').exists())
             self.assertFalse(any(name.startswith('models/') for name in manifest['files']))

@@ -69,7 +69,14 @@ if [[ "$portable" -eq 1 ]]; then
   extra_cmake+=(-DGGML_NATIVE=OFF -DGGML_BACKEND_DL=ON -DGGML_CPU_ALL_VARIANTS=ON
     -DGGML_OPENMP=OFF -DLLAMA_OPENSSL=OFF -DCMAKE_BUILD_RPATH_USE_ORIGIN=ON)
   if [[ "$(ap_os)" == Darwin ]]; then
-    extra_cmake+=('-DCMAKE_BUILD_RPATH=@loader_path')
+    # Accelerate's ILP64 interfaces used by this pin are available from 13.3.
+    # Target the API baseline, rather than inheriting the build host's OS.
+    export MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-13.3}"
+    extra_cmake+=("-DCMAKE_OSX_DEPLOYMENT_TARGET=$MACOSX_DEPLOYMENT_TARGET"
+      '-DCMAKE_BUILD_RPATH=@loader_path'
+      "-DCMAKE_C_FLAGS=${CFLAGS:-} -Werror=unguarded-availability-new"
+      "-DCMAKE_CXX_FLAGS=${CXXFLAGS:-} -Werror=unguarded-availability-new"
+      '-DCMAKE_OBJC_FLAGS=-Werror=unguarded-availability-new')
   fi
 fi
 if [[ "$backend" == vulkan ]]; then
