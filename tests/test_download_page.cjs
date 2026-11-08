@@ -73,3 +73,13 @@ test('Windows ARM detection chooses the native archive when the browser reports 
   assert.equal(page.get('#platform').value,'windows-arm64');
   assert.equal(page.get('#download').href,'https://example.org/arm64.zip');
 });
+test('platform downloads show their own version after a Windows-only update',async()=>{
+  const mixed=structuredClone(config);
+  mixed.version='v0.1.0-preview.4';
+  mixed.platforms['macos-arm64'].version='v0.1.0-preview.3';
+  mixed.platforms['windows-x86_64'].version='v0.1.0-preview.4';
+  const mac=await render(mixed,'Macintosh');
+  const windows=await render(mixed,'Windows NT 10.0');
+  assert.equal(mac.get('#version').textContent,'v0.1.0-preview.3');
+  assert.equal(windows.get('#version').textContent,'v0.1.0-preview.4');
+});

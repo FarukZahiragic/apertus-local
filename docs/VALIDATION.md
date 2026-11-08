@@ -27,7 +27,7 @@ from a build target.
 
 The functional report is generated under ignored `dist/validation-reference-laptop.json`.
 The short Qwen throughput regression run is recorded in `benchmarks/results.md`.
-The complete Python fixture suite now contains 26 passing tests, alongside seven
+The complete Python fixture suite now contains 26 passing tests, alongside eight
 passing Node download-page and browser-cleanup tests.
 Functional request checks are not performance benchmarks. The owner informally
 observed generation in the thirty-something tokens/s range on the friend's Mac,
@@ -111,6 +111,23 @@ literal/relative paths, missing-file rejection, mismatched-checksum rejection an
 file-handle cleanup. Native Windows checks test it under PowerShell 5.1 on x64
 and ARM64 before publishing an updated archive. Confirmation against the friend's
 exact error/patch remains separate.
+
+The [Windows preview.4 release checks](https://github.com/FarukZahiragic/apertus-local/actions/runs/42509994265)
+pass on both architectures under Windows PowerShell 5.1, including the new
+checksum regression, existing download/lifecycle fixtures and actual-model checks
+from the extracted archives. Both document answers are `Sarajevo`; each report
+records three repeated requests with server outbound networking blocked. These
+are hosted-runner checks, not a reproduction of the friend's exact exception.
+
+The two preview.4 ZIPs are built from `7db04e6bf0347ba0c88cd1aff0c582f473088741`.
+All 88 payload hashes, both archive hashes and native PE dependencies/architectures
+were verified before publication. Mac/Linux stay on their tested preview.3
+archives; the download page displays each platform's actual version.
+
+| Windows preview.4 ZIP | Bytes | SHA-256 |
+| --- | --- | --- |
+| ARM64 | 11,390,884 | `664538e5bb9b52d09ac0413ac95aa28d24401da9637fa777123ea01efc79e1e4` |
+| Intel/AMD x64 | 11,745,878 | `bb67c41c0599dc5ad1a89094a6c160781da807f4d4e86df1fe8ffc47de3fdaae` |
 
 ## Still pending
 

@@ -17,6 +17,7 @@ function safeURL(value) {
 function update() {
   const selected = platform.value;
   const release = configuration?.platforms?.[selected];
+  document.querySelector('#version').textContent = release?.version || configuration?.version || 'Preparing a release';
   document.querySelector('#platform-note').textContent = platformText[selected][0] + (release?.minimum_os ? ' Requires ' + release.minimum_os + '.' : ' See release notes for minimum system requirements.');
   document.querySelector('#open-instructions').textContent = platformText[selected][1];
   document.querySelector('#mac-guide').hidden = selected !== 'macos-arm64';
@@ -48,7 +49,6 @@ fetch('config.json', {cache: 'no-cache'}).then(response => {
   return response.json();
 }).then(config => {
   configuration = config;
-  document.querySelector('#version').textContent = config.version || 'Preparing a release';
   const modelURL = safeURL(config.model?.url);
   if (modelURL) {
     const link = document.createElement('a');
