@@ -1,0 +1,361 @@
+diff --git a/scripts/ui-assets.cmake b/scripts/ui-assets.cmake
+index dec34ebd..09094908 100644
+--- a/scripts/ui-assets.cmake
++++ b/scripts/ui-assets.cmake
+@@ -537,6 +537,8 @@ if(BUILD_UI)
+     npm_build(NPM_OK)
+     if(NPM_OK)
+         set(provisioned TRUE)
++    else()
++        message(FATAL_ERROR "UI source build failed; refusing to omit the participant UI")
+     endif()
+ endif()
+ 
+diff --git a/tools/ui/src/lib/components/app/chat/ChatForm/ChatFormActions/ChatFormActionAdd/ChatFormActionAddDropdown.svelte b/tools/ui/src/lib/components/app/chat/ChatForm/ChatFormActions/ChatFormActionAdd/ChatFormActionAddDropdown.svelte
+index 1ce73184..c51cd244 100644
+--- a/tools/ui/src/lib/components/app/chat/ChatForm/ChatFormActions/ChatFormActionAdd/ChatFormActionAddDropdown.svelte
++++ b/tools/ui/src/lib/components/app/chat/ChatForm/ChatFormActions/ChatFormActionAdd/ChatFormActionAddDropdown.svelte
+@@ -1,4 +1,5 @@
+ <script lang="ts">
++	import { APERTUS_WORKSHOP_UI } from '$lib/constants/workshop.constants';
+ 	import { File, Image, MessageSquare, Mic, Plus, Video } from '@lucide/svelte';
+ 	import {
+ 		ChatFormActionAddReasoningSubmenu,
+@@ -98,7 +99,7 @@
+ 			}}
+ 		>
+ 			<!-- in router mode the models selector owns the reasoning submenu -->
+-			{#if !serverStore.isRouterMode}
++			{#if !serverStore.isRouterMode && !APERTUS_WORKSHOP_UI}
+ 				<ChatFormActionAddReasoningSubmenu />
+ 
+ 				<DropdownMenu.Separator />
+@@ -143,16 +144,18 @@
+ 				<span>System Message</span>
+ 			</DropdownMenu.Item>
+ 
+-			<ChatFormActionAddToolsSubmenu />
++			{#if !APERTUS_WORKSHOP_UI}
++				<ChatFormActionAddToolsSubmenu />
+ 
+-			<DropdownMenu.Item
+-				class="flex cursor-pointer items-center gap-2"
+-				onclick={chatFormActions.onMcpSettingsClick}
+-			>
+-				<McpLogo class={ICON_CLASS_DEFAULT} />
++				<DropdownMenu.Item
++					class="flex cursor-pointer items-center gap-2"
++					onclick={chatFormActions.onMcpSettingsClick}
++				>
++					<McpLogo class={ICON_CLASS_DEFAULT} />
+ 
+-				<span>MCP Servers</span>
+-			</DropdownMenu.Item>
++					<span>MCP Servers</span>
++				</DropdownMenu.Item>
++			{/if}
+ 		</DropdownMenu.Content>
+ 	</DropdownMenu.Root>
+ </div>
+diff --git a/tools/ui/src/lib/components/app/chat/ChatForm/ChatFormActions/ChatFormActionAdd/ChatFormActionAddSheet.svelte b/tools/ui/src/lib/components/app/chat/ChatForm/ChatFormActions/ChatFormActionAdd/ChatFormActionAddSheet.svelte
+index acd0f4d2..18b41bdf 100644
+--- a/tools/ui/src/lib/components/app/chat/ChatForm/ChatFormActions/ChatFormActionAdd/ChatFormActionAddSheet.svelte
++++ b/tools/ui/src/lib/components/app/chat/ChatForm/ChatFormActions/ChatFormActionAdd/ChatFormActionAddSheet.svelte
+@@ -1,4 +1,5 @@
+ <script lang="ts">
++	import { APERTUS_WORKSHOP_UI } from '$lib/constants/workshop.constants';
+ 	import {
+ 		Check,
+ 		ChevronDown,
+@@ -75,12 +76,14 @@
+ 				<Sheet.Title>Add to chat</Sheet.Title>
+ 
+ 				<Sheet.Description class="sr-only">
+-					Add files, system prompt or configure MCP servers
++					{APERTUS_WORKSHOP_UI
++						? 'Add files or a system message'
++						: 'Add files, system prompt or configure MCP servers'}
+ 				</Sheet.Description>
+ 			</Sheet.Header>
+ 
+ 			<div class="flex flex-col gap-1 px-1.5 pb-2">
+-				{#if reasoning.modelSupportsThinking}
++				{#if reasoning.modelSupportsThinking && !APERTUS_WORKSHOP_UI}
+ 					<Collapsible.Root
+ 						onOpenChange={(open) => (reasoningExpanded = open)}
+ 						open={reasoningExpanded}
+@@ -166,7 +169,7 @@
+ 
+ 										<span>{item.label}</span>
+ 									</button>
+-								{:else if item.disabledTooltip}
++								{:else if item.disabledTooltip && !APERTUS_WORKSHOP_UI}
+ 									<Tooltip.Root delayDuration={TOOLTIP_DELAY_DURATION}>
+ 										<Tooltip.Trigger>
+ 											<button class={sheetItemClass} disabled type="button">
+@@ -196,7 +199,7 @@
+ 					<span>System Message</span>
+ 				</button>
+ 
+-				{#if toolsPanel.totalToolCount > 0}
++				{#if toolsPanel.totalToolCount > 0 && !APERTUS_WORKSHOP_UI}
+ 					<Collapsible.Root onOpenChange={(open) => (toolsExpanded = open)} open={toolsExpanded}>
+ 						<Collapsible.Trigger class={sheetItemClass}>
+ 							{#if toolsExpanded}
+@@ -228,18 +231,20 @@
+ 					</Collapsible.Root>
+ 				{/if}
+ 
+-				<button
+-					class={sheetItemClass}
+-					onclick={() => {
+-						sheetOpen = false;
+-						chatFormActions.onMcpSettingsClick?.();
+-					}}
+-					type="button"
+-				>
+-					<McpLogo class="inline {ICON_CLASS_DEFAULT} shrink-0" />
++				{#if !APERTUS_WORKSHOP_UI}
++					<button
++						class={sheetItemClass}
++						onclick={() => {
++							sheetOpen = false;
++							chatFormActions.onMcpSettingsClick?.();
++						}}
++						type="button"
++					>
++						<McpLogo class="inline {ICON_CLASS_DEFAULT} shrink-0" />
+ 
+-					<span>MCP Servers</span>
+-				</button>
++						<span>MCP Servers</span>
++					</button>
++				{/if}
+ 			</div>
+ 		</Sheet.Content>
+ 	</Sheet.Root>
+diff --git a/tools/ui/src/lib/components/app/models/ModelCapabilityIcons.svelte b/tools/ui/src/lib/components/app/models/ModelCapabilityIcons.svelte
+index c9505a95..160f836a 100644
+--- a/tools/ui/src/lib/components/app/models/ModelCapabilityIcons.svelte
++++ b/tools/ui/src/lib/components/app/models/ModelCapabilityIcons.svelte
+@@ -1,4 +1,5 @@
+ <script lang="ts">
++	import { APERTUS_WORKSHOP_UI } from '$lib/constants/workshop.constants';
+ 	import { Image, Lightbulb, Mic, Video, Wrench } from '@lucide/svelte';
+ 	import * as Tooltip from '$lib/components/ui/tooltip';
+ 	import type { ModelModalities } from '$lib/types/models';
+@@ -27,7 +28,7 @@
+ </script>
+ 
+ <span class="inline-flex items-center {gapClass}">
+-	{#if supportsToolUse && !hideCapabilities}
++	{#if supportsToolUse && !hideCapabilities && !APERTUS_WORKSHOP_UI}
+ 		<Tooltip.Root>
+ 			<Tooltip.Trigger>
+ 				<Wrench class="{iconSize} text-muted-foreground" />
+@@ -39,7 +40,7 @@
+ 		</Tooltip.Root>
+ 	{/if}
+ 
+-	{#if supportsThinking && !hideCapabilities}
++	{#if supportsThinking && !hideCapabilities && !APERTUS_WORKSHOP_UI}
+ 		<Tooltip.Root>
+ 			<Tooltip.Trigger>
+ 				<Lightbulb class="{iconSize} text-muted-foreground" />
+@@ -65,7 +66,7 @@
+ 				</Tooltip.Root>
+ 			{/if}
+ 
+-			{#if modalities?.video}
++			{#if modalities?.video && !APERTUS_WORKSHOP_UI}
+ 				<Tooltip.Root>
+ 					<Tooltip.Trigger>
+ 						<Video class={iconSize} />
+diff --git a/tools/ui/src/lib/components/app/models/ModelsSelectorDropdown.svelte b/tools/ui/src/lib/components/app/models/ModelsSelectorDropdown.svelte
+index 30dedcba..2669e3f7 100644
+--- a/tools/ui/src/lib/components/app/models/ModelsSelectorDropdown.svelte
++++ b/tools/ui/src/lib/components/app/models/ModelsSelectorDropdown.svelte
+@@ -1,4 +1,5 @@
+ <script lang="ts">
++	import { APERTUS_WORKSHOP_UI } from '$lib/constants/workshop.constants';
+ 	import ModelLoadHighlight from './ModelLoadHighlight.svelte';
+ 	import type { ModelItem } from './utils';
+ 	import { ChevronDown, Lightbulb, Loader2 } from '@lucide/svelte';
+@@ -237,7 +238,7 @@
+ 										<span class="min-w-0 font-medium">Select model</span>
+ 									{/if}
+ 
+-									{#if reasoning.isReasoningActive}
++									{#if reasoning.isReasoningActive && !APERTUS_WORKSHOP_UI}
+ 										<Lightbulb class="h-3.5 w-3.5 shrink-0 text-amber-400" />
+ 									{/if}
+ 								</span>
+@@ -351,7 +352,9 @@
+ 						</DropdownMenu.SubContent>
+ 					</DropdownMenu.Sub>
+ 
+-					<ChatFormActionAddReasoningSubmenu />
++					{#if !APERTUS_WORKSHOP_UI}
++						<ChatFormActionAddReasoningSubmenu />
++					{/if}
+ 				</DropdownMenu.Content>
+ 			</DropdownMenu.Root>
+ 		{:else}
+@@ -387,7 +390,7 @@
+ 								/>
+ 							{/if}
+ 
+-							{#if reasoning.isReasoningActive}
++							{#if reasoning.isReasoningActive && !APERTUS_WORKSHOP_UI}
+ 								<Lightbulb class="h-3.5 w-3.5 shrink-0 text-amber-400" />
+ 							{/if}
+ 
+diff --git a/tools/ui/src/lib/constants/attachment-menu.constants.ts b/tools/ui/src/lib/constants/attachment-menu.constants.ts
+index 143450a7..e60f3cc6 100644
+--- a/tools/ui/src/lib/constants/attachment-menu.constants.ts
++++ b/tools/ui/src/lib/constants/attachment-menu.constants.ts
+@@ -1,3 +1,4 @@
++import { APERTUS_WORKSHOP_UI } from './workshop.constants';
+ import { FILE_TYPE_ICONS } from '$lib/constants';
+ import { AttachmentAction, AttachmentItemEnabledWhen, AttachmentMenuItemId } from '$lib/enums';
+ import type { AttachmentMenuItem } from '$lib/types';
+@@ -52,4 +53,6 @@ export const ATTACHMENT_FILE_ITEMS: AttachmentMenuItem[] = [
+ 	}
+ ];
+ 
+-export const ATTACHMENT_TOOLTIP_TEXT = 'Add files, prompts, tools or MCP Servers';
++export const ATTACHMENT_TOOLTIP_TEXT = APERTUS_WORKSHOP_UI
++	? 'Add files or a system message'
++	: 'Add files, prompts, tools or MCP Servers';
+diff --git a/tools/ui/src/lib/constants/settings.constants.ts b/tools/ui/src/lib/constants/settings.constants.ts
+index 7140bbcc..d409b7e6 100644
+--- a/tools/ui/src/lib/constants/settings.constants.ts
++++ b/tools/ui/src/lib/constants/settings.constants.ts
+@@ -1,3 +1,4 @@
++import { APERTUS_WORKSHOP_UI } from '$lib/constants/workshop.constants';
+ import { CLI_FLAGS } from './cli-flags.constants';
+ import { DEFAULT_MCP_CONFIG } from './mcp.constants';
+ import { SETTINGS_KEYS } from './settings-keys.constants';
+@@ -663,6 +664,16 @@ function toSettingsSection(section: SettingsSectionEntry): SettingsSection {
+ 	return {
+ 		fields: section.settings
+ 			.filter((s) => s.standaloneField !== false)
++			.filter(
++				(s) =>
++					!APERTUS_WORKSHOP_UI ||
++					!new Set<string>([
++						SETTINGS_KEYS.JS_SANDBOX_ENABLED,
++						SETTINGS_KEYS.SYMBOLIC_MATH_ENABLED,
++						SETTINGS_KEYS.SHOW_AGENTIC_TURN_STATS,
++						SETTINGS_KEYS.SHOW_FULL_PATH_IN_MENTIONS
++					]).has(s.key)
++			)
+ 			.map((s) => ({
+ 				dependsOn: s.dependsOn,
+ 				help: s.help,
+@@ -685,7 +696,13 @@ function toSettingsSection(section: SettingsSectionEntry): SettingsSection {
+ }
+ 
+ /** Sidebar sections in custom display order (the registry array order). */
+-export const SETTINGS_CHAT_SECTIONS: SettingsSection[] = SETTINGS_REGISTRY.map(toSettingsSection);
++export const SETTINGS_CHAT_SECTIONS: SettingsSection[] = SETTINGS_REGISTRY.filter(
++	(section) =>
++		!APERTUS_WORKSHOP_UI ||
++		![SETTINGS_SECTION_SLUGS.TOOLS, SETTINGS_SECTION_SLUGS.AGENTIC].some(
++			(slug) => slug === section.slug
++		)
++).map(toSettingsSection);
+ 
+ /** INPUT-type settings whose value is a number. */
+ export const NUMERIC_FIELDS = getAllSettings()
+diff --git a/tools/ui/src/lib/constants/workshop.constants.ts b/tools/ui/src/lib/constants/workshop.constants.ts
+new file mode 100644
+index 00000000..fe94cac4
+--- /dev/null
++++ b/tools/ui/src/lib/constants/workshop.constants.ts
+@@ -0,0 +1,2 @@
++/** The participant build exposes only the validated Apertus workshop workflow. */
++export const APERTUS_WORKSHOP_UI = true;
+diff --git a/tools/ui/src/lib/stores/conversations/preferences.svelte.ts b/tools/ui/src/lib/stores/conversations/preferences.svelte.ts
+index 916911a1..c062a0ac 100644
+--- a/tools/ui/src/lib/stores/conversations/preferences.svelte.ts
++++ b/tools/ui/src/lib/stores/conversations/preferences.svelte.ts
+@@ -1,3 +1,4 @@
++import { APERTUS_WORKSHOP_UI } from '$lib/constants/workshop.constants';
+ /**
+  * ConversationPreferences - Per-chat options with global fallback
+  *
+@@ -114,6 +115,9 @@ export class ConversationPreferences {
+ 	 * DEFAULT means no override is sent and the server decides.
+ 	 */
+ 	getReasoningEffort(): ReasoningEffort {
++		// Ignore old browser/conversation effort choices; keep the server's THINKING setting.
++		if (APERTUS_WORKSHOP_UI) return ReasoningEffort.DEFAULT;
++
+ 		if (this.host.activeConversation) {
+ 			if (this.host.activeConversation.reasoningEffort !== undefined) {
+ 				return this.host.activeConversation.reasoningEffort;
+diff --git a/tools/ui/src/lib/stores/mcp/index.svelte.ts b/tools/ui/src/lib/stores/mcp/index.svelte.ts
+index 768e2c1a..dcb90361 100644
+--- a/tools/ui/src/lib/stores/mcp/index.svelte.ts
++++ b/tools/ui/src/lib/stores/mcp/index.svelte.ts
+@@ -1,3 +1,4 @@
++import { APERTUS_WORKSHOP_UI } from '$lib/constants/workshop.constants';
+ /**
+  * mcpStore - MCP host: server connections and tool operations
+  *
+@@ -727,6 +728,9 @@ class MCPStore implements McpHealthHost {
+ 	}
+ 
+ 	getServers(): MCPServerSettingsEntry[] {
++		// Saved MCP settings must not silently reconnect in the participant UI.
++		if (APERTUS_WORKSHOP_UI) return [];
++
+ 		const raw = settingsStore.config.mcpServers;
+ 
+ 		// cache the parse: the config string rarely changes and getServers is
+diff --git a/tools/ui/src/lib/stores/models/props.svelte.ts b/tools/ui/src/lib/stores/models/props.svelte.ts
+index 9d2d817a..00973104 100644
+--- a/tools/ui/src/lib/stores/models/props.svelte.ts
++++ b/tools/ui/src/lib/stores/models/props.svelte.ts
+@@ -1,3 +1,4 @@
++import { APERTUS_WORKSHOP_UI } from '$lib/constants/workshop.constants';
+ /**
+  * ModelPropsManager - Per-model props cache, modalities and thinking detection
+  *
+@@ -84,7 +85,7 @@ export class ModelPropsManager {
+ 
+ 		return {
+ 			audio: inputs.includes(FileTypeCategory.AUDIO),
+-			video: inputs.includes(FileTypeCategory.VIDEO),
++			video: !APERTUS_WORKSHOP_UI && inputs.includes(FileTypeCategory.VIDEO),
+ 			vision: inputs.includes(FileTypeCategory.IMAGE)
+ 		};
+ 	}
+@@ -266,7 +267,7 @@ export class ModelPropsManager {
+ 	): ModelModalities {
+ 		return {
+ 			audio: modalities.audio ?? false,
+-			video: modalities.video ?? false,
++			video: !APERTUS_WORKSHOP_UI && (modalities.video ?? false),
+ 			vision: modalities.vision ?? false
+ 		};
+ 	}
+diff --git a/tools/ui/src/lib/stores/tools.svelte.ts b/tools/ui/src/lib/stores/tools.svelte.ts
+index 1d413340..24e8bb86 100644
+--- a/tools/ui/src/lib/stores/tools.svelte.ts
++++ b/tools/ui/src/lib/stores/tools.svelte.ts
+@@ -1,3 +1,4 @@
++import { APERTUS_WORKSHOP_UI } from '$lib/constants/workshop.constants';
+ /**
+  * toolsStore - Tool registry and enablement
+  *
+@@ -57,6 +58,8 @@ class ToolsStore {
+ 
+ 	/** Canonical flat list of tool entries with source metadata and stable keys, deduped by key */
+ 	get allTools(): ToolEntry[] {
++		if (APERTUS_WORKSHOP_UI) return [];
++
+ 		const entries: ToolEntry[] = [];
+ 		const seen = new SvelteSet<string>();
+ 		const push = (entry: ToolEntry) => {
