@@ -12,9 +12,10 @@ dependent stack; `main` is not changed until they are reviewed and merged.
 | Same laptop, Apertus Q4_K_M, CPU, 4 threads, 4K context | Start through extracted launcher; health, embedded UI assets, streamed final usage, document Q&A | pass; document answer `Sarajevo` |
 | Same configuration | 50 streamed requests, maximum 16 generated tokens each | 50/50 pass |
 | Linux, actual Bash 3.2 | Download corruption/resumption/completed-part recovery; Darwin detection; runtime overrides/auto gating; launcher ownership, readiness, startup failure, Metal-to-CPU retry and archive contents | 16 tests pass |
+| Linux, actual Bash 3.2 | Standalone Mac setup: clone/start from a single file, paths with spaces, preserve existing edits/folders, reject unsupported hardware and stop safely when Apple tools need interactive installation | 5 fixture tests pass; fresh physical Mac setup remains pending |
 | Node | Download availability, required checksums and safe URLs | 3 tests pass |
-| GitHub-hosted Apple M1 VM, 7 GB RAM, macOS 15 | Portable CPU/Metal builds, relocated app packaging, real CPU and partial Metal inference (`GPU_LAYERS=8 LOAD_MODE=none`) | pass in [native CI](https://github.com/FarukZahiragic/apertus-local/actions/runs/42385198446); hosted VM is not a participant laptop |
-| GitHub-hosted Linux VM, only loopback networking | Fresh Apertus startup, embedded assets, streamed usage and document Q&A | pass in the same run; browser assertion corrected afterward |
+| GitHub-hosted Apple M1 VM, 7 GB RAM, macOS 15 | Portable CPU/Metal builds, relocated app packaging, real CPU and partial Metal inference (`GPU_LAYERS=8 LOAD_MODE=none`) | pass in [native CI](https://github.com/FarukZahiragic/apertus-local/actions/runs/42386944980); hosted VM is not a participant laptop |
+| GitHub-hosted Linux VM, only loopback networking | Fresh Apertus startup, embedded assets, streamed usage, document Q&A and rendered chat input/model in actual Chrome | pass in the same run |
 | Reference Linux laptop, actual Chrome | Render embedded chat input and model name through the DevTools pipe | pass; networking enabled during this local check |
 
 The functional report is generated under ignored `dist/validation-reference-laptop.json`.
@@ -74,5 +75,5 @@ accepts a previous Mac artifact run ID and retains raw responses/server logs.
 The isolated Linux browser check originally used virtual time and dumped the DOM
 before asynchronous browser storage and UI startup completed. The check now polls
 the real rendered chat input and model name through Chrome's DevTools pipe, with
-a bounded wall-clock timeout. The actual API inference already passed with only
-loopback networking; the latest browser result is available in native CI above.
+a bounded wall-clock timeout. Both the actual API inference and the corrected
+browser check passed with only loopback networking in the linked native CI run.

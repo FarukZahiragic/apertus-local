@@ -7,6 +7,36 @@ context and operating-system memory. Keep enough free disk for downloads and upd
 
 ## Prepare while online
 
+For a fresh Mac, only the repository's `setup.sh` file needs to be sent. Save it
+in Downloads, open Terminal and run:
+
+```bash
+bash ~/Downloads/setup.sh
+```
+
+The script installs Apple command line tools if missing (complete the macOS
+window), installs missing CMake/Python using Homebrew if needed, clones
+`feat/macos-setup` into `~/apertus-1.5-local`, builds CPU and Metal, and downloads
+the checksum-verified public model. It opens CPU chat and prints commands for
+future starts and CPU/Metal benchmarks. No signing identity or Hugging Face
+account is required. Allow around 20 GB free for this development setup.
+
+`bash ~/Downloads/setup.sh --no-start` performs preparation without starting chat.
+You can then disconnect networking and run
+`cd ~/apertus-1.5-local && ./Start.command`. Stop with Control+C, then test
+`BACKEND=metal ./Start.command` from that directory. Setup does not automatically
+run benchmarks or certify Metal; follow the checks below before enabling it.
+
+Setup logs append to `~/Library/Logs/Apertus Local/setup.log`. Rerun the same
+command after an interrupted installation; existing builds and verified model
+downloads are reused. Existing project checkouts are reused without fetching,
+switching branches or discarding edits; unrelated folders are refused.
+`APERTUS_INSTALL_DIR` chooses another installation folder. Running `bash setup.sh`
+inside a clone uses that clone by default. The script targets native Apple
+Silicon macOS; packaged workshop downloads are a separate distribution path.
+
+For manual installation instead:
+
 Install Xcode command line tools with `xcode-select --install`, then CMake (for
 example `brew install cmake` if you already use Homebrew). Clone this repository.
 The build uses Apple Clang, the pinned Apertus-compatible llama.cpp fork and the
