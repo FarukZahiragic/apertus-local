@@ -16,7 +16,7 @@ bash ~/Downloads/setup.sh
 
 The script installs Apple command line tools if missing (complete the macOS
 window), installs missing CMake/Python using Homebrew if needed, clones
-`feat/macos-setup` into `~/apertus-1.5-local`, builds CPU and Metal, and downloads
+`main` into `~/apertus-1.5-local`, builds CPU and Metal, and downloads
 the checksum-verified public model. It opens CPU chat and prints commands for
 future starts and CPU/Metal benchmarks. No signing identity or Hugging Face
 account is required. Allow around 20 GB free for this development setup.
@@ -43,14 +43,15 @@ The build uses Apple Clang, the pinned Apertus-compatible llama.cpp fork and the
 same patches as Linux. A stock Homebrew llama.cpp is not a substitute for this pin.
 
 ```bash
-git clone --branch chore/workshop-validation https://github.com/FarukZahiragic/apertus-local apertus-1.5-local
+git clone https://github.com/FarukZahiragic/apertus-local apertus-1.5-local
 cd apertus-1.5-local
 scripts/setup_llamacpp.sh --cpu
 ```
 
-The implementation and standalone setup are currently in stacked PRs #16–#22. The command above checks
-out the full implementation branch while review is pending; after those PRs merge,
-the same deployment will be available from `main`.
+Deployment PRs #16–#24 are merged into `main`. New portable builds target macOS
+13.3 or later and compile the app wrapper explicitly; see
+[COMPATIBILITY.md](COMPATIBILITY.md) for the difference between a minimum target
+and the build/test host. The older preview.2 wrapper inherited macOS 15.8.
 
 Copy `apertus-v1.5-8b-Q4_K_M.gguf` into `models/` using USB or an authorized model
 repository. No conversion is needed on the Mac. Verify an existing copy offline:

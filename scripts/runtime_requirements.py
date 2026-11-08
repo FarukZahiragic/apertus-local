@@ -47,7 +47,8 @@ for path in args.root.rglob('*'):
         magic = source.read(4)
     if magic == b'\x7fELF':
         count += 1
-        architectures.add('x86_64' if struct.unpack_from('<H', path.read_bytes(), 18)[0] == 62 else 'arm64')
+        machine = struct.unpack_from('<H', path.read_bytes(), 18)[0]
+        architectures.add({62:'x86_64', 183:'arm64'}.get(machine, f'elf:{machine}'))
         symbols = subprocess.check_output(['objdump', '-T', str(path)], text=True)
         for line in symbols.splitlines():
             if '*UND*' in line:

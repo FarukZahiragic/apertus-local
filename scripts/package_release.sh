@@ -107,6 +107,8 @@ root = Path(sys.argv[1])
 path = root/'compatibility.json'
 manifest = json.loads((root/'release.json').read_text())
 manifest['compatibility'] = json.loads(path.read_text())
+expected = 'arm64' if manifest['platform'].endswith('arm64') else 'x86_64'
+assert manifest['compatibility']['architectures'] == [expected], 'Archive contains a different CPU architecture'
 manifest['files']['compatibility.json'] = hashlib.sha256(path.read_bytes()).hexdigest()
 (root/'release.json').write_text(json.dumps(manifest, indent=2)+'\n')
 PY

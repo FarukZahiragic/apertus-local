@@ -77,21 +77,25 @@ function Save-ApertusModel {
                     $outputStream = New-Object IO.FileStream($partial, [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::Write, [IO.FileShare]::Read)
                     $outputStream.SetLength($offset); $outputStream.Position = $offset
                     $inputStream = $response.GetResponseStream()
-                    $buffer = New-Object byte[] (1MB)
+                    # Keep the large transfer in .NET rather than interpreting
+                    # one PowerShell loop per TLS record (especially slow on ARM).
+                    $copy = $inputStream.CopyToAsync($outputStream, 1MB)
                     $progress = [Diagnostics.Stopwatch]::StartNew()
-                    while (($count = $inputStream.Read($buffer, 0, $buffer.Length)) -gt 0) {
-                        $outputStream.Write($buffer, 0, $count)
+                    while (-not $copy.IsCompleted) {
                         if ($progress.Elapsed.TotalSeconds -ge 3) {
-                            Write-Host ('Model: {0:N1} / {1:N1} GiB' -f ($outputStream.Position / 1GB), ($total / 1GB))
+                            $written = (Get-Item -LiteralPath $partial).Length
+                            Write-Host ('Model: {0:N1} / {1:N1} GiB' -f ($written / 1GB), ($total / 1GB))
                             $progress.Restart()
                         }
+                        Start-Sleep -Milliseconds 250
                     }
+                    [void]$copy.GetAwaiter().GetResult()
                     $outputStream.Flush()
                     if ($outputStream.Length -ne $total) { throw 'Model download ended before the expected byte count' }
                     break
                 } catch {
                     if ($attempt -eq 3) { throw }
-                    Write-Host "Download interrupted; retrying ($attempt/3). Verified partial bytes are retained."
+                    Write-Host "Download interrupted; retrying ($attempt/3). Partial bytes are retained for the final checksum check."
                     Start-Sleep -Seconds (2 * $attempt)
                 } finally {
                     if ($inputStream) { $inputStream.Dispose() }

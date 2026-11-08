@@ -26,7 +26,11 @@ After building and placing the GGUF locally, run `./Start.sh` on Linux or
 and opens the browser after health and a one-token local inference check. Ctrl+C or the Stop launcher shuts
 it down. See [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md) for native packages,
 resumable first-run downloads and macOS signing. The [Hugging Face download page](https://huggingface.co/spaces/faruk-zahiragic/apertus-local)
-tracks model and platform availability. A Linux Ubuntu 24.04 preview is available there.
+tracks model and platform availability. Native archives include their runtime;
+participants do not need a compiler or Python. Windows uses `Start.cmd` and
+`Stop.cmd`, macOS opens `Apertus Local.app`, and Linux uses `Start.sh`/`Stop.sh`.
+See [Windows setup](docs/WINDOWS.md) and [compatibility requirements](docs/COMPATIBILITY.md)
+for architecture choices and minimum capabilities across OS releases.
 The Mac source setup and offline rehearsal passed on a physical Mac. An unsigned
 Apple Silicon preview is available without Apple Developer membership; first launch
 may need **System Settings > Privacy & Security > Open Anyway**. Its downloaded-app
@@ -39,7 +43,7 @@ check also waits for the embedded chat to render in a real browser.
 
 For a fresh Apple Silicon Mac, send the standalone [setup.sh](setup.sh) file and
 run `bash ~/Downloads/setup.sh` in Terminal. It installs missing prerequisites,
-clones the implementation branch into `~/apertus-1.5-local`, builds CPU and Metal,
+clones `main` into `~/apertus-1.5-local`, builds CPU and Metal,
 verifies the model download and opens CPU chat. Complete any macOS/Homebrew
 installation prompts. Use `bash ~/Downloads/setup.sh --no-start` to prepare before
 an offline session. See [docs/MACOS.md](docs/MACOS.md) for logs and Metal testing.

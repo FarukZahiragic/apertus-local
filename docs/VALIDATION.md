@@ -1,7 +1,8 @@
 # Native deployment validation
 
-Implementation and hardware acceptance are tracked separately. The native implementation PRs and unsigned-preview follow-up form a
-dependent stack; `main` is not changed until they are reviewed and merged.
+Implementation and hardware acceptance are tracked separately. Native deployment
+PRs #16–#24 are merged into `main`. Windows and broader compatibility work is in
+the follow-up PR; do not infer physical laptop validation from a build target.
 
 ## Recorded on 7–8 November 2026
 
@@ -19,7 +20,7 @@ dependent stack; `main` is not changed until they are reviewed and merged.
 | GitHub-hosted Apple M1 VM, 7 GB RAM, macOS 15 | Versioned Mac release candidate: build, extract, code seal, actual CPU and partial Metal inference through delivered launch scripts | pass in [release preparation](https://github.com/FarukZahiragic/apertus-local/actions/runs/42422097790); unsigned development artifact, no public Mac release |
 | GitHub-hosted Mac/Linux runners | Unsigned-preview implementation: 26 Python tests, five Node tests, native builds and actual model checks, including Linux browser rendering with external networking blocked | pass in [preview CI](https://github.com/FarukZahiragic/apertus-local/actions/runs/42478430452) |
 | GitHub-hosted Apple M1 VM, 7 GB RAM, macOS 15 | Public unsigned preview: first-open guide in ZIP, code-seal verification, actual CPU and eight-layer packed Metal inference through extracted app | pass in [preview release build](https://github.com/FarukZahiragic/apertus-local/actions/runs/42478427184); both document answers `Sarajevo` |
-| Linux verification of Mac release | ZIP SHA-256 and all 55 payload hashes, bundled first-open guide, Mach-O deployment target and anonymous release download | pass; macOS minimum 15.0.0; 19,633,339 bytes; SHA-256 `605e0283e02ede132838bd794ebf0f970780c96925bec3275aee149268ff3686` |
+| Linux verification of Mac release | ZIP SHA-256 and all 55 payload hashes, bundled first-open guide, CPU executable deployment target and anonymous release download | pass; CPU minimum 15.0.0, but the outer ARM64 applet was later found to require 15.8; 19,633,339 bytes; SHA-256 `605e0283e02ede132838bd794ebf0f970780c96925bec3275aee149268ff3686` |
 | GitHub-hosted Apple M1 VM, 7 GB RAM, macOS 15 | Portable CPU/Metal builds, relocated app packaging, real CPU and partial Metal inference (`GPU_LAYERS=8 LOAD_MODE=none`) | pass in [native CI](https://github.com/FarukZahiragic/apertus-local/actions/runs/42386944980); hosted VM is not a participant laptop |
 | GitHub-hosted Linux VM, only loopback networking | Fresh Apertus startup, embedded assets, streamed usage, document Q&A and rendered chat input/model in actual Chrome | pass in the same run |
 | Reference Linux laptop, actual Chrome | Render embedded chat input and model name through the DevTools pipe | pass; networking enabled during this local check |
@@ -52,8 +53,10 @@ hardware certification. Other Linux distributions require their own compatibilit
 check; CPU dispatch does not remove libc requirements.
 
 `v0.1.0-preview.2` adds the public [unsigned Apple Silicon Mac preview](https://github.com/FarukZahiragic/apertus-local/releases/tag/v0.1.0-preview.2).
-It targets macOS 15+, includes a first-open guide beside the app, and needs no
+Its outer ARM64 applet requires macOS 15.8+, includes a first-open guide beside the app, and needs no
 Apple Developer membership. It has an ad-hoc code seal and has not been notarized.
+New portable builds replace that host-provided applet with a native launcher
+targeting macOS 13.3 and scan every bundled Mach-O against that maximum minimum.
 The physical browser-download/Finder-opening rehearsal remains pending, as stated
 in the release notes and download page. This is separate from the completed
 physical Mac source/offline rehearsal and hosted delivered-runtime checks.

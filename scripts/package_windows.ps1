@@ -57,7 +57,19 @@ try {
         $RuntimeDirectory = ($candidates | Sort-Object FullName -Descending | Select-Object -First 1).FullName
     }
     if (-not $RuntimeDirectory -or -not (Test-Path $RuntimeDirectory)) { throw 'Visual C++ redistributable directory was not found' }
-    foreach ($library in @(Get-ChildItem (Join-Path $RuntimeDirectory '*.dll'))) { Copy-Item -LiteralPath $library.FullName -Destination $runtime }
+    $expectedMachine = 0x8664
+    if ($Architecture -eq 'arm64') { $expectedMachine = 0xAA64 }
+    foreach ($library in @(Get-ChildItem (Join-Path $RuntimeDirectory '*.dll'))) {
+        # Microsoft's ARM64 redistributable directory also contains an x64
+        # exception helper. Copy only DLLs for this native engine architecture.
+        $bytes = [IO.File]::ReadAllBytes($library.FullName)
+        $peOffset = [BitConverter]::ToInt32($bytes, 0x3C)
+        $machine = [BitConverter]::ToUInt16($bytes, $peOffset + 4)
+        if ($machine -eq $expectedMachine) { Copy-Item -LiteralPath $library.FullName -Destination $runtime }
+    }
+    foreach ($required in @('vcruntime140.dll', 'msvcp140.dll')) {
+        if (-not (Test-Path (Join-Path $runtime $required))) { throw "Missing native CRT DLL: $required" }
+    }
     Copy-Item (Join-Path $root 'packaging/MSVC-REDIST-NOTICE.txt') (Join-Path $stage 'licenses')
     if (@(Get-ChildItem (Join-Path $runtime 'ggml-cpu*.dll')).Count -eq 0) { throw 'Missing dynamically dispatched CPU backend DLLs' }
     $files = @{}
@@ -72,7 +84,7 @@ try {
     $sourceCommit = & git -C $root rev-parse HEAD
     $llamaCommit = & git -C $vendor rev-parse HEAD
     $manifest = @{ version=$Version; platform=$platform; source_commit=$sourceCommit; llama_commit=$llamaCommit;
-        minimum_powershell='5.1'; cpu_dispatch=$true; msvc_runtime='app-local'; signing='unsigned';
+        minimum_windows='10'; minimum_powershell='5.1'; cpu_dispatch=$true; msvc_runtime='app-local'; signing='unsigned';
         patches=$patches; files=$files }
     [IO.File]::WriteAllText((Join-Path $stage 'release.json'), ($manifest | ConvertTo-Json -Depth 5))
     & (Join-Path $runtime 'llama-server.exe') --version

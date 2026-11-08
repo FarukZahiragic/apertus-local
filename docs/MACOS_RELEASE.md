@@ -24,7 +24,10 @@ The [v0.1.0-preview.2 Mac download](https://github.com/FarukZahiragic/apertus-lo
 is public and available from the HF Space. Both [native CI](https://github.com/FarukZahiragic/apertus-local/actions/runs/42478430452)
 and the [unsigned release build](https://github.com/FarukZahiragic/apertus-local/actions/runs/42478427184)
 pass. The public download checksum, all 55 payload hashes, bundled first-open guide
-and macOS 15.0 deployment target were verified. The remaining physical Finder
+and CPU executable's macOS 15.0 deployment target were verified. The old applet
+wrapper was later found to require macOS 15.8; new packages compile a native
+wrapper targeting 13.3, as explained in [COMPATIBILITY.md](COMPATIBILITY.md).
+The remaining physical Finder
 rehearsal is labelled pending; no Apple credentials are needed to try this preview.
 
 ## Optional signing credentials
@@ -125,10 +128,9 @@ gh workflow run native.yml --repo FarukZahiragic/apertus-local \
   -f sign_macos_release=false
 ```
 
-Use `--ref main` after the implementation PRs merge. Dispatch of the registered
-native workflow on implementation branches has been verified while the PR stack is
-under review. If the web UI does not show its new inputs yet, use the CLI command
-above. No signing secrets are used by pull-request CI jobs.
+Deployment PRs #16–#24 are merged; use `--ref main` for merged code. An implementation
+branch can be selected while reviewing a new change. No signing secrets are used
+by pull-request CI jobs.
 
 In the GitHub UI, open **Actions > Native deployment checks > Run workflow**, select
 the implementation branch (or `main` after merge), enter the version, and leave
