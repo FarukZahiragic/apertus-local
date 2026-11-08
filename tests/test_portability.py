@@ -2,6 +2,7 @@
 import hashlib
 import http.server
 import os
+import shutil
 from pathlib import Path
 import subprocess
 import socketserver
@@ -80,6 +81,30 @@ class PortabilityTests(unittest.TestCase):
             self.assertIn('checksum mismatch', result.stderr)
             self.assertFalse((Path(directory) / 'fixture.gguf').exists())
             self.assertFalse((Path(directory) / 'fixture.gguf.download-lock').exists())
+
+    def test_encoder_download_ignores_language_model_overrides(self):
+        with tempfile.TemporaryDirectory(prefix='apertus encoder ') as directory:
+            root = Path(directory)
+            (root/'scripts').mkdir(); (root/'config').mkdir()
+            for script in ['get_model.sh', 'platform.sh']:
+                shutil.copy2(ROOT/'scripts'/script, root/'scripts'/script)
+            digest = hashlib.sha256(PAYLOAD).hexdigest()
+            (root/'config/multimodal.env').write_text(
+                f'APERTUS_MODEL_FILE=encoder.gguf\nAPERTUS_MODEL_SHA256={digest}\n'
+                f'APERTUS_MODEL_BYTES={len(PAYLOAD)}\nAPERTUS_MODEL_REPO=fixture\n'
+                f'APERTUS_MODEL_REVISION=fixture\nAPERTUS_MODEL_URL=http://127.0.0.1:{self.server.server_port}/encoder\n')
+            env = dict(os.environ, MODELS_DIR=str(root/'models'), MODEL_URL='http://127.0.0.1:1/wrong',
+                       MODEL_SHA256='0'*64, MODEL_BYTES='1', MODEL_REVISION='wrong')
+            env.pop('MMPROJ_URL', None)
+            command = [BASH, str(root/'scripts/get_model.sh'), '--multimodal']
+            result = subprocess.run(command, env=env, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual((root/'models/encoder.gguf').read_bytes(), PAYLOAD)
+            count = RangeServer.requests
+            env['MMPROJ_URL'] = 'http://127.0.0.1:1/offline'
+            result = subprocess.run(command, env=env, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(RangeServer.requests, count)
 
     def test_completed_partial_recovers_without_network(self):
         with tempfile.TemporaryDirectory() as directory:

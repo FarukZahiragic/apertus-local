@@ -12,11 +12,13 @@ function FreePort {
 $temporary = Join-Path ([IO.Path]::GetTempPath()) ('apertus windows test ' + [Guid]::NewGuid().ToString('N'))
 $children = @()
 $names = @('PORT','MODELS_DIR','APERTUS_STATE_DIR','MODEL','MODEL_SHA256','MODEL_URL','BACKEND','THREADS','CTX','STARTUP_TIMEOUT',
+    'MULTIMODAL','MMPROJ','MMPROJ_SHA256','MMPROJ_URL','IMAGE_MAX_TOKENS',
     'APERTUS_FIXTURE_SOURCE','APERTUS_FIXTURE_ARGUMENTS','APERTUS_FIXTURE_CORRUPT','APERTUS_FIXTURE_REQUESTS',
     'APERTUS_FIXTURE_COMPUTE_FAILURE','APERTUS_FIXTURE_START_FAILURE')
 $original=@{}
 foreach($name in $names) { $original[$name]=[Environment]::GetEnvironmentVariable($name); [Environment]::SetEnvironmentVariable($name,$null,'Process') }
 try {
+    $env:MULTIMODAL='0'
     foreach($directory in @('scripts/windows','config','runtime/cpu/bin','models','state')) { [IO.Directory]::CreateDirectory((Join-Path $temporary $directory)) | Out-Null }
     Copy-Item (Join-Path $root 'scripts/windows/*') (Join-Path $temporary 'scripts/windows')
     $fixture = Join-Path $temporary 'runtime/cpu/bin/llama-server.exe'
@@ -96,6 +98,29 @@ try {
     Assert ($first.WaitForExit(30000)) 'Owner did not exit after Stop'
     Assert (-not (Test-Path (Join-Path $env:APERTUS_STATE_DIR "port-$env:PORT.lock"))) 'Lock was not released'
     Write-Host 'PASS: native argument quoting, exclusive ownership and owned stop'
+    $mmDestination=Join-Path $env:MODELS_DIR 'encoder.gguf'
+    [IO.File]::WriteAllBytes($mmDestination,$source)
+    [IO.File]::WriteAllText((Join-Path $temporary 'config/multimodal.env'),
+        ($configText.Replace('fixture.gguf','encoder.gguf') + "APERTUS_MODEL_URL=http://127.0.0.1:1/encoder`n"))
+    $env:MULTIMODAL='1'; $env:IMAGE_MAX_TOKENS='512'
+    $visual=Launch 'multimodal'; $children += $visual
+    $ready=$false
+    for($i=0;$i -lt 300;$i++) {
+        if((Test-Path (Join-Path $temporary 'multimodal.log')) -and (Get-Content (Join-Path $temporary 'multimodal.log') -Raw) -match 'Ready:') { $ready=$true; break }
+        if($visual.HasExited) { break }
+        Start-Sleep -Milliseconds 100
+    }
+    Assert $ready 'Multimodal fixture failed to start from verified cached encoders'
+    $mmArguments=[IO.File]::ReadAllLines($env:APERTUS_FIXTURE_ARGUMENTS)
+    Assert ($mmArguments -contains '--mmproj') 'Missing multimodal flag'
+    Assert ($mmArguments -contains $mmDestination) 'Encoder path with spaces changed'
+    Assert ($mmArguments -contains '--no-mmproj-offload') 'Encoders must work without a GPU'
+    Assert ($mmArguments[[array]::IndexOf($mmArguments,'--image-max-tokens')+1] -eq '512') 'Image budget changed'
+    $mmStop=Launch 'multimodal-stop' '-Stop'; $children += $mmStop
+    Assert ($mmStop.WaitForExit(30000) -and $mmStop.ExitCode -eq 0) 'Multimodal stop failed'
+    Assert ($visual.WaitForExit(30000) -and $visual.ExitCode -eq 0) 'Multimodal owner failed'
+    $env:MULTIMODAL='0'
+    Write-Host 'PASS: independent cached encoder verification, CPU image budget and multimodal lifecycle'
     [IO.File]::WriteAllText($env:APERTUS_FIXTURE_COMPUTE_FAILURE,'fail')
     $failure=Launch 'compute'; $children += $failure
     Assert ($failure.WaitForExit(30000)) 'Compute failure did not stop startup'

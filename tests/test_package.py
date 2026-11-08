@@ -24,10 +24,11 @@ class PackageTests(unittest.TestCase):
             for name in ['package_release.sh','platform.sh','get_model.sh','serve.sh','launch.sh','runtime_requirements.py']:
                 shutil.copy2(ROOT/'scripts'/name, root/'scripts'/name)
             shutil.copy2(ROOT/'config/model.env', root/'config/model.env')
+            shutil.copy2(ROOT/'config/multimodal.env', root/'config/multimodal.env')
             for source in (ROOT/'packaging').iterdir():
                 if source.is_file():
                     shutil.copy2(source, root/'packaging'/source.name)
-            for name in ['Start.command','Stop.command','Start.sh','Stop.sh']:
+            for name in ['Start.command','Stop.command','Start.sh','Stop.sh','Start-Text.sh','Start-Text.command']:
                 shutil.copy2(ROOT/name, root/name)
             vendor = root/'vendor/llama.cpp'
             vendor.mkdir(parents=True)

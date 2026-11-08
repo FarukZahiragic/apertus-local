@@ -15,6 +15,9 @@
 #        THINKING 1 to let Apertus deliberate before answering (default: 0, off)
 #        LLAMA_CPP_DIR checkout location (default: vendor/llama.cpp)
 #        BUILD_DIR build location (default: $LLAMA_CPP_DIR/build)
+#        MMPROJ   image/audio encoder GGUF (launch.sh downloads it automatically)
+#        MULTIMODAL 0 for text-only; 1 requires MMPROJ
+#        IMAGE_MAX_TOKENS image detail budget, 256 by default (256..1024)
 # CPU-only by default. For Iris Xe use BUILD_DIR=vendor/llama.cpp/build-vulkan
 # and pass -- --n-gpu-layers 99 (after building with setup_llamacpp.sh --vulkan).
 set -euo pipefail
@@ -57,6 +60,22 @@ echo "OpenAI API: http://$HOST:$PORT/v1  (any API key)"
 echo "Runtime:    $AP_BACKEND; $THREADS threads; context $CTX; thinking $THINKING; GPU layers $AP_GPU_LAYERS"
 echo "Build:      $BUILD_DIR"
 echo "Load mode:  $LOAD_MODE"
+mm_args=()
+case "${MULTIMODAL:-${MMPROJ:+1}}" in
+  ''|0|1) ;;
+  *) echo 'error: MULTIMODAL must be 0 or 1' >&2; exit 1 ;;
+esac
+if [[ "${MULTIMODAL:-${MMPROJ:+1}}" == 1 ]]; then
+  [[ -f "${MMPROJ:-}" ]] || { echo 'error: encoder missing; use launch.sh or set MMPROJ' >&2; exit 1; }
+  image_tokens="${IMAGE_MAX_TOKENS:-256}"
+  [[ "$image_tokens" =~ ^[1-9][0-9]*$ ]] && ((image_tokens >= 256 && image_tokens <= 1024)) || {
+    echo 'error: IMAGE_MAX_TOKENS must be between 256 and 1024' >&2; exit 1;
+  }
+  mm_args=(--mmproj "$MMPROJ" --no-mmproj-offload --image-min-tokens 256 --image-max-tokens "$image_tokens")
+  echo "Image/audio: enabled; image budget $image_tokens tokens; CPU encoders"
+else
+  echo 'Image/audio: disabled (text-only)'
+fi
 
 # The chat template comes from the GGUF (Apertus 1.5 format, rendered with jinja).
 # One slot: a single local user gets the whole context and all cores.
@@ -72,4 +91,5 @@ exec "$SERVER" \
   --jinja \
   --chat-template-kwargs "{\"enable_thinking\":$enable_thinking}" \
   --offline \
+  "${mm_args[@]+"${mm_args[@]}"}" \
   "$@"
