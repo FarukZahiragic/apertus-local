@@ -1,0 +1,31 @@
+{
+  "version": null,
+  "model": {
+    "repo": "faruk-zahiragic/Apertus-v1.5-8B-GGUF",
+    "revision": "c40df29efdea4f0dd59ccf73635574918405561b",
+    "url": "https://huggingface.co/faruk-zahiragic/Apertus-v1.5-8B-GGUF/resolve/c40df29efdea4f0dd59ccf73635574918405561b/apertus-v1.5-8b-Q4_K_M.gguf",
+    "filename": "apertus-v1.5-8b-Q4_K_M.gguf",
+    "bytes": 5656804512,
+    "sha256": "e8ddf308abe64441725dcdbfc32e7c89f2b52b94e90f24c30236694f0a90eb8c"
+  },
+  "platforms": {
+    "macos-arm64": {
+      "available": false,
+      "url": null,
+      "checksum_url": null,
+      "status": "Mac testing and signing pending"
+    },
+    "linux-x86_64": {
+      "available": false,
+      "url": null,
+      "checksum_url": null,
+      "status": "Release validation in progress"
+    },
+    "windows-x86_64": {
+      "available": false,
+      "url": null,
+      "checksum_url": null,
+      "status": "Windows package not yet available"
+    }
+  }
+}
