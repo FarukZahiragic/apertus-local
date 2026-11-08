@@ -33,7 +33,7 @@ The repository does not yet configure a public GGUF download location.
 ## CPU baseline
 
 ```bash
-scripts/serve.sh
+BACKEND=cpu scripts/serve.sh
 ```
 
 Open http://127.0.0.1:8080/. Keep thinking off, one slot, a 4K context, no draft.
@@ -44,12 +44,18 @@ to verify a fresh offline start. See [OFFLINE.md](OFFLINE.md) for acceptance che
 
 ```bash
 scripts/setup_llamacpp.sh --metal
-BUILD_DIR=vendor/llama.cpp/build-metal scripts/serve.sh -- --n-gpu-layers 99
+BACKEND=metal scripts/serve.sh
 ```
 
 Metal uses the integrated GPU. CPU support does not require Metal. Check the server
 log for actual offloaded layers and coherent answers before comparing throughput.
 Mac inference and performance remain pending until measured on the actual hardware.
+`BACKEND=auto` keeps CPU until you explicitly set `APERTUS_METAL_VALIDATED=1`
+after the Apertus offline, quality and performance checks pass on your machine.
+Then auto mode selects an enumerated Metal device, or reports CPU fallback.
+Explicit `BACKEND=metal` fails if Metal is unavailable. `THREADS`, `CTX` and
+`BUILD_DIR` always allow manual overrides. Default CPU threads use the Mac's
+performance-core count where available, falling back to physical cores.
 
 ## Record a comparable CPU/Metal run
 
