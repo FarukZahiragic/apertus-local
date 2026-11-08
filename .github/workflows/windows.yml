@@ -47,7 +47,9 @@ jobs:
           }
           if($bad) { throw 'PowerShell syntax errors' }
       - name: Verify downloads, native arguments and owned process lifecycle
-        run: tests/test_windows.ps1
+        run: |
+          tests/test_windows_hash.ps1
+          tests/test_windows.ps1
       - name: Build portable native CPU runtime
         run: scripts/setup_windows.ps1 -Architecture '${{ matrix.arch }}'
       - name: Package and verify relocated runtime

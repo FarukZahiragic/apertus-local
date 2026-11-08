@@ -1,8 +1,8 @@
 # Native deployment validation
 
 Implementation and hardware acceptance are tracked separately. Native deployment
-PRs #16–#24 are merged into `main`. Windows and broader compatibility work is in
-the follow-up PR; do not infer physical laptop validation from a build target.
+PRs #16–#25 are merged into `main`. Do not infer physical laptop validation
+from a build target.
 
 ## Recorded on 7–8 November 2026
 
@@ -27,7 +27,7 @@ the follow-up PR; do not infer physical laptop validation from a build target.
 
 The functional report is generated under ignored `dist/validation-reference-laptop.json`.
 The short Qwen throughput regression run is recorded in `benchmarks/results.md`.
-The complete Python fixture suite now contains 26 passing tests, alongside seven
+The complete Python fixture suite now contains 26 passing tests, alongside eight
 passing Node download-page and browser-cleanup tests.
 Functional request checks are not performance benchmarks. The owner informally
 observed generation in the thirty-something tokens/s range on the friend's Mac,
@@ -88,6 +88,46 @@ A parallel PR run passed the Linux model checks but Chrome exceeded the initial
 passed the same browser assertion. The harness now gives only its first command
 a bounded 60-second cold-start allowance; the rendered chat input/model checks
 remain unchanged.
+
+## Friend's Windows report after preview.3
+
+The owner relayed a test on a friend's own Windows machine. The original launcher
+failed at `Get-FileHash`. The friend preserved the original and applied a local
+fix, then reported that package/model checksums, chat, follow-up context,
+streaming, stop/restart and cached-model reuse passed. The exact exception and
+local patch have not been supplied, so the original failure's cause remains
+unconfirmed and this is not an unmodified-package installation pass.
+
+Browser automation could not establish the local URL, so rendered browser chat
+remains unverified on that machine. The reported CPU generation rate of roughly
+4–6 tokens/s is informal: CPU, RAM, Windows/PowerShell versions and generation
+settings were not provided, and no benchmark row is inferred from it.
+
+The checksum follow-up uses .NET's streaming SHA-256 API directly, removing the
+launcher's dependency on `Get-FileHash` command discovery without skipping hash
+verification. A regression test makes that command unavailable in module scope;
+the original implementation fails, and the replacement passes known hash vectors,
+literal/relative paths, missing-file rejection, mismatched-checksum rejection and
+file-handle cleanup. Native Windows checks test it under PowerShell 5.1 on x64
+and ARM64 before publishing an updated archive. Confirmation against the friend's
+exact error/patch remains separate.
+
+The [Windows preview.4 release checks](https://github.com/FarukZahiragic/apertus-local/actions/runs/42509994265)
+pass on both architectures under Windows PowerShell 5.1, including the new
+checksum regression, existing download/lifecycle fixtures and actual-model checks
+from the extracted archives. Both document answers are `Sarajevo`; each report
+records three repeated requests with server outbound networking blocked. These
+are hosted-runner checks, not a reproduction of the friend's exact exception.
+
+The two preview.4 ZIPs are built from `7db04e6bf0347ba0c88cd1aff0c582f473088741`.
+All 88 payload hashes, both archive hashes and native PE dependencies/architectures
+were verified before publication. Mac/Linux stay on their tested preview.3
+archives; the download page displays each platform's actual version.
+
+| Windows preview.4 ZIP | Bytes | SHA-256 |
+| --- | --- | --- |
+| ARM64 | 11,390,884 | `664538e5bb9b52d09ac0413ac95aa28d24401da9637fa777123ea01efc79e1e4` |
+| Intel/AMD x64 | 11,745,878 | `bb67c41c0599dc5ad1a89094a6c160781da807f4d4e86df1fe8ffc47de3fdaae` |
 
 ## Still pending
 

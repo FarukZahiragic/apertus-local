@@ -1,5 +1,5 @@
 {
-  "version": "v0.1.0-preview.3",
+  "version": "v0.1.0-preview.4",
   "model": {
     "repo": "faruk-zahiragic/Apertus-v1.5-8B-GGUF",
     "revision": "c40df29efdea4f0dd59ccf73635574918405561b",
@@ -15,30 +15,34 @@
       "checksum_url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.3/apertus-local-v0.1.0-preview.3-macos-arm64.zip.sha256",
       "minimum_os": "macOS 13.3 or later",
       "status": "Unsigned Apple Silicon preview. CPU and partial Metal inference checked on a hosted Mac; physical first-open rehearsal remains separate.",
-      "signing": "unsigned"
+      "signing": "unsigned",
+      "version": "v0.1.0-preview.3"
     },
     "linux-x86_64": {
       "available": true,
       "url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.3/apertus-local-v0.1.0-preview.3-linux-x86_64.tar.gz",
       "checksum_url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.3/apertus-local-v0.1.0-preview.3-linux-x86_64.tar.gz.sha256",
       "minimum_os": "glibc 2.34+, GLIBCXX 3.4.30+ and CXXABI 1.3.13+",
-      "status": "Same archive checked on Ubuntu 22.04, Ubuntu 24.04 and Debian 12; local inference checked with networking disabled."
+      "status": "Same archive checked on Ubuntu 22.04, Ubuntu 24.04 and Debian 12; local inference checked with networking disabled.",
+      "version": "v0.1.0-preview.3"
     },
     "windows-x86_64": {
       "available": true,
-      "url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.3/apertus-local-v0.1.0-preview.3-windows-x86_64.zip",
-      "checksum_url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.3/apertus-local-v0.1.0-preview.3-windows-x86_64.zip.sha256",
+      "url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.4/apertus-local-v0.1.0-preview.4-windows-x86_64.zip",
+      "checksum_url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.4/apertus-local-v0.1.0-preview.4-windows-x86_64.zip.sha256",
       "minimum_os": "64-bit Windows 10 or later with Windows PowerShell 5.1",
-      "status": "Intel / AMD preview. Actual model and extracted launcher checked on a native x64 runner with server outbound networking blocked.",
-      "signing": "unsigned"
+      "status": "Updated Windows launcher. Actual model and extracted launcher checked on a native x64 runner with server outbound networking blocked.",
+      "signing": "unsigned",
+      "version": "v0.1.0-preview.4"
     },
     "windows-arm64": {
       "available": true,
-      "url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.3/apertus-local-v0.1.0-preview.3-windows-arm64.zip",
-      "checksum_url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.3/apertus-local-v0.1.0-preview.3-windows-arm64.zip.sha256",
+      "url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.4/apertus-local-v0.1.0-preview.4-windows-arm64.zip",
+      "checksum_url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.4/apertus-local-v0.1.0-preview.4-windows-arm64.zip.sha256",
       "minimum_os": "ARM64 Windows 10 or later with Windows PowerShell 5.1",
-      "status": "ARM / Snapdragon preview. Actual model and extracted launcher checked on a native ARM64 runner with server outbound networking blocked.",
-      "signing": "unsigned"
+      "status": "Updated Windows launcher. Actual model and extracted launcher checked on a native ARM64 runner with server outbound networking blocked.",
+      "signing": "unsigned",
+      "version": "v0.1.0-preview.4"
     }
   }
 }

@@ -27,7 +27,21 @@ function Get-ApertusConfig {
 
 function Get-ApertusHash {
     param([string]$Path)
-    return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+    # Use the framework directly so checksum verification does not depend on
+    # cmdlet/module discovery in the participant's PowerShell environment.
+    # ComputeHash(Stream) keeps memory bounded for the multi-gigabyte GGUF.
+    $stream = $null; $algorithm = $null
+    try {
+        $nativePath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Path)
+        $stream = [IO.File]::OpenRead($nativePath)
+        $algorithm = [Security.Cryptography.SHA256]::Create()
+        return [BitConverter]::ToString($algorithm.ComputeHash($stream)).Replace('-', '').ToLowerInvariant()
+    } catch {
+        throw "SHA-256 verification failed for '$Path': $($_.Exception.Message)"
+    } finally {
+        if ($algorithm) { $algorithm.Dispose() }
+        if ($stream) { $stream.Dispose() }
+    }
 }
 
 function Test-ApertusModel {
