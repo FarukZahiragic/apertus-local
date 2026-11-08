@@ -258,6 +258,7 @@ class WindowsBootstrapTests(BootstrapFixture):
         self.package = self.root / 'runtime.zip'
         module = '''function Invoke-Apertus {
     param([string]$Root, [switch]$GetModel)
+    if ($env:MULTIMODAL -ne '0') { throw 'Bootstrap must not fetch optional encoders' }
     [IO.File]::AppendAllText($env:BOOTSTRAP_TEST_CALLS, "model:$env:MODELS_DIR`n")
 }
 '''
@@ -282,6 +283,7 @@ class WindowsBootstrapTests(BootstrapFixture):
         self.assertTrue((self.data / 'Stop.cmd').exists())
         self.assertIn('model:' + str(self.data / 'models'), self.calls.read_text())
         self.assertIn('Sysnative', (self.data / 'Start.cmd').read_text())
+        self.assertIn("$env:MULTIMODAL = '0'", (self.data / 'start.ps1').read_text(encoding='utf-8-sig'))
         self.assertIn("bootstrap''s", (self.data / 'start.ps1').read_text(encoding='utf-8-sig'))
 
     def test_windows_reuses_verified_runtime(self):

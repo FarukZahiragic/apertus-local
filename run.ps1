@@ -101,6 +101,7 @@ if (-not $env:MODEL -and -not $env:MODELS_DIR) {
     }
 }
 $env:MODELS_DIR = $models
+$env:MULTIMODAL = '0'
 if (-not $env:APERTUS_STATE_DIR) { $env:APERTUS_STATE_DIR = Join-Path $data 'state' }
 if ($env:MODEL -and -not $env:MODEL_SHA256) { $env:MODEL_SHA256 = 'e8ddf308abe64441725dcdbfc32e7c89f2b52b94e90f24c30236694f0a90eb8c' }
 function Quote-BootstrapLiteral {
@@ -108,7 +109,7 @@ function Quote-BootstrapLiteral {
     return "'" + $Value.Replace("'", "''") + "'"
 }
 $start = Join-Path $data 'start.ps1'
-$lines = @('$ErrorActionPreference = ''Stop''')
+$lines = @('$ErrorActionPreference = ''Stop''', '$env:MULTIMODAL = ''0''')
 foreach ($name in @('MODELS_DIR', 'APERTUS_STATE_DIR', 'MODEL', 'MODEL_SHA256')) {
     $value = [Environment]::GetEnvironmentVariable($name)
     if ($value) { $lines += ('if (-not $env:{0}) {{ $env:{0} = {1} }}' -f $name, (Quote-BootstrapLiteral $value)) }
