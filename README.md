@@ -1,10 +1,9 @@
 # apertus-local
 
-This feature branch contains the **image/audio candidate** for Windows, Apple
-Silicon Mac and Linux. It reuses the existing language model and adds separately
-verified encoders. The public Hugging Face downloads remain the text-only release.
-See [candidate setup and local testing](docs/MULTIMODAL.md). Merge is pending the
-project owner's local test.
+The source checkout also includes an **image/audio candidate** for Windows,
+Apple Silicon Mac and Linux with separately verified encoders. The public Hugging
+Face downloads and one-command setup below use the text-only release.
+See [candidate setup and local testing](docs/MULTIMODAL.md).
 
 Run [Apertus-v1.5-8B](https://huggingface.co/swiss-ai/Apertus-v1.5-8B) on a machine
 you control, with no dedicated GPU required and no internet during inference, using
@@ -25,7 +24,29 @@ A split onto a small added GPU is outside this repository. On the reference
 laptop the fair Q4_K_M run is about 5.9 tokens/s generation and 23 tokens/s
 prompt processing (the 1 November 2026 row in `benchmarks/results.md`).
 
-## Participant launcher
+## One-command local chat
+
+On **Apple Silicon macOS or x86_64 Linux**, paste this into Terminal:
+
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/FarukZahiragic/apertus-local/main/run.sh)"
+```
+
+On **Windows x64 or ARM64**, paste this into PowerShell:
+
+```powershell
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/FarukZahiragic/apertus-local/main/run.ps1)))
+```
+
+The command gets a checksum-verified native runtime if missing (about 12 MB on
+Windows, 17–20 MB on Linux/Mac), reuses or downloads the 5.3 GiB model, and opens
+local chat. It installs no compiler, Python, Homebrew, or repository checkout.
+The Mac path runs the server directly in Terminal, without opening the app wrapper.
+Keep the terminal open; Ctrl+C stops chat. The command prints a local entry point
+for later starts, including offline. See [docs/ONE_COMMAND.md](docs/ONE_COMMAND.md)
+for preparation without starting, existing model/runtime reuse, and OS requirements.
+
+## Downloadable launcher
 
 Download the matching archive from the [Hugging Face download page](https://huggingface.co/spaces/faruk-zahiragic/apertus-local)
 and extract it. Windows users double-click `Start.cmd`, Mac users open
@@ -49,7 +70,7 @@ check also waits for the embedded chat to render in a real browser.
 
 ## Quickstart
 
-For a fresh Apple Silicon Mac, send the standalone [setup.sh](setup.sh) file and
+For a Mac development checkout, send the standalone [setup.sh](setup.sh) file and
 run `bash ~/Downloads/setup.sh` in Terminal. It installs missing prerequisites,
 clones `main` into `~/apertus-1.5-local`, builds CPU and Metal,
 verifies the model download and opens CPU chat. Complete any macOS/Homebrew

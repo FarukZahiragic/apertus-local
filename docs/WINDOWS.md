@@ -9,6 +9,11 @@ Plan for 16 GB RAM and space for the 5.3 GiB model plus the small runtime.
 
 ## Participants
 
+Use the [one-command PowerShell setup](ONE_COMMAND.md) to download the matching
+native runtime, reuse or prepare the model and open local chat automatically.
+It leaves `Start.cmd` and `Stop.cmd` in `%LOCALAPPDATA%\Apertus Local` for later
+starts, including offline. It needs no Python, Git or compiler installation.
+
 Download the matching Windows ZIP from the HF Space, extract the whole archive,
 and double-click `Start.cmd`. Keep its window open. The first start resumes any
 partial model download, verifies the pinned SHA-256, starts llama-server on

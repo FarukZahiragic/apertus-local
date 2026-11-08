@@ -1,6 +1,12 @@
 # Workshop packages
 
-The participant path is: download a native package, open its launcher, download the
+The shortest participant path is now a single Terminal/PowerShell command from
+[ONE_COMMAND.md](ONE_COMMAND.md). It obtains the native runtime automatically,
+downloads only missing weights and opens chat. On Mac it runs the server directly
+from Terminal without the app wrapper. It retains a local entry point for offline
+starts and requires no compiler, Python, Homebrew or repository checkout.
+
+The downloadable alternative is: download a native package, open its launcher, download the
 GGUF once, then chat locally. Preparation needs internet; inference does not. The
 native runtime serves its embedded UI at `http://127.0.0.1:8080/`.
 
