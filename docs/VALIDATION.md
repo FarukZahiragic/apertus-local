@@ -1,8 +1,8 @@
 # Native deployment validation
 
 Implementation and hardware acceptance are tracked separately. Native deployment
-PRs #16–#24 are merged into `main`. Windows and broader compatibility work is in
-the follow-up PR; do not infer physical laptop validation from a build target.
+PRs #16–#25 are merged into `main`. Do not infer physical laptop validation
+from a build target.
 
 ## Recorded on 7–8 November 2026
 
@@ -88,6 +88,29 @@ A parallel PR run passed the Linux model checks but Chrome exceeded the initial
 passed the same browser assertion. The harness now gives only its first command
 a bounded 60-second cold-start allowance; the rendered chat input/model checks
 remain unchanged.
+
+## Friend's Windows report after preview.3
+
+The owner relayed a test on a friend's own Windows machine. The original launcher
+failed at `Get-FileHash`. The friend preserved the original and applied a local
+fix, then reported that package/model checksums, chat, follow-up context,
+streaming, stop/restart and cached-model reuse passed. The exact exception and
+local patch have not been supplied, so the original failure's cause remains
+unconfirmed and this is not an unmodified-package installation pass.
+
+Browser automation could not establish the local URL, so rendered browser chat
+remains unverified on that machine. The reported CPU generation rate of roughly
+4–6 tokens/s is informal: CPU, RAM, Windows/PowerShell versions and generation
+settings were not provided, and no benchmark row is inferred from it.
+
+The checksum follow-up uses .NET's streaming SHA-256 API directly, removing the
+launcher's dependency on `Get-FileHash` command discovery without skipping hash
+verification. A regression test makes that command unavailable in module scope;
+the original implementation fails, and the replacement passes known hash vectors,
+literal/relative paths, missing-file rejection, mismatched-checksum rejection and
+file-handle cleanup. Native Windows checks test it under PowerShell 5.1 on x64
+and ARM64 before publishing an updated archive. Confirmation against the friend's
+exact error/patch remains separate.
 
 ## Still pending
 

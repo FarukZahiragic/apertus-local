@@ -15,6 +15,10 @@ partial model download, verifies the pinned SHA-256, starts llama-server on
 `127.0.0.1:8080`, checks one actual decode, and opens local chat. Subsequent starts
 reuse the verified model without contacting HF. Stop with Control+C or `Stop.cmd`.
 
+Checksum verification uses the built-in .NET streaming SHA-256 implementation,
+so the launcher does not need to discover the `Get-FileHash` PowerShell command.
+Files that cannot be read or fail verification stop startup with an error.
+
 The package is unsigned. Its PowerShell invocation applies an execution-policy
 option only to that process, without changing saved machine/user policy. Managed
 organization policy still takes precedence; ask the administrator if installation
@@ -77,6 +81,10 @@ Windows laptop measurements and fresh-user installation remain distinct checks.
 resumption, corruption, offline cache recovery, paths with spaces, JSON argument
 quoting, ownership, stop, compute failure and occupied-port preservation. No model
 quality claim is inferred from fixture results.
+
+`tests/test_windows_hash.ps1` independently checks known SHA-256 vectors and
+literal/relative paths with `Get-FileHash` deliberately unavailable. Missing or
+incorrect files are rejected, and file handles are released after hashing.
 
 The actual model check extracts the delivered ZIP to a separate path, blocks
 outbound networking for that server process with Windows Firewall, and validates
