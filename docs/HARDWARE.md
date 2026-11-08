@@ -1,5 +1,9 @@
 # Hardware
 
+Apple Silicon deployment is documented in [MACOS.md](MACOS.md). Use
+`scripts/platform.sh` for hardware labels on macOS and Linux. Mac performance is
+unmeasured; a newer memory generation alone does not establish an inference speed.
+
 ## Target laptop (the "regular laptop" reference)
 
 | Part | Spec |

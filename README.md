@@ -1,7 +1,7 @@
 # apertus-local
 
 Run [Apertus-v1.5-8B](https://huggingface.co/swiss-ai/Apertus-v1.5-8B) on a machine
-you control, with no GPU and no internet during inference, using
+you control, with no dedicated GPU required and no internet during inference, using
 [llama.cpp](https://github.com/ggml-org/llama.cpp). The use is private chat and
 questions about a document: the data stays on that machine, including when
 connectivity is poor.
@@ -20,6 +20,10 @@ laptop the fair Q4_K_M run is about 5.9 tokens/s generation and 23 tokens/s
 prompt processing (the 1 November 2026 row in `benchmarks/results.md`).
 
 ## Quickstart
+
+Apple Silicon: follow [docs/MACOS.md](docs/MACOS.md) to build natively and compare
+CPU with Metal. The same GGUF works on both platforms; Mac performance is not yet
+measured. CPU serving remains supported.
 
 Prerequisites (Ubuntu 24.04):
 
@@ -79,6 +83,7 @@ scripts/bench_matrix.sh               # full matrix, about 35 to 45 minutes
 
 It compares 4 vs 8 threads, Q4_K_M / Q4_0 / IQ4_XS (whichever files are in `models/`),
 F16 vs Q8_0 KV cache, and filled contexts, and writes rows to
+[benchmarks/results.md](benchmarks/results.md). Earlier tuning rows remain in
 [benchmarks/cpu-tuning.md](benchmarks/cpu-tuning.md). For the Iris Xe iGPU, build once
 with `scripts/setup_llamacpp.sh --vulkan` (see the script header for packages) and add
 `--vulkan`. With 11 GB of free disk, test one extra quant file at a time.

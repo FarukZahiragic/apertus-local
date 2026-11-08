@@ -14,6 +14,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/scripts/platform.sh"
 LLAMA_CPP_DIR="${LLAMA_CPP_DIR:-$REPO_ROOT/vendor/llama.cpp}"
 RESULTS="${RESULTS:-$REPO_ROOT/benchmarks/results.md}"
 MODEL="${MODEL:-$REPO_ROOT/models/apertus-v1.5-8b-Q4_K_M.gguf}"
@@ -65,8 +66,7 @@ for model in "$MODEL" "$DRAFT"; do
 done
 
 if [[ -z "$hw" ]]; then
-  cpu="$(awk -F': ' '/^model name/ { print $2; exit }' /proc/cpuinfo)"
-  if [[ "$cpu" == *"i5-1135G7"* ]]; then hw="laptop i5-1135G7"; else hw="$cpu, $(nproc) threads"; fi
+  hw="$(ap_hardware)"
 fi
 
 run_dir="$(mktemp -d "${TMPDIR:-/tmp}/apertus-bench-spec.XXXXXX")"

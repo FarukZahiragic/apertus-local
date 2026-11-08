@@ -18,6 +18,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/scripts/platform.sh"
 LLAMA_CPP_DIR="${LLAMA_CPP_DIR:-$REPO_ROOT/vendor/llama.cpp}"
 RESULTS="${RESULTS:-$REPO_ROOT/benchmarks/results.md}"
 BUILD_DIR="${BUILD_DIR:-$LLAMA_CPP_DIR/build}"
@@ -47,13 +48,7 @@ done
 [[ -x "$BENCH" ]] || { echo "error: $BENCH missing; run scripts/setup_llamacpp.sh" >&2; exit 1; }
 
 if [[ -z "$hw" ]]; then
-  cpu="$(awk -F': ' '/^model name/ { print $2; exit }' /proc/cpuinfo)"
-  mem_gb="$(awk '/^MemTotal/ { printf "%.0f", $2 / 1048576 }' /proc/meminfo)"
-  if [[ "$cpu" == *"i5-1135G7"* ]]; then
-    hw="laptop i5-1135G7"
-  else
-    hw="$cpu, $(nproc) threads, ${mem_gb} GB"
-  fi
+  hw="$(ap_hardware)"
 fi
 
 cmd=("$BENCH" -m "$model" -t "$threads" -p "$n_prompt" -n "$n_gen" -r "$reps" -o json "${extra[@]}")

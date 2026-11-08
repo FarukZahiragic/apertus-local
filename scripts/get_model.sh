@@ -1,41 +1,82 @@
 #!/usr/bin/env bash
-# Download one GGUF file from Hugging Face into models/ and verify its sha256.
-#
-# Usage: scripts/get_model.sh [HF_REPO FILE]
-#   default: Qwen/Qwen2.5-1.5B-Instruct-GGUF qwen2.5-1.5b-instruct-q4_k_m.gguf
-# Env:   HF_TOKEN    used for gated or private repos (optional)
-#        MODELS_DIR  destination directory (default: models/)
+# Download a GGUF, resume interruptions, verify SHA-256, then install atomically.
+# Usage: scripts/get_model.sh [--apertus | HF_REPO FILE]
+# Default: Qwen/Qwen2.5-1.5B-Instruct-GGUF qwen2.5-1.5b-instruct-q4_k_m.gguf
+# --apertus uses config/model.env, including the pinned checksum; a verified local
+# copy works without networking. Set APERTUS_MODEL_REPO or MODEL_URL for download.
+# Env: HF_TOKEN, MODELS_DIR, MODEL_URL, MODEL_REVISION, MODEL_SHA256, MODEL_BYTES.
 set -euo pipefail
-
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-HF_REPO="${1:-Qwen/Qwen2.5-1.5B-Instruct-GGUF}"
-FILE="${2:-qwen2.5-1.5b-instruct-q4_k_m.gguf}"
+source "$REPO_ROOT/scripts/platform.sh"
+case "${1:-}" in
+  -h|--help) sed -n '2,/^set -euo pipefail/{ /^set -euo pipefail/!p; }' "$0"; exit 0 ;;
+  --apertus)
+    [[ $# -eq 1 ]] || { echo 'error: --apertus takes no arguments' >&2; exit 1; }
+    source "$REPO_ROOT/config/model.env"
+    HF_REPO="$APERTUS_MODEL_REPO" FILE="$APERTUS_MODEL_FILE"
+    MODEL_SHA256="${MODEL_SHA256:-$APERTUS_MODEL_SHA256}"
+    MODEL_BYTES="${MODEL_BYTES:-$APERTUS_MODEL_BYTES}"
+    MODEL_REVISION="${MODEL_REVISION:-$APERTUS_MODEL_REVISION}"
+    ;;
+  *)
+    [[ $# -eq 0 || $# -eq 2 ]] || { echo 'error: provide HF_REPO FILE, or --apertus' >&2; exit 1; }
+    HF_REPO="${1:-Qwen/Qwen2.5-1.5B-Instruct-GGUF}"
+    FILE="${2:-qwen2.5-1.5b-instruct-q4_k_m.gguf}"
+    ;;
+esac
+[[ "$FILE" != */* && "$FILE" != .* ]] || { echo 'error: FILE must be a file name, without directories' >&2; exit 1; }
 MODELS_DIR="${MODELS_DIR:-$REPO_ROOT/models}"
-URL="https://huggingface.co/$HF_REPO/resolve/main/$FILE"
 DEST="$MODELS_DIR/$FILE"
-
-auth=()
-[[ -n "${HF_TOKEN:-}" ]] && auth=(-H "Authorization: Bearer $HF_TOKEN")
-
 mkdir -p "$MODELS_DIR"
-
-# For LFS files, Hugging Face returns the sha256 in the X-Linked-Etag header.
-expected="$(curl -sfI "${auth[@]}" "$URL" | tr -d '\r"' \
-  | awk 'tolower($1) == "x-linked-etag:" { print $2 }')" || {
-  echo "error: cannot access $URL (gated/private repo without HF_TOKEN, or wrong name?)" >&2
+expected="${MODEL_SHA256:-}"
+if [[ -n "$expected" ]] && [[ ! "$expected" =~ ^[a-fA-F0-9]{64}$ ]]; then
+  echo 'error: MODEL_SHA256 must be a 64-character SHA-256 digest' >&2; exit 1
+fi
+expected="$(printf '%s' "$expected" | tr 'A-F' 'a-f')"
+if [[ -f "$DEST" && -n "$expected" ]] && ap_verify "$DEST" "$expected"; then
+  echo "already present and verified: $DEST"; exit 0
+fi
+if [[ -z "${MODEL_URL:-}" && -z "$HF_REPO" ]]; then
+  echo "error: copy $FILE into $MODELS_DIR, or set APERTUS_MODEL_REPO / MODEL_URL (see README.md)" >&2
   exit 1
+fi
+URL="${MODEL_URL:-https://huggingface.co/$HF_REPO/resolve/${MODEL_REVISION:-main}/$FILE}"
+auth=()
+[[ -z "${HF_TOKEN:-}" ]] || auth=(-H "Authorization: Bearer $HF_TOKEN")
+if [[ -z "$expected" ]]; then
+  expected="$(curl -sfI "${auth[@]+"${auth[@]}"}" "$URL" | tr -d '\r"' | awk 'tolower($1) == "x-linked-etag:" {print $2}')" || {
+    echo 'error: cannot access model; check the repository name, access terms, and HF_TOKEN' >&2; exit 1;
+  }
+  [[ "$expected" =~ ^[a-fA-F0-9]{64}$ ]] || {
+    echo 'error: no SHA-256 published; provide MODEL_SHA256 explicitly' >&2; exit 1;
+  }
+fi
+if [[ -f "$DEST" ]] && ap_verify "$DEST" "$expected"; then
+  echo "already present and verified: $DEST"; exit 0
+fi
+lock="$DEST.download-lock"
+mkdir "$lock" 2>/dev/null || {
+  echo "error: download already running; if interrupted, remove the empty directory $lock" >&2; exit 1;
 }
-
-if [[ -f "$DEST" && -n "$expected" ]] && echo "$expected  $DEST" | sha256sum -c --status; then
-  echo "already present and verified: $DEST"
-  exit 0
+trap 'rmdir "$lock" 2>/dev/null || true' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+partial="$DEST.part"
+if [[ -n "${MODEL_BYTES:-}" ]]; then
+  [[ "$MODEL_BYTES" =~ ^[1-9][0-9]*$ ]] || { echo 'error: invalid MODEL_BYTES' >&2; exit 1; }
+  received=0
+  [[ ! -f "$partial" ]] || received="$(wc -c < "$partial" | tr -d ' ')"
+  available="$(df -Pk "$MODELS_DIR" | awk 'NR==2 {printf "%.0f", $4*1024}')"
+  if ((available < MODEL_BYTES - received + 104857600)); then
+    echo 'error: insufficient free disk space for the model (including 100 MiB reserve)' >&2; exit 1
+  fi
 fi
-
-echo "downloading $HF_REPO/$FILE -> $DEST"
-curl -fL --retry 5 --retry-delay 4 -C - "${auth[@]}" -o "$DEST" "$URL"
-
-if [[ -n "$expected" ]]; then
-  echo "$expected  $DEST" | sha256sum -c -
-else
-  echo "warning: no sha256 published for $FILE; skipping verification" >&2
+echo "downloading $FILE into $MODELS_DIR (interrupt and rerun to resume)"
+curl -fL --retry 5 --retry-delay 4 -C - "${auth[@]+"${auth[@]}"}" -o "$partial" "$URL"
+echo "verifying SHA-256: $FILE"
+if ! ap_verify "$partial" "$expected"; then
+  rm -f "$partial"
+  echo 'error: checksum mismatch; incomplete or incorrect model removed; rerun to download again' >&2; exit 1
 fi
+mv -f "$partial" "$DEST"
+echo "ready: $DEST"

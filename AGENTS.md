@@ -4,8 +4,9 @@ These rules apply to every human and agent contributing to this repo.
 
 ## Scope
 
-- The goal is fixed: run Apertus-v1.5-8B offline on a regular laptop (no GPU, no
-  internet during inference), serve it through `llama-server`, then make it faster.
+- The goal is fixed: run Apertus-v1.5-8B offline on a regular laptop (no dedicated
+  GPU required, no internet during inference), serve it through `llama-server`,
+  then make it faster. CPU remains supported; integrated acceleration is optional.
 - Nothing outside local deployment, serving, and speed work. No new features,
   frameworks, or tooling that the roadmap does not call for.
 - Build the minimal working version first, then improve it. A phase is done when
@@ -40,3 +41,5 @@ These rules apply to every human and agent contributing to this repo.
   under `models/` and `vendor/`, which are ignored.
 - Scripts are bash with `set -euo pipefail`, run from the repo root, and print what they
   do. Secrets such as `HF_TOKEN` come from the environment, never from files in the repo.
+- Participant launchers may use native macOS or Windows entry points. Keep shared
+  inference behavior in llama-server and keep platform wrappers small.
