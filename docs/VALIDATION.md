@@ -15,15 +15,16 @@ dependent stack; `main` is not changed until they are reviewed and merged.
 | Linux, actual Bash 3.2 | Standalone Mac setup: clone/start from a single file, paths with spaces, preserve existing edits/folders, reject unsupported hardware and stop safely when Apple tools need interactive installation | 5 fixture tests pass |
 | Linux, system Bash and actual Bash 3.2 | Mac release preflight, unsigned output preservation, credential rejection, temporary keychain cleanup/restoration on success and failure, rejected notarization response | 5 fixture tests pass; Apple commands/services are simulated, not real signing |
 | Friend's physical Apple Silicon Mac; chip/RAM/macOS/backend not recorded | Standalone setup, tests, manual chat and fresh offline start | pass, reported by project owner; no automated report supplied |
-| Node | Download availability, required checksums and safe URLs | 3 tests pass |
+| Node | Download availability, required checksums, safe URLs and delayed browser shutdown/profile cleanup | 4 tests pass; cleanup fixture fails against the previous implementation |
+| GitHub-hosted Apple M1 VM, 7 GB RAM, macOS 15 | Versioned Mac release candidate: build, extract, code seal, actual CPU and partial Metal inference through delivered launch scripts | pass in [release preparation](https://github.com/FarukZahiragic/apertus-local/actions/runs/42422097790); unsigned development artifact, no public Mac release |
 | GitHub-hosted Apple M1 VM, 7 GB RAM, macOS 15 | Portable CPU/Metal builds, relocated app packaging, real CPU and partial Metal inference (`GPU_LAYERS=8 LOAD_MODE=none`) | pass in [native CI](https://github.com/FarukZahiragic/apertus-local/actions/runs/42386944980); hosted VM is not a participant laptop |
 | GitHub-hosted Linux VM, only loopback networking | Fresh Apertus startup, embedded assets, streamed usage, document Q&A and rendered chat input/model in actual Chrome | pass in the same run |
 | Reference Linux laptop, actual Chrome | Render embedded chat input and model name through the DevTools pipe | pass; networking enabled during this local check |
 
 The functional report is generated under ignored `dist/validation-reference-laptop.json`.
 The short Qwen throughput regression run is recorded in `benchmarks/results.md`.
-The complete Python fixture suite now contains 26 passing tests, alongside the
-three passing Node download-page tests.
+The complete Python fixture suite now contains 26 passing tests, alongside four
+passing Node download-page and browser-cleanup tests.
 Functional request checks are not performance benchmarks. The owner informally
 observed generation in the thirty-something tokens/s range on the friend's Mac,
 with faster prompt processing too. The configuration and raw results were not
@@ -85,3 +86,10 @@ before asynchronous browser storage and UI startup completed. The check now poll
 the real rendered chat input and model name through Chrome's DevTools pipe, with
 a bounded wall-clock timeout. Both the actual API inference and the corrected
 browser check passed with only loopback networking in the linked native CI run.
+
+The later [release PR CI run](https://github.com/FarukZahiragic/apertus-local/actions/runs/42422171966)
+passed its actual Linux offline API and rendered-browser checks, then failed while
+deleting Chrome's profile before Chrome had finished writing it. The harness now
+waits for its owned browser to exit and removes the profile asynchronously. A
+delayed-write regression fixture fails against the old cleanup and passes with
+the fix. This cleanup failure was separate from inference and Mac packaging.
