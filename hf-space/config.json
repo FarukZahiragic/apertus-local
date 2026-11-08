@@ -1,5 +1,5 @@
 {
-  "version": "v0.1.0-preview.1",
+  "version": "v0.1.0-preview.2",
   "model": {
     "repo": "faruk-zahiragic/Apertus-v1.5-8B-GGUF",
     "revision": "c40df29efdea4f0dd59ccf73635574918405561b",
@@ -10,10 +10,11 @@
   },
   "platforms": {
     "macos-arm64": {
-      "available": false,
-      "url": null,
-      "checksum_url": null,
-      "status": "Source setup and offline chat tested on a physical Mac. Signed app download is being prepared."
+      "available": true,
+      "url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.2/apertus-local-v0.1.0-preview.2-macos-arm64.zip",
+      "checksum_url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.2/apertus-local-v0.1.0-preview.2-macos-arm64.zip.sha256",
+      "signing": "unsigned",
+      "status": "Unsigned macOS 15+ preview. First launch may require Open Anyway; read the Mac guide. Physical downloaded-app opening rehearsal pending."
     },
     "linux-x86_64": {
       "available": true,

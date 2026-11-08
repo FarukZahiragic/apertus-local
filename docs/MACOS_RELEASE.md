@@ -20,6 +20,13 @@ links to [the participant guide](../hf-space/macos-first-start.html).
 Signing and notarization remain an optional future distribution choice. Skip the
 credential section below when preparing the unsigned preview.
 
+The [v0.1.0-preview.2 Mac download](https://github.com/FarukZahiragic/apertus-local/releases/tag/v0.1.0-preview.2)
+is public and available from the HF Space. Both [native CI](https://github.com/FarukZahiragic/apertus-local/actions/runs/42478430452)
+and the [unsigned release build](https://github.com/FarukZahiragic/apertus-local/actions/runs/42478427184)
+pass. The public download checksum, all 55 payload hashes, bundled first-open guide
+and macOS 15.0 deployment target were verified. The remaining physical Finder
+rehearsal is labelled pending; no Apple credentials are needed to try this preview.
+
 ## Optional signing credentials
 
 Use the Apple Developer Program account that will identify the publisher. Creating
