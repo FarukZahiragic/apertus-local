@@ -293,6 +293,17 @@ class WindowsBootstrapTests(BootstrapFixture):
         self.assertEqual(second.returncode, 0, second.stdout + second.stderr)
         self.assertEqual(self.requests, ['full'])
 
+    def test_windows_saves_absolute_existing_model_path(self):
+        model = self.root / "existing model's file.gguf"
+        model.write_bytes(b'fixture model')
+        self.env.update(MODEL=model.name,
+                        MODEL_SHA256=hashlib.sha256(model.read_bytes()).hexdigest())
+        result = self.run_setup(inline=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        saved = (self.data / 'start.ps1').read_text(encoding='utf-8-sig')
+        self.assertIn(str(model).replace("'", "''"), saved)
+        self.assertFalse(self.calls.exists())
+
     def test_windows_bad_hash_never_runs_model_download(self):
         self.env['APERTUS_PACKAGE_SHA256'] = '0' * 64
         result = self.run_setup()

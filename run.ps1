@@ -22,6 +22,7 @@ if ($env:APERTUS_PACKAGE_URL -or $env:APERTUS_PACKAGE_SHA256) {
 $uri = [Uri]$url
 if ($uri.Scheme -ne 'https' -and -not ($uri.Scheme -eq 'http' -and $uri.IsLoopback)) { throw 'Package downloads require HTTPS (HTTP loopback is allowed for tests).' }
 if ($env:MODEL -and -not [IO.File]::Exists($env:MODEL)) { throw "MODEL does not exist: $env:MODEL" }
+if ($env:MODEL) { $env:MODEL = [IO.Path]::GetFullPath($env:MODEL) }
 $data = Join-Path $env:LOCALAPPDATA 'Apertus Local'
 if ($env:APERTUS_INSTALL_DIR) { $data = [IO.Path]::GetFullPath($env:APERTUS_INSTALL_DIR) }
 [IO.Directory]::CreateDirectory($data) | Out-Null
