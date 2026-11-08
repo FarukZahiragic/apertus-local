@@ -50,6 +50,9 @@ jobs:
         run: |
           tests/test_windows_hash.ps1
           tests/test_windows.ps1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
       - name: Build portable native CPU runtime
         run: scripts/setup_windows.ps1 -Architecture '${{ matrix.arch }}'
       - name: Package and verify relocated runtime

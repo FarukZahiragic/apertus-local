@@ -63,6 +63,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
       - name: Build portable CPU runtime
         run: scripts/setup_llamacpp.sh --cpu --portable
       - name: Build portable Metal runtime
@@ -89,7 +92,7 @@ jobs:
         run: /bin/bash tests/native_smoke.sh
       - name: Verify actual Apertus and browser UI with external networking blocked
         if: runner.os == 'Linux'
-        run: sudo --preserve-env=PACKAGED_ROOT unshare --net /bin/bash tests/offline_smoke.sh
+        run: sudo --preserve-env=PACKAGED_ROOT unshare --net env WORKSHOP_UI_CHECK=1 /bin/bash tests/offline_smoke.sh
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -167,6 +170,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
       - name: Build and verify versioned Mac archive
         env:
           SIGN_RELEASE: ${{ inputs.sign_macos_release }}
