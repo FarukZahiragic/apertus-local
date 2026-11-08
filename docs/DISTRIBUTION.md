@@ -1,7 +1,8 @@
 # Workshop packages
 
 The participant path is: download a native package, open its launcher, download the
-GGUF once, then chat locally. Preparation needs internet; inference does not. The
+language GGUF and F32 encoders once, then chat locally. Both files total about
+6.1 GiB. Preparation needs internet; inference does not. The
 native runtime serves its embedded UI at `http://127.0.0.1:8080/`.
 
 ## Run from a checkout
@@ -13,6 +14,7 @@ After building and placing the model in `models/`:
 ./Stop.sh                           # Linux; ./Stop.command on macOS
 scripts/launch.sh --no-browser       # keep the URL in the terminal
 scripts/launch.sh --check            # hardware/runtime check without downloading
+./Start-Text.sh                     # optional lighter text-only mode
 ```
 
 The launcher verifies the pinned model before use, resumes first-run downloads,
@@ -125,8 +127,9 @@ Maintainers can prepare the upload tools once (not needed by participants):
 python3 -m venv .venv-release
 .venv-release/bin/pip install 'huggingface_hub>=0.34,<3'
 .venv-release/bin/hf auth login
-scripts/publish_hf.sh                 # publish the exact GGUF and the static Space
-scripts/publish_hf.sh --space-only    # verify remote GGUF hash and update only page
+scripts/publish_hf.sh                 # publish both pinned GGUF files and the static Space
+scripts/publish_hf.sh --model-only    # prepare the model repository before updating the page
+scripts/publish_hf.sh --space-only    # verify both remote hashes/sizes, then update only the page
 ```
 
 `HF_TOKEN` is read from the environment or supplied to the process from the normal
@@ -134,12 +137,17 @@ HF credential cache outside this repo. It is never printed, saved in source or
 bundled. By default the script creates public repositories in the authenticated
 personal namespace; `--private` creates private repositories instead. Existing
 repository visibility is preserved. `MODEL_REPO` and `SPACE_REPO` override names.
-The model upload includes provenance, SHA256SUMS and the original Apache license.
+The model upload includes the full-vocabulary language weights, F32 encoders,
+provenance, both SHA256SUMS entries and the original Apache license. The Space
+publisher verifies both remote hashes and byte counts before advertising a release.
 Publication metadata is written under ignored `dist/hf-publication.json`.
 
 To enable a native platform, first validate its archive, publish that archive and
 its checksum under a fixed release version, then set `available`, `url`,
 `checksum_url`, `status` and the top-level `version` in `hf-space/config.json`.
+The `model` and `encoders` entries pin the two model files. The page keeps downloads
+disabled if the encoder URL or checksum is missing. The publisher stages immutable
+Hugging Face URLs for both files at the verified model-repository revision.
 Publish with `--space-only`. For unsigned Mac previews, include the per-app approval
 guide and accurately label the pending Finder-opening rehearsal. Signing is not a
 prerequisite. GitHub CI artifacts are development builds until promoted to a

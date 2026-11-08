@@ -16,7 +16,7 @@
     <ol>
       <li><p><strong>Choose your processor.</strong> Use the Intel / AMD download for most PCs, or ARM / Snapdragon for ARM PCs. Find the system type under <strong>Settings → System → About</strong>.</p></li>
       <li><p><strong>Extract the whole ZIP.</strong> Right-click it and choose <strong>Extract All</strong>. Open the extracted folder. Run files from that folder.</p></li>
-      <li><p><strong>Double-click Start.cmd.</strong> Keep its window open. The first start downloads and verifies the 5.3 GiB model, then opens local browser chat.</p></li>
+      <li><p><strong>Double-click Start.cmd.</strong> Keep its window open. The first start downloads and verifies the model files (5.3 GiB language model plus 872 MiB image/audio encoders), then opens local browser chat.</p></li>
       <li><p><strong>Chat offline after preparation.</strong> Later starts reuse the checked model. Press <strong>Ctrl+C</strong> in the window or open <strong>Stop.cmd</strong> to stop and release the model's memory.</p></li>
     </ol>
     <p>The package works with the built-in Windows PowerShell 5.1. Its launcher uses
@@ -24,7 +24,7 @@
       This is an unsigned preview. If Windows or your organization blocks it, follow
       your organization's installation rules or ask the organizer. Keep security tools enabled.</p>
     <p>Already have the model? Copy <code>apertus-v1.5-8b-Q4_K_M.gguf</code> into
-      <code>%LOCALAPPDATA%\Apertus Local\models\</code> before starting. Logs are saved
+      <code>%LOCALAPPDATA%\Apertus Local\models\</code> before starting. For image/audio input, also copy <code>apertus-v1.5-8b-mmproj-F32.gguf</code> there. Logs are saved
       under <code>%LOCALAPPDATA%\Apertus Local\state\</code>.</p>
     <p>If using a USB drive, use a filesystem that supports files larger than 4 GB, such as exFAT.</p>
     <p><a href="index.html">Back to downloads →</a></p>

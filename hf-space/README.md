@@ -12,7 +12,7 @@ short_description: Download Apertus 8B for private, offline laptop chat
 # Apertus Local
 
 A download page for native Apertus-v1.5-8B Q4_K_M chat through llama-server.
-The model runs on the participant's laptop; this Space does not process prompts.
+Text, images and audio are processed on the participant's laptop; this Space does not process prompts or attachments. Answers are text. Model files total about 6.1 GiB, including separate F32 encoders.
 
 Source and measured results: https://github.com/FarukZahiragic/apertus-local
 
@@ -25,4 +25,4 @@ Windows has separate Intel/AMD and ARM64 entries and a first-start guide.
 Keep each entry unavailable until its own native archive, checksum and inference
 checks pass. Minimum OS/library capabilities are release metadata, separate from
 the runner version used for testing. `scripts/publish_hf.sh` uploads this directory
-and the exact GGUF.
+and both verified GGUF files.

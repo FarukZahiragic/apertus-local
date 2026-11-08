@@ -1,10 +1,8 @@
 # apertus-local
 
-This feature branch contains the **image/audio candidate** for Windows, Apple
-Silicon Mac and Linux. It reuses the existing language model and adds separately
-verified encoders. The public Hugging Face downloads remain the text-only release.
-See [candidate setup and local testing](docs/MULTIMODAL.md). Merge is pending the
-project owner's local test.
+Text, image and audio input are supported on Windows x64/ARM64, Apple Silicon Mac
+and Linux x86_64. The launcher reuses the language model and downloads matching
+F32 encoders. See [image/audio setup and validation](docs/MULTIMODAL.md).
 
 Run [Apertus-v1.5-8B](https://huggingface.co/swiss-ai/Apertus-v1.5-8B) on a machine
 you control, with no dedicated GPU required and no internet during inference, using
@@ -32,7 +30,7 @@ and extract it. Windows users double-click `Start.cmd`, Mac users open
 `Apertus Local.app`, and Linux users run `./Start.sh`. Native archives include
 their runtime; participants do not need a compiler or Python.
 
-The first start downloads and verifies the model, starts local chat, and opens
+The first start downloads and verifies both model files (about 6.1 GiB total), starts local chat, and opens
 the browser after health and a one-token inference check. Later starts reuse the
 verified model offline. Keep the launcher's window open; Ctrl+C or the matching
 Stop launcher shuts it down. See [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md)

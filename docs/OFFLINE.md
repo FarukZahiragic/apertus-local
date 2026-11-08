@@ -83,6 +83,18 @@ Recorded prompt processing is roughly 18 to 23 tok/s on the laptop: allow about
 
 ## Native participant checks
 
+For image/audio chat, prepare both files while online:
+
+```bash
+scripts/get_model.sh --apertus
+scripts/get_model.sh --multimodal
+```
+
+Start the native launcher, attach a photo and ask a follow-up, then stop and repeat
+after disconnecting networking. Both GGUF files can also be copied from USB.
+`Start-Text.sh`/`Start-Text.cmd` or `MULTIMODAL=0` skips the encoders for text-only use.
+See [MULTIMODAL.md](MULTIMODAL.md) for model locations and Mac instructions.
+
 On macOS, use the Wi-Fi menu to turn Wi-Fi off and disconnect Ethernet and other
 network adapters. Start the launcher again and reload the local page. Ubuntu's
 `nmcli`, `ss` and network namespaces above are Linux-specific; on macOS use

@@ -40,6 +40,8 @@ class SetupTests(unittest.TestCase):
     def fixture(self, directory):
         scripts = directory/'scripts'
         scripts.mkdir(parents=True)
+        (directory/'config').mkdir()
+        (directory/'config/multimodal.env').write_text('# encoder fixture\n')
         for name in ['platform.sh', 'setup_llamacpp.sh', 'get_model.sh']:
             (scripts/name).write_text('#!/bin/bash\nset -euo pipefail\n'
                                      'printf "%s|%s|%s\\n" "$PWD" "${0##*/}" "$*" >> "$SETUP_TEST_CALLS"\n')
@@ -74,6 +76,7 @@ fi''')
         self.assertIn(str(self.install)+'|setup_llamacpp.sh|--cpu', calls)
         self.assertIn(str(self.install)+'|setup_llamacpp.sh|--metal', calls)
         self.assertIn('|get_model.sh|--apertus', calls)
+        self.assertIn('|get_model.sh|--multimodal', calls)
         self.assertIn('started:cpu', calls)
         self.assertTrue((self.root/'setup.log').exists())
 
@@ -87,6 +90,15 @@ fi''')
         self.assertEqual(edited.read_text(), 'Keep my local work.\n')
         self.assertEqual(subprocess.check_output([GIT, '-C', str(self.install), 'status', '--porcelain']), before)
         self.assertNotIn('started:', self.calls.read_text())
+        self.assertIn('|get_model.sh|--multimodal', self.calls.read_text())
+
+    def test_text_only_preparation_skips_encoders(self):
+        self.fixture(self.install)
+        self.env['MULTIMODAL'] = '0'
+        result = self.run_setup('--no-start')
+        self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
+        self.assertIn('|get_model.sh|--apertus', self.calls.read_text())
+        self.assertNotIn('--multimodal', self.calls.read_text())
 
     def test_unrelated_existing_folder_is_preserved(self):
         self.install.mkdir()
