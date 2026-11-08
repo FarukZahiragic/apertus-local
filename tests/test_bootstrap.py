@@ -1,8 +1,6 @@
 """Exercise standalone setup, trusted archives, file reuse and offline entry points."""
-import contextlib
 import hashlib
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-import json
 import os
 from pathlib import Path
 import shutil
@@ -23,7 +21,7 @@ class BootstrapFixture(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(prefix="apertus bootstrap's ")
         self.addCleanup(self.tmp.cleanup)
-        self.root = Path(self.tmp.name)
+        self.root = Path(self.tmp.name).resolve()
         self.data = self.root / 'local data'
         self.calls = self.root / 'calls'
         self.requests = []
@@ -97,7 +95,7 @@ printf 'launch:%s|models:%s|model:%s|multimodal:%s\\n' "$*" "$MODELS_DIR" "${MOD
         (root / 'scripts/get_model.sh').write_text('''#!/bin/bash
 set -euo pipefail
 echo "model:$*|models:$MODELS_DIR" >> "$BOOTSTRAP_TEST_CALLS"
-[[ "${BOOTSTRAP_FAIL_MODEL:-0}" == 0 ]]
+if [[ "${BOOTSTRAP_FAIL_MODEL:-0}" != 0 ]]; then exit 1; fi
 mkdir -p "$MODELS_DIR"
 ''')
         server = root / 'runtime/cpu/bin/llama-server'
