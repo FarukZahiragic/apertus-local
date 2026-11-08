@@ -1,8 +1,8 @@
 ---
 title: Apertus Local
 emoji: 🏔️
-colorFrom: red
-colorTo: gray
+colorFrom: blue
+colorTo: blue
 sdk: static
 app_file: index.html
 pinned: false
@@ -21,7 +21,11 @@ its archive, checksum, model URL and native checks are ready. The Mac unsigned
 preview requires no Apple Developer membership and includes per-app first-open
 instructions in `macos-first-start.html`; the physical Finder-opening rehearsal
 is labelled pending. Developer ID signing/notarization are optional.
-Windows has separate Intel/AMD and ARM64 entries and a first-start guide.
+The command selector has two choices: macOS / Linux and Windows. The setup
+scripts detect the native OS and processor. Hardware-specific archive links
+remain in the optional download section, with their own checksum, system
+requirements and first-start guides. The current official Apertus wordmark and
+blue palette are documented in `assets/README.md` and served with the page.
 Keep each entry unavailable until its own native archive, checksum and inference
 checks pass. Minimum OS/library capabilities are release metadata, separate from
 the runner version used for testing. `scripts/publish_hf.sh` uploads this directory

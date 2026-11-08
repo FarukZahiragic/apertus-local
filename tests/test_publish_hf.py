@@ -38,7 +38,7 @@ class HfApi:
         return S(sha='existing-revision',siblings=files)
     def upload_folder(self, repo_id, folder_path, **kwargs):
         config=json.loads((Path(folder_path)/'config.json').read_text())
-        record('space_commit', config=config)
+        record('space_commit', config=config, patterns=kwargs.get('allow_patterns'))
         return S(oid='space-revision')
 '''
 
@@ -89,6 +89,7 @@ class PublishTests(unittest.TestCase):
             self.assertIn(item['sha256']+'  '+item['filename'],model['sums'])
         page=calls[-1]
         self.assertEqual(page['kind'],'space_commit')
+        self.assertIn('assets/*',page['patterns'])
         for key in ['model','encoders']:
             self.assertEqual(page['config'][key]['revision'],'model-revision')
             self.assertIn('/resolve/model-revision/',page['config'][key]['url'])
