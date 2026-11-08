@@ -200,7 +200,13 @@ The log shows slow prompt evaluation; memory pressure is a possible explanation,
 not an established cause. This VM is below the recommended 16 GB RAM, and 8 GB
 participant machines remain outside the validated contract.
 
-After integrating the source candidate, all 46 local Python checks and nine Node
+The [follow-up cross-platform run](https://github.com/FarukZahiragic/apertus-local/actions/runs/42530465561)
+passed first launch, streaming/document Q&A, owned stop and cached restart on all
+four native platforms, including the 7 GB Mac. The Mac bootstrap, pinned runtime
+and decode-probe timeout were unchanged. This successful fresh-VM run does not
+erase the earlier constrained-memory failure or validate 8 GB attendee machines.
+
+After integrating the source candidate, all 47 local Python checks and nine Node
 checks pass, including verification that both bootstraps leave optional image/audio
 encoders off. The cross-platform workflow checks the actual published runtime,
 model, stop and saved entry point rather than substituting a small model.
