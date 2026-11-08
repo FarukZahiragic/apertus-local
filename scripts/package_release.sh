@@ -60,6 +60,10 @@ copy_runtime() {
   [[ -f "$build/CMakeCache.txt" ]] || { echo "error: missing build cache: $build" >&2; exit 1; }
   grep -q '^GGML_NATIVE:BOOL=OFF$' "$build/CMakeCache.txt" || { echo 'error: release build must use --portable' >&2; exit 1; }
   grep -q '^GGML_BACKEND_DL:BOOL=ON$' "$build/CMakeCache.txt" || { echo 'error: release build needs dynamic CPU dispatch' >&2; exit 1; }
+  grep -q '^LLAMA_BUILD_UI:BOOL=ON$' "$build/CMakeCache.txt" &&
+    grep -q '^LLAMA_USE_PREBUILT_UI:BOOL=OFF$' "$build/CMakeCache.txt" || {
+      echo 'error: rebuild this runtime with the patched participant UI before packaging' >&2; exit 1;
+    }
   if [[ "$backend" == cpu ]]; then
     grep -q '^GGML_METAL:BOOL=OFF$' "$build/CMakeCache.txt" || { echo 'error: CPU fallback must be built without Metal' >&2; exit 1; }
   fi
