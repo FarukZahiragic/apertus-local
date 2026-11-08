@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>First start on a Mac — Apertus Local</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="wrap nav"><a class="wordmark" href="index.html">← Apertus Local downloads</a></header>
+  <main class="wrap before">
+    <p class="eyebrow">APPLE SILICON · UNSIGNED PREVIEW</p>
+    <h1>First start on a Mac</h1>
+    <p>Use an Apple M-series Mac with macOS 15 or newer. We recommend 16 GB RAM.
+      No Apple Developer membership or build tools are needed.</p>
+    <ol>
+      <li><p><strong>Extract the ZIP.</strong> Move <strong>Apertus Local.app</strong> into Applications or another permanent folder, then double-click it.</p></li>
+      <li><p><strong>Approve the app if macOS blocks it.</strong> This preview has no Apple-verified publisher or notarization. After trying to open it, dismiss the warning, open <strong>System Settings → Privacy &amp; Security</strong>, scroll to Security, and choose <strong>Open Anyway</strong> for Apertus Local. Confirm the next prompt. Your Mac may ask for your login password or Touch ID.</p></li>
+      <li><p><strong>Allow Terminal access when asked.</strong> The app opens a Terminal window to show progress. Keep that window open while chatting.</p></li>
+      <li><p><strong>Get the model once.</strong> The launcher downloads and checks the 5.3 GiB model, then opens local chat in your browser. Stay online until preparation finishes.</p></li>
+      <li><p><strong>Chat locally.</strong> After preparation, you can restart and chat with networking off. Press <strong>Control+C</strong> in Terminal to stop. Open the app again to start another session.</p></li>
+    </ol>
+    <p>Approve only the app you intentionally downloaded from this project's release page.
+      Keep system-wide security checks enabled. If a managed Mac does not offer an approval button,
+      ask its administrator. A warning about malware or a damaged app requires help from the organizer.</p>
+    <p><a href="https://support.apple.com/en-us/102445">Apple's instructions for approving an app ↗</a></p>
+    <p>Already have the model? Copy <code>apertus-v1.5-8b-Q4_K_M.gguf</code> into
+      <code>~/Library/Application Support/Apertus Local/models/</code> before starting.</p>
+    <p class="small">Preview status: native CPU and partial Metal inference pass in hosted Mac checks.
+      The source setup and offline chat were tested on a physical Mac.
+      A browser-download and Finder-opening rehearsal for this packaged app is still pending.</p>
+    <p><a href="index.html">Back to downloads →</a></p>
+  </main>
+</body>
+</html>

@@ -1,18 +1,20 @@
 #!/usr/bin/env bash
 # Build a versioned Apple Silicon app on a Mac or a GitHub-hosted Mac runner.
-# Usage: scripts/release_macos.sh --version VERSION [--unsigned] [--check]
+# Usage: scripts/release_macos.sh --version VERSION [--sign|--unsigned] [--check]
 # Signed builds read MACOS_CERTIFICATE_P12_BASE64, MACOS_CERTIFICATE_PASSWORD,
 # APPLE_ID, APPLE_TEAM_ID and APPLE_APP_PASSWORD from the environment.
 # Credentials use a temporary keychain and are removed on success or failure.
-# --unsigned prepares a development artifact; it is not a public workshop app.
+# The default is an unsigned preview; macOS may require per-app first-open approval.
+# --sign opts into Developer ID signing and notarization with Apple credentials.
 set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
-version='' signed=1 check=0
+version='' signed=0 check=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --version) [[ $# -ge 2 ]] || { echo 'error: --version needs a value' >&2; exit 1; }; version="$2"; shift ;;
     --unsigned) signed=0 ;;
+    --sign) signed=1 ;;
     --check) check=1 ;;
     -h|--help) sed -n '2,/^set -euo pipefail/{ /^set -euo pipefail/!p; }' "$0"; exit 0 ;;
     *) echo "error: unknown argument: $1" >&2; exit 1 ;;
@@ -91,5 +93,5 @@ if [[ "$signed" -eq 1 ]]; then
   spctl --assess --type execute "$app"
   echo 'Signed archive and stapled notarization ticket verified.'
 else
-  echo 'Unsigned development archive ready. Public Mac downloads still require signing.'
+  echo 'Unsigned preview archive ready. Include MACOS_FIRST_START.txt with the download.'
 fi

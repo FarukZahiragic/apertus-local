@@ -1,9 +1,9 @@
 # Native deployment validation
 
-Implementation and hardware acceptance are tracked separately. PRs #16–#23 form a
+Implementation and hardware acceptance are tracked separately. The native implementation PRs and unsigned-preview follow-up form a
 dependent stack; `main` is not changed until they are reviewed and merged.
 
-## Recorded on 7 November 2026
+## Recorded on 7–8 November 2026
 
 | Environment | Check | Result |
 | --- | --- | --- |
@@ -15,7 +15,7 @@ dependent stack; `main` is not changed until they are reviewed and merged.
 | Linux, actual Bash 3.2 | Standalone Mac setup: clone/start from a single file, paths with spaces, preserve existing edits/folders, reject unsupported hardware and stop safely when Apple tools need interactive installation | 5 fixture tests pass |
 | Linux, system Bash and actual Bash 3.2 | Mac release preflight, unsigned output preservation, credential rejection, temporary keychain cleanup/restoration on success and failure, rejected notarization response | 5 fixture tests pass; Apple commands/services are simulated, not real signing |
 | Friend's physical Apple Silicon Mac; chip/RAM/macOS/backend not recorded | Standalone setup, tests, manual chat and fresh offline start | pass, reported by project owner; no automated report supplied |
-| Node | Download availability, required checksums, safe URLs and delayed browser shutdown/profile cleanup | 4 tests pass; cleanup fixture fails against the previous implementation |
+| Node | Download availability, required checksums, safe URLs, unsigned Mac first-open guidance and delayed browser shutdown/profile cleanup | 5 tests pass; cleanup fixture fails against the previous implementation |
 | GitHub-hosted Apple M1 VM, 7 GB RAM, macOS 15 | Versioned Mac release candidate: build, extract, code seal, actual CPU and partial Metal inference through delivered launch scripts | pass in [release preparation](https://github.com/FarukZahiragic/apertus-local/actions/runs/42422097790); unsigned development artifact, no public Mac release |
 | GitHub-hosted Apple M1 VM, 7 GB RAM, macOS 15 | Portable CPU/Metal builds, relocated app packaging, real CPU and partial Metal inference (`GPU_LAYERS=8 LOAD_MODE=none`) | pass in [native CI](https://github.com/FarukZahiragic/apertus-local/actions/runs/42386944980); hosted VM is not a participant laptop |
 | GitHub-hosted Linux VM, only loopback networking | Fresh Apertus startup, embedded assets, streamed usage, document Q&A and rendered chat input/model in actual Chrome | pass in the same run |
@@ -23,7 +23,7 @@ dependent stack; `main` is not changed until they are reviewed and merged.
 
 The functional report is generated under ignored `dist/validation-reference-laptop.json`.
 The short Qwen throughput regression run is recorded in `benchmarks/results.md`.
-The complete Python fixture suite now contains 26 passing tests, alongside four
+The complete Python fixture suite now contains 26 passing tests, alongside five
 passing Node download-page and browser-cleanup tests.
 Functional request checks are not performance benchmarks. The owner informally
 observed generation in the thirty-something tokens/s range on the friend's Mac,
@@ -55,11 +55,12 @@ check; CPU dispatch does not remove libc requirements.
   Detailed Mac hardware labels and CPU/Metal latency, quality, memory and sustained
   measurements can follow when that machine is available. Use `scripts/bench_mac.sh`
   for benchmark rows. Keep global automatic Metal selection gated in the meantime.
-- Sign/notarize the Mac app with a Developer ID, then test a downloaded app on a
-  clean Mac, including the Terminal automation prompt and offline relaunch.
-  Hosted release preparation is in `scripts/release_macos.sh`; credential setup
-  and workflow commands are in [MACOS_RELEASE.md](MACOS_RELEASE.md). Apple
-  credentials are not configured yet; real signing has not been claimed as passed.
+- Rehearse the unsigned app's browser download and Finder first-open approval
+  on a physical Mac, including its Terminal automation prompt and offline relaunch.
+  The unsigned default in `scripts/release_macos.sh` needs no Apple credentials.
+  Workflow commands and optional signing are in [MACOS_RELEASE.md](MACOS_RELEASE.md).
+  The preview can be published with this remaining check clearly labelled;
+  Developer ID signing is not a release prerequisite for this chosen route.
 - Implement and validate native Windows packaging before offering Windows downloads.
 - Rehearse the workshop installation with a person who has not developed the repo.
 

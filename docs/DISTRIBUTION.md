@@ -65,18 +65,18 @@ signed bundle. macOS may ask to allow the app to control Terminal. Keep that win
 open and use Ctrl+C to stop. For an offline workshop, populate its `models/`
 subdirectory with the verified GGUF before the workshop starts.
 
-## Sign macOS releases
+## Mac previews and optional signing
 
 The source setup and offline rehearsal have passed on a physical Apple Silicon
 Mac (reported by the owner; hardware details and formal benchmarks can follow).
 Those benchmarks do not block packaging. [MACOS_RELEASE.md](MACOS_RELEASE.md)
-provides the exact one-time credential setup and the hosted build/signing workflow,
-so the friend's Mac is not required to prepare a signed draft. The workflow keeps
-unsigned candidates in Actions and creates a GitHub release draft only after
-signing, notarization and delivered-runtime inference checks pass. A downloaded-app
-opening check is still required before publishing that draft.
+provides the hosted release workflow. Its default is an unsigned preview requiring
+no Apple Developer membership or Apple credentials. The workflow creates a draft
+after code-seal and delivered-runtime inference checks pass. The ZIP includes
+`MACOS_FIRST_START.txt`; the download page links to a first-open guide. Complete
+the downloaded-app opening rehearsal before treating the preview as workshop-ready.
 
-Unsigned archives are development artifacts. On a Mac with an installed Developer
+Developer ID signing is optional. On a Mac with an installed Developer
 ID Application identity and an existing `notarytool` keychain profile:
 
 ```bash
@@ -97,8 +97,9 @@ checked but does not establish an identified publisher or notarization.
 ## Release readiness
 
 Publishing requires a versioned GGUF location and a tested runtime archive for each
-advertised platform. Keep unsigned or untested platforms unavailable on the download
-page. Windows packaging is a separate pending slice and must not be advertised as
+advertised platform. An unsigned Mac preview may be available with its first-open
+instructions, code-seal/inference checks and pending physical-download rehearsal
+clearly labelled. Windows packaging is a separate pending slice and must not be advertised as
 supported. The same applies to Intel Macs, Linux ARM64 and untested Linux variants.
 
 Before promoting a version, follow [OFFLINE.md](OFFLINE.md), [MACOS.md](MACOS.md) and
@@ -137,8 +138,10 @@ Publication metadata is written under ignored `dist/hf-publication.json`.
 To enable a native platform, first validate its archive, publish that archive and
 its checksum under a fixed release version, then set `available`, `url`,
 `checksum_url`, `status` and the top-level `version` in `hf-space/config.json`.
-Publish with `--space-only`. Never enable Mac downloads before signing and actual
-Mac checks pass. GitHub CI artifacts are development builds, not workshop releases.
+Publish with `--space-only`. For unsigned Mac previews, include the per-app approval
+guide and accurately label the pending Finder-opening rehearsal. Signing is not a
+prerequisite. GitHub CI artifacts are development builds until promoted to a
+versioned release with its checksum and preview notes.
 
 ## Automated and recorded checks
 

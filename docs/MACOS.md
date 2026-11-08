@@ -116,9 +116,10 @@ to expose thermal throttling. No Mac speed claim is made before these checks.
 
 ## Release builds
 
-Use [MACOS_RELEASE.md](MACOS_RELEASE.md) to prepare signing credentials and run the
-build on GitHub's Mac runner without borrowing a physical Mac. The signed app's
-download/open rehearsal remains a separate distribution check.
+Use [MACOS_RELEASE.md](MACOS_RELEASE.md) to run the unsigned preview build on
+GitHub's Mac runner without Apple credentials or a connected physical Mac.
+The ZIP includes first-open instructions; the downloaded-app opening rehearsal
+remains a separate distribution check. Developer ID signing is optional.
 
 `scripts/setup_llamacpp.sh --cpu --portable` uses `build-portable/` with runtime
 CPU dispatch. `--metal --portable` uses `build-metal-portable/`. Release packaging

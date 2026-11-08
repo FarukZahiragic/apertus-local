@@ -1,0 +1,36 @@
+Apertus Local — first start on a Mac
+
+Requirements: Apple M-series chip, macOS 15 or newer; 16 GB RAM recommended.
+No Apple Developer membership, Homebrew, Python or compiler installation is needed.
+
+1. Extract the ZIP. Move Apertus Local.app into Applications or another permanent
+   folder, then double-click it.
+2. This unsigned preview has not been notarized by Apple. If macOS says the
+   developer cannot be verified or the app was not checked, dismiss that alert.
+3. Open System Settings > Privacy & Security. Scroll to Security and choose
+   Open Anyway for Apertus Local. Confirm the next prompt; macOS may ask for
+   your login password or Touch ID. Approve only the app you intentionally
+   downloaded from the project's release page. Your Mac normally remembers this
+   exception for subsequent starts of this copy of the app.
+4. If asked, allow Apertus Local to control Terminal. Its Terminal window shows
+   startup progress; keep it open while chatting.
+5. On the first start, the launcher downloads and verifies the 5.3 GiB model.
+   Leave internet access on until this finishes. It then opens local browser chat.
+6. Press Control+C in the Terminal window to stop. Open the app again to restart.
+   Once the model is prepared, local chat works without an internet connection.
+
+Apple describes per-app approval at https://support.apple.com/en-us/102445.
+Do not disable system-wide security checks. If a managed Mac offers no approval
+button, ask its administrator. A warning that the app contains malware or has
+been damaged is a different problem: stop and contact the workshop organizer.
+
+Copy a previously downloaded model here to avoid downloading it again:
+~/Library/Application Support/Apertus Local/models/
+File: apertus-v1.5-8b-Q4_K_M.gguf
+
+Preview validation: native CPU and partial Metal inference pass in hosted Mac
+checks. The source setup and offline chat were tested on a physical Mac. Opening
+this downloaded app through Finder on a physical Mac remains a pending rehearsal.
+
+Project and release checksums:
+https://github.com/FarukZahiragic/apertus-local/releases

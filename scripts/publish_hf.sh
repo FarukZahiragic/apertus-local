@@ -72,7 +72,7 @@ with tempfile.TemporaryDirectory(prefix='apertus-hf-space-') as stage:
     (stage/'config.json').write_text(json.dumps(config, indent=2)+'\n')
     api.create_repo(space_repo, repo_type='space', space_sdk='static', private=private, exist_ok=True)
     commit = api.upload_folder(repo_id=space_repo, repo_type='space', folder_path=str(stage),
-                               allow_patterns=['README.md','index.html','style.css','app.js','config.json'],
+                               allow_patterns=['README.md','index.html','macos-first-start.html','style.css','app.js','config.json'],
                                commit_message='Publish native Apertus Local download page')
 result = {'model_repo': model_repo, 'model_revision': revision,
           'model_url': f'https://huggingface.co/{model_repo}',
