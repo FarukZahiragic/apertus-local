@@ -55,6 +55,9 @@ class PackageTests(unittest.TestCase):
             if sys.platform == 'darwin':
                 archive = root/'dist/apertus-local-fixture-macos-arm64.zip'
                 with zipfile.ZipFile(archive) as handle:
+                    instructions = handle.read('MACOS_FIRST_START.txt').decode()
+                    self.assertIn('Privacy & Security', instructions)
+                    self.assertIn('Open Anyway', instructions)
                     info = plistlib.loads(handle.read('Apertus Local.app/Contents/Info.plist'))
                     self.assertEqual(info['CFBundleIdentifier'],'io.github.FarukZahiragic.apertus-local')
                     self.assertIn('Terminal',info['NSAppleEventsUsageDescription'])

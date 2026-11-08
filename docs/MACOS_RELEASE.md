@@ -6,11 +6,28 @@ benchmarks can follow later; they do not block a conservative CPU-default packag
 The next acceptance check concerns opening the **downloaded app**, which also
 exercises macOS distribution checks and the Terminal automation prompt.
 
-GitHub's Apple Silicon runner can build, sign and notarize the app. The friend's
-Mac does not need to be connected for that work. Participants receive an app with
-the runtimes included; they do not install Homebrew, Python or compiler tools.
+The current distribution path is an **unsigned preview**. Neither the publisher
+nor participants need Apple Developer membership or signing credentials. The app
+retains an ad-hoc code seal needed for bundle integrity; that seal does not establish
+an Apple-verified publisher or notarization. macOS may require per-app first-open
+approval. Keep system-wide security checks enabled.
 
-## One-time credentials, when the Apple account is available
+GitHub's Apple Silicon runner builds the app without a connected physical Mac.
+Participants receive both runtimes and do not install Homebrew, Python or compiler
+tools. The ZIP includes `MACOS_FIRST_START.txt` beside the app. The download page
+links to [the participant guide](../hf-space/macos-first-start.html).
+
+Signing and notarization remain an optional future distribution choice. Skip the
+credential section below when preparing the unsigned preview.
+
+The [v0.1.0-preview.2 Mac download](https://github.com/FarukZahiragic/apertus-local/releases/tag/v0.1.0-preview.2)
+is public and available from the HF Space. Both [native CI](https://github.com/FarukZahiragic/apertus-local/actions/runs/42478430452)
+and the [unsigned release build](https://github.com/FarukZahiragic/apertus-local/actions/runs/42478427184)
+pass. The public download checksum, all 55 payload hashes, bundled first-open guide
+and macOS 15.0 deployment target were verified. The remaining physical Finder
+rehearsal is labelled pending; no Apple credentials are needed to try this preview.
+
+## Optional signing credentials
 
 Use the Apple Developer Program account that will identify the publisher. Creating
 a Developer ID certificate through the portal requires the Account Holder role.
@@ -103,41 +120,41 @@ The **Native deployment checks** workflow accepts `macos_release_version` and
 
 ```bash
 gh workflow run native.yml --repo FarukZahiragic/apertus-local \
-  --ref feat/macos-release \
+  --ref feat/unsigned-macos-download \
   -f macos_release_version=v0.1.0-preview.2 \
-  -f sign_macos_release=true
+  -f sign_macos_release=false
 ```
 
 Use `--ref main` after the implementation PRs merge. Dispatch of the registered
-native workflow on `feat/macos-release` has been verified while the PR stack is
+native workflow on implementation branches has been verified while the PR stack is
 under review. If the web UI does not show its new inputs yet, use the CLI command
 above. No signing secrets are used by pull-request CI jobs.
 
 In the GitHub UI, open **Actions > Native deployment checks > Run workflow**, select
 the implementation branch (or `main` after merge), enter the version, and leave
-signing enabled. Choose an unused version; existing release assets are preserved.
+signing disabled. Choose an unused version; existing release assets are preserved.
 
-The workflow checks the scripts, builds portable CPU and Metal runtimes, signs,
-submits to Apple, requires an accepted notarization response, staples and validates
-the ticket, checks the delivered archive, and tests actual Apertus inference through
-the extracted app's launch scripts. The hosted runner's Metal check uses eight GPU
+The workflow checks the scripts, builds portable CPU and Metal runtimes, verifies
+the ad-hoc code seal, checks the delivered archive, and tests actual Apertus inference
+through the extracted app's launch scripts. The hosted runner's Metal check uses eight GPU
 layers and packed weights because it has only 7 GB RAM. This is a functional VM
-check, not a physical-Mac speed measurement. A successful signed run creates a
+check, not a physical-Mac speed measurement. A successful run creates a
 **draft** GitHub prerelease with the ZIP and its SHA-256 checksum.
 
-Set `sign_macos_release=false` to prepare an unsigned development candidate without
-Apple credentials. It is retained as an Actions artifact; no public release is
-created. The [first candidate run](https://github.com/FarukZahiragic/apertus-local/actions/runs/42422097790)
+The unsigned route also retains an Actions artifact. The
+[first candidate run](https://github.com/FarukZahiragic/apertus-local/actions/runs/42422097790)
 passed, including real CPU and partial Metal inference from the extracted app.
 Its `macos-release-v0.1.0-preview.2` artifact contains the 19.6 MB ZIP, checksum
 and inference reports. All 55 payload hashes and the archive hash were checked
 after downloading it; no model weights are bundled. This is a development
 candidate with an ad-hoc code seal, not a Developer ID signed release.
-The first signed run and Apple's real acceptance remain pending until
-credentials are supplied. Run `gh run list --workflow native.yml` to find the run,
+Set `sign_macos_release=true` only if opting into the optional Developer ID route:
+it imports the five Apple secrets, signs, requires an accepted notarization response,
+and staples/verifies the ticket. No real Apple signing has been claimed as passed.
+Run `gh run list --workflow native.yml` to find the run,
 then `gh run watch RUN_ID --exit-status` to follow it.
 
-For a local Mac with these five environment variables already set, the same path is:
+On a local Mac, the unsigned default needs no Apple environment variables:
 
 ```bash
 scripts/release_macos.sh --version v0.1.0-preview.2
@@ -151,21 +168,26 @@ rerunning; the ID and response are printed in the signing log.
 
 ## Download check and Hugging Face availability
 
-When a Mac is available, download the draft's ZIP through a browser, extract it,
-and open **Apertus Local.app** from Finder. Allow Terminal automation if asked.
+When a Mac is available, download the preview's ZIP through a browser, extract it,
+and open **Apertus Local.app** from Finder. If macOS blocks this unsigned app,
+use **System Settings > Privacy & Security > Open Anyway** for that app and confirm.
+Follow `MACOS_FIRST_START.txt`. Allow Terminal automation if asked.
 Confirm that the browser opens chat, an answer completes, and Control+C stops it.
 This checks the packaged app; the earlier `setup.sh` rehearsal checked the source
 installation. The same prepared GGUF can be copied into
 `~/Library/Application Support/Apertus Local/models/` to avoid another download.
 
-After that check, publish the draft. Verify the public ZIP and checksum URLs from
-an unauthenticated connection. In `hf-space/config.json`, change only the Mac entry
+An unsigned preview may be published with the pending Finder-opening rehearsal
+clearly labelled. Complete that rehearsal before treating it as workshop-ready.
+Publish the draft and verify the public ZIP and checksum URLs from an
+unauthenticated connection. In `hf-space/config.json`, change only the Mac entry
 to its tested versioned download URLs, set `available` to `true`, and update its
 status and the top-level version. Retain the Linux entry's existing versioned URLs.
 Publish the updated page with `scripts/publish_hf.sh --space-only`.
 
-The current Space already hosts the verified model and the Linux preview. Its Mac
-status records the completed source/offline rehearsal and pending signed app.
+The current Space hosts the verified model and Linux preview. Its Mac entry labels
+the unsigned preview and links to first-open instructions. Neither payment nor an
+Apple Developer account is required by this path.
 Formal CPU/Metal benchmark numbers can be added after publication; they are
 required for performance claims and broader automatic-acceleration defaults,
 rather than for making the conservative package available.

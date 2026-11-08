@@ -44,3 +44,14 @@ test('download links reject non-HTTPS schemes',async()=>{
   const page=await render(unsafe);
   assert.equal(page.get('#download').href,undefined);
 });
+test('Mac preview explains first-open approval and exposes its installation guide',async()=>{
+  const page=await render(config,'Macintosh');
+  assert.equal(page.get('#mac-guide').hidden,false);
+  assert.match(page.get('#open-instructions').textContent,/Open Anyway/);
+  assert.match(page.get('#platform-note').textContent,/No Apple Developer membership/);
+  const linux=await render(config,'Linux');
+  assert.equal(linux.get('#mac-guide').hidden,true);
+  const guide=fs.readFileSync('hf-space/macos-first-start.html','utf8');
+  assert.match(guide,/Privacy &amp; Security/);
+  assert.match(guide,/Open Anyway/);
+});

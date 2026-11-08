@@ -111,13 +111,17 @@ if [[ "$platform" == macos-arm64 ]]; then
     "$REPO_ROOT/scripts/sign_macos.sh" "$app"
   else
     # osacompile's original ad-hoc seal is invalid after adding app resources.
-    # Development builds still need a consistent bundle; public releases use
-    # Developer ID and notarization through --sign instead.
+    # Unsigned previews still need a consistent bundle. Developer ID signing
+    # and notarization are optional through --sign.
     codesign --force --sign - "$app"
     codesign --verify --deep --strict "$app"
   fi
   archive="$output/$name.zip"
   ditto -c -k --sequesterRsrc --keepParent "$app" "$archive"
+  if [[ "$sign" -eq 0 ]]; then
+    # Keep first-open help beside the app, readable before macOS permits launch.
+    /usr/bin/zip -j "$archive" "$REPO_ROOT/packaging/MACOS_FIRST_START.txt"
+  fi
 else
   archive="$output/$name.tar.gz"
   tar -czf "$archive" -C "$stage" "$name"

@@ -17,6 +17,9 @@ The model runs on the participant's laptop; this Space does not process prompts.
 Source and measured results: https://github.com/FarukZahiragic/apertus-local
 
 Release availability is controlled by `config.json`. Enable a platform only after
-its archive, checksum, model URL and hardware validation are ready. Mac releases
-also require signing/notarization. Windows remains unavailable until implemented
+its archive, checksum, model URL and native checks are ready. The Mac unsigned
+preview requires no Apple Developer membership and includes per-app first-open
+instructions in `macos-first-start.html`; the physical Finder-opening rehearsal
+is labelled pending. Developer ID signing/notarization are optional.
+Windows remains unavailable until implemented
 and tested. `scripts/publish_hf.sh` uploads this directory and the exact GGUF.

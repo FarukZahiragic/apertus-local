@@ -27,8 +27,10 @@ and opens the browser after health and a one-token local inference check. Ctrl+C
 it down. See [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md) for native packages,
 resumable first-run downloads and macOS signing. The [Hugging Face download page](https://huggingface.co/spaces/faruk-zahiragic/apertus-local)
 tracks model and platform availability. A Linux Ubuntu 24.04 preview is available there.
-The Mac source setup and offline rehearsal passed on a physical Mac; the downloadable
-app awaits signing and its download/open check. See [validation status](docs/VALIDATION.md)
+The Mac source setup and offline rehearsal passed on a physical Mac. An unsigned
+Apple Silicon preview is available without Apple Developer membership; first launch
+may need **System Settings > Privacy & Security > Open Anyway**. Its downloaded-app
+opening rehearsal remains pending. See [validation status](docs/VALIDATION.md)
 and [Mac release steps](docs/MACOS_RELEASE.md). Formal speed measurements can follow later.
 Native CI checks actual inference on Linux and Apple Silicon; the Linux offline
 check also waits for the embedded chat to render in a real browser.

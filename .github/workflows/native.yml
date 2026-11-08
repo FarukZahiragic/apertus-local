@@ -10,9 +10,9 @@ on:
         required: false
         default: ''
       sign_macos_release:
-        description: 'Sign/notarize and create a draft release (requires Apple secrets)'
+        description: 'Optional Developer ID signing/notarization; leave off for the free unsigned preview'
         type: boolean
-        default: true
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -93,6 +93,7 @@ jobs:
     env:
       JOBS: '2'
       RELEASE_VERSION: ${{ inputs.macos_release_version }}
+      MACOSX_DEPLOYMENT_TARGET: '15.0'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -108,7 +109,7 @@ jobs:
           APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
         run: |
           arguments=(--version "$RELEASE_VERSION")
-          if [[ "$SIGN_RELEASE" != true ]]; then arguments+=(--unsigned); fi
+          if [[ "$SIGN_RELEASE" == true ]]; then arguments+=(--sign); fi
           /bin/bash scripts/release_macos.sh "${arguments[@]}"
       - name: Download exact model for delivered-runtime check
         run: scripts/get_model.sh --apertus
@@ -129,22 +130,32 @@ jobs:
             dist/launcher-*.log
           retention-days: 14
           if-no-files-found: error
-      - name: Create signed release draft
-        if: inputs.sign_macos_release
+      - name: Create release draft
         env:
           GH_TOKEN: ${{ github.token }}
+          SIGN_RELEASE: ${{ inputs.sign_macos_release }}
         run: |
           if gh release view "$RELEASE_VERSION" >/dev/null 2>&1; then
             echo 'error: release already exists; choose an unused version' >&2
             exit 1
           fi
           cat > "$RUNNER_TEMP/mac-release-notes.md" <<'NOTES'
-          Apple Silicon macOS preview of Apertus Local. The app includes portable CPU and Metal runtimes; no compiler, Homebrew or Python installation is needed by participants.
+          Apple Silicon macOS 15+ preview of Apertus Local. The app includes portable CPU and Metal runtimes; no Apple Developer membership, compiler, Homebrew or Python installation is needed by participants.
 
           Unzip and open Apertus Local.app. Allow Terminal access when asked. The launcher downloads and verifies the 5.3 GiB model once, then opens local chat. Keep Terminal open; Control+C stops the model. CPU is the default; 16 GB RAM is recommended.
 
-          The app is signed, notarized and stapled. Hosted-runner inference checks use CPU and partial Metal; a downloaded-app opening check on a physical Mac is still required before publishing this draft and enabling its Hugging Face download button. Formal laptop performance measurements can follow separately.
+          Hosted-runner inference checks use CPU and partial Metal. The source setup and offline chat passed on a physical Mac according to the project owner. The packaged app's browser-download/Finder opening rehearsal is still pending; this release is a preview. Formal laptop performance measurements can follow separately.
           NOTES
+          if [[ "$SIGN_RELEASE" == true ]]; then
+            echo 'This app is Developer ID signed, notarized and stapled.' >> "$RUNNER_TEMP/mac-release-notes.md"
+          else
+            cat >> "$RUNNER_TEMP/mac-release-notes.md" <<'NOTES'
+
+          This preview has an ad-hoc code seal, without an Apple-verified publisher or notarization. After trying to open the app, macOS may require System Settings > Privacy & Security > Open Anyway, followed by confirmation. Approve only the app you intentionally downloaded from this release. Do not disable system-wide security checks. If a managed Mac does not offer approval, contact its administrator.
+
+          Read MACOS_FIRST_START.txt inside the ZIP, or https://support.apple.com/en-us/102445. Signing remains an optional future distribution improvement.
+          NOTES
+          fi
           archive="dist/release/apertus-local-$RELEASE_VERSION-macos-arm64.zip"
           gh release create "$RELEASE_VERSION" "$archive" "$archive.sha256" \
             --draft --prerelease --target "$GITHUB_SHA" \

@@ -79,8 +79,9 @@ printf '%s\\n' "${3:-unsigned}" > "$TEST_RELEASE_ROOT/package.log"
         if credentials:
             environment.update(CREDENTIALS)
         environment.update(env)
+        signing = ['--sign'] if credentials else []
         result = subprocess.run([BASH, str(self.root/'scripts/release_macos.sh'), '--version',
-                                 'v0.1.0-preview.2', *args], env=environment,
+                                 'v0.1.0-preview.2', *signing, *args], env=environment,
                                 text=True, capture_output=True, timeout=20)
         for name in ['MACOS_CERTIFICATE_PASSWORD', 'APPLE_APP_PASSWORD']:
             self.assertNotIn(CREDENTIALS[name], result.stdout + result.stderr)
@@ -96,7 +97,7 @@ printf '%s\\n' "${3:-unsigned}" > "$TEST_RELEASE_ROOT/package.log"
         self.assertEqual(events[-2]['keys'], ['/Users/test/Library/Keychains/login keychain-db'])
 
     def test_missing_credentials_stop_before_build_or_keychain(self):
-        result = self.run_release()
+        result = self.run_release('--sign')
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('missing release credential MACOS_CERTIFICATE_P12_BASE64', result.stderr)
         self.assertFalse((self.root/'events.jsonl').exists())
@@ -104,10 +105,10 @@ printf '%s\\n' "${3:-unsigned}" > "$TEST_RELEASE_ROOT/package.log"
         self.assertEqual(list((self.root/'tmp').iterdir()), [])
 
     def test_unsigned_candidate_needs_no_credentials_and_preserves_existing_output(self):
-        checked = self.run_release('--unsigned', '--check')
+        checked = self.run_release('--check')
         self.assertEqual(checked.returncode, 0, checked.stderr)
         self.assertFalse((self.root/'build.log').exists())
-        result = self.run_release('--unsigned')
+        result = self.run_release()
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertFalse((self.root/'events.jsonl').exists())
         archive = self.root/'dist/release/apertus-local-v0.1.0-preview.2-macos-arm64.zip'

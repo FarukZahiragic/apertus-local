@@ -5,7 +5,7 @@ const checksum = document.querySelector('#checksum');
 const status = document.querySelector('#status');
 let configuration;
 const platformText = {
-  'macos-arm64': ['On a Mac, check About This Mac for an Apple M-series chip.', 'Unzip the download and open Apertus Local.app. Allow Terminal access when asked, and keep the terminal window open.'],
+  'macos-arm64': ['Apple M-series chip, macOS 15 or newer. No Apple Developer membership needed.', 'Unzip and open Apertus Local.app. If macOS blocks this unsigned preview, use System Settings → Privacy & Security → Open Anyway. Allow Terminal access when asked and keep its window open.'],
   'linux-x86_64': ['For compatible Intel / AMD Linux laptops. Check the release notes for the supported distribution.', 'Extract the archive, open a terminal in the extracted folder, and run ./Start.sh. Keep the terminal open.'],
   'windows-x86_64': ['Windows packaging and validation are still pending.', 'A Windows launcher will be provided after native Windows validation.']
 };
@@ -16,6 +16,7 @@ function update() {
   const selected = platform.value;
   document.querySelector('#platform-note').textContent = platformText[selected][0];
   document.querySelector('#open-instructions').textContent = platformText[selected][1];
+  document.querySelector('#mac-guide').hidden = selected !== 'macos-arm64';
   const release = configuration?.platforms?.[selected];
   const url = safeURL(release?.url);
   const sumURL = safeURL(release?.checksum_url);

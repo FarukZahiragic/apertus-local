@@ -21,8 +21,12 @@ CPU is available on every packaged platform. Metal is experimental on Apple
 Silicon and remains opt-in until Apertus checks pass on that hardware.
 Developer overrides: BACKEND=cpu|metal, THREADS, CTX, PORT, MODEL.
 
-Unsigned development Mac packages have not completed Apple's distribution checks.
-Use signed, notarized workshop releases when available; do not disable Gatekeeper.
+Unsigned Mac previews have an ad-hoc code seal, without Apple Developer ID
+verification or notarization. After trying to open the app, use System Settings >
+Privacy & Security > Open Anyway if offered, then confirm. Approve only the app
+you intentionally downloaded from this project. Read MACOS_FIRST_START.txt beside
+the app. No Apple Developer membership is needed. Keep system-wide security checks
+enabled. An administrator may need to approve installation on a managed Mac.
 Windows packages are not yet provided or validated.
 
 Source, hardware measurements and troubleshooting:
