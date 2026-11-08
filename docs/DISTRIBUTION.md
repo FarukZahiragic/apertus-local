@@ -99,8 +99,10 @@ checked but does not establish an identified publisher or notarization.
 Publishing requires a versioned GGUF location and a tested runtime archive for each
 advertised platform. An unsigned Mac preview may be available with its first-open
 instructions, code-seal/inference checks and pending physical-download rehearsal
-clearly labelled. Windows packaging is a separate pending slice and must not be advertised as
-supported. The same applies to Intel Macs, Linux ARM64 and untested Linux variants.
+clearly labelled. Windows uses native Intel/AMD and ARM64 archives, each with its
+own build and inference checks; see [WINDOWS.md](WINDOWS.md). Intel Macs, Linux
+ARM64 and musl-only Linux still need separate packages. Compatibility minimums
+come from [the capability policy](COMPATIBILITY.md), not a distro-name whitelist.
 
 Before promoting a version, follow [OFFLINE.md](OFFLINE.md), [MACOS.md](MACOS.md) and
 the roadmap hardware checks. The automated suite exercises download corruption,
@@ -147,6 +149,10 @@ versioned release with its checksum and preview notes.
 
 `python3 -m unittest discover -s tests -v` and
 `node --test tests/test_*.cjs` exercise the portable control paths and browser cleanup.
+Windows adds `tests/test_windows.ps1` under Windows PowerShell 5.1, native PE
+dependency checks and actual-model smoke tests from the extracted ZIP. The same
+`scripts/validate_local.py` checks the API on all platforms; Python is a maintainer
+validation dependency, not a participant requirement.
 GitHub Actions builds native Linux and Apple Silicon packages, downloads the exact
 GGUF and runs real-model UI/API checks. The Mac VM may expose no usable Metal
 GPU; that case is reported as unavailable rather than counted as a GPU test.

@@ -4,6 +4,12 @@
 applies these patches in order. Keep each one minimal; drop it once the pinned branch
 contains the change.
 
+`0004-windows-arm-cpu-variants.patch` adds the missing Windows ARM64 build entries
+for the pin's existing Windows CPU feature detection. It includes ARMv8.0 and
+optional dot-product, FP16 and I8MM variants. The existing runtime scoring checks
+the OS-reported features before choosing a variant; no build-host tuning or
+Snapdragon model whitelist is used. Tensor math and model loading are unchanged.
+
 | Patch | Why |
 | --- | --- |
 | `0001-apertus-expose-layer-inputs.patch` | DSpark drafts read the target's hidden states at the inputs of layers 1, 8, 15, 22 and 29. The Apertus graph did not record them (`res->t_layer_inp[il]`), so `--spec-type draft-dspark` aborted with `t_layer_inp[il] != nullptr`. Same one-line hook as `qwen3.cpp` and `llama.cpp`. |

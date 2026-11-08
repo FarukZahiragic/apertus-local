@@ -27,7 +27,7 @@ Privacy & Security > Open Anyway if offered, then confirm. Approve only the app
 you intentionally downloaded from this project. Read MACOS_FIRST_START.txt beside
 the app. No Apple Developer membership is needed. Keep system-wide security checks
 enabled. An administrator may need to approve installation on a managed Mac.
-Windows packages are not yet provided or validated.
+Windows users should download the matching Windows ZIP and open Start.cmd.
 
 Source, hardware measurements and troubleshooting:
 https://github.com/FarukZahiragic/apertus-local

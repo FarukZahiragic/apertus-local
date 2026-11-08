@@ -62,7 +62,7 @@ class SetupTests(unittest.TestCase):
         self.env['SETUP_TEST_TEMPLATE'] = str(template)
         self.env['SETUP_TEST_REAL_GIT'] = GIT
         self.stub('git', '''if [[ "$1" == clone ]]; then
-  [[ "$2 $3 $4" == '--branch feat/macos-setup --single-branch' ]]
+  [[ "$2 $3 $4" == '--branch main --single-branch' ]]
   [[ "$5" == https://github.com/FarukZahiragic/apertus-local ]]
   cp -R "$SETUP_TEST_TEMPLATE" "$6"
 else

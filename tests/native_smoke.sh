@@ -9,7 +9,7 @@ export APERTUS_STATE_DIR="$PWD/.apertus-state"
 if [[ -n "${PACKAGED_ROOT:-}" ]]; then
   export MODEL="$PWD/models/apertus-v1.5-8b-Q4_K_M.gguf"
 fi
-export HARDWARE_KIND='GitHub-hosted VM (NOT laptop)' PORT=18087 CTX=512 THREADS=2
+export HARDWARE_KIND="${HARDWARE_KIND:-GitHub-hosted VM (NOT laptop)}" PORT=18087 CTX=512 THREADS=2
 launcher=''
 cleanup() {
   if [[ -n "$launcher" ]]; then

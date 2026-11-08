@@ -1,0 +1,14 @@
+Microsoft Visual C++ runtime components
+
+The Windows archive includes Microsoft Visual C++ runtime DLLs copied from the
+target architecture's Visual Studio redistributable directory. These components
+are Microsoft software and are governed by their Microsoft Software License Terms.
+Their inclusion does not change the licenses of Apertus, llama.cpp or this project.
+
+Visual Studio 2022 redistribution list and governing license references:
+https://learn.microsoft.com/visualstudio/releases/2022/redistribution
+
+Microsoft's application-local deployment documentation:
+https://learn.microsoft.com/cpp/windows/choosing-a-deployment-method
+
+Only release redistributables are included, not debug runtimes or compiler tools.

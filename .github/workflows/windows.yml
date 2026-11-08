@@ -1,0 +1,73 @@
+name: Native Windows deployment
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Archive version (CI only unless promoted to a release)'
+        default: ci
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2022
+            arch: x64
+          - os: windows-11-arm
+            arch: arm64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: powershell
+    env:
+      JOBS: '2'
+      RELEASE_VERSION: ${{ inputs.version || 'ci' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Parse native PowerShell scripts
+        run: |
+          $bad=$false
+          Get-ChildItem scripts,tests -Recurse -Include *.ps1,*.psm1 | ForEach-Object {
+            $tokens=$null; $errors=$null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($_.FullName,[ref]$tokens,[ref]$errors)
+            if($errors) { $errors | Format-List; $bad=$true }
+          }
+          if($bad) { throw 'PowerShell syntax errors' }
+      - name: Verify downloads, native arguments and owned process lifecycle
+        run: tests/test_windows.ps1
+      - name: Build portable native CPU runtime
+        run: scripts/setup_windows.ps1 -Architecture '${{ matrix.arch }}'
+      - name: Package and verify relocated runtime
+        run: scripts/package_windows.ps1 -Version $env:RELEASE_VERSION -Architecture '${{ matrix.arch }}'
+      - name: Download and verify exact model
+        run: |
+          $env:MODELS_DIR=Join-Path $PWD 'models'
+          scripts/windows/launch.ps1 -GetModel
+      - name: Validate the delivered archive with actual inference
+        run: |
+          $platform='windows-x86_64'
+          if('${{ matrix.arch }}' -eq 'arm64') { $platform='windows-arm64' }
+          tests/windows_smoke.ps1 -Archive "dist/apertus-local-$env:RELEASE_VERSION-$platform.zip" -Architecture '${{ matrix.arch }}'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-Windows-${{ matrix.arch }}
+          path: |
+            dist/
+            .apertus-state/windows/*.log
+          include-hidden-files: true
+          retention-days: 14
+          if-no-files-found: warn

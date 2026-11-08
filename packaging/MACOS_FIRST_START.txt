@@ -1,6 +1,6 @@
 Apertus Local — first start on a Mac
 
-Requirements: Apple M-series chip, macOS 15 or newer; 16 GB RAM recommended.
+Requirements: Apple M-series chip, macOS @MACOS_MINIMUM@ or newer; 16 GB RAM recommended.
 No Apple Developer membership, Homebrew, Python or compiler installation is needed.
 
 1. Extract the ZIP. Move Apertus Local.app into Applications or another permanent

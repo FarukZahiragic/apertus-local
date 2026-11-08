@@ -1,7 +1,8 @@
 # Native deployment validation
 
-Implementation and hardware acceptance are tracked separately. The native implementation PRs and unsigned-preview follow-up form a
-dependent stack; `main` is not changed until they are reviewed and merged.
+Implementation and hardware acceptance are tracked separately. Native deployment
+PRs #16–#24 are merged into `main`. Windows and broader compatibility work is in
+the follow-up PR; do not infer physical laptop validation from a build target.
 
 ## Recorded on 7–8 November 2026
 
@@ -19,14 +20,14 @@ dependent stack; `main` is not changed until they are reviewed and merged.
 | GitHub-hosted Apple M1 VM, 7 GB RAM, macOS 15 | Versioned Mac release candidate: build, extract, code seal, actual CPU and partial Metal inference through delivered launch scripts | pass in [release preparation](https://github.com/FarukZahiragic/apertus-local/actions/runs/42422097790); unsigned development artifact, no public Mac release |
 | GitHub-hosted Mac/Linux runners | Unsigned-preview implementation: 26 Python tests, five Node tests, native builds and actual model checks, including Linux browser rendering with external networking blocked | pass in [preview CI](https://github.com/FarukZahiragic/apertus-local/actions/runs/42478430452) |
 | GitHub-hosted Apple M1 VM, 7 GB RAM, macOS 15 | Public unsigned preview: first-open guide in ZIP, code-seal verification, actual CPU and eight-layer packed Metal inference through extracted app | pass in [preview release build](https://github.com/FarukZahiragic/apertus-local/actions/runs/42478427184); both document answers `Sarajevo` |
-| Linux verification of Mac release | ZIP SHA-256 and all 55 payload hashes, bundled first-open guide, Mach-O deployment target and anonymous release download | pass; macOS minimum 15.0.0; 19,633,339 bytes; SHA-256 `605e0283e02ede132838bd794ebf0f970780c96925bec3275aee149268ff3686` |
+| Linux verification of Mac release | ZIP SHA-256 and all 55 payload hashes, bundled first-open guide, CPU executable deployment target and anonymous release download | pass; CPU minimum 15.0.0, but the outer ARM64 applet was later found to require 15.8; 19,633,339 bytes; SHA-256 `605e0283e02ede132838bd794ebf0f970780c96925bec3275aee149268ff3686` |
 | GitHub-hosted Apple M1 VM, 7 GB RAM, macOS 15 | Portable CPU/Metal builds, relocated app packaging, real CPU and partial Metal inference (`GPU_LAYERS=8 LOAD_MODE=none`) | pass in [native CI](https://github.com/FarukZahiragic/apertus-local/actions/runs/42386944980); hosted VM is not a participant laptop |
 | GitHub-hosted Linux VM, only loopback networking | Fresh Apertus startup, embedded assets, streamed usage, document Q&A and rendered chat input/model in actual Chrome | pass in the same run |
 | Reference Linux laptop, actual Chrome | Render embedded chat input and model name through the DevTools pipe | pass; networking enabled during this local check |
 
 The functional report is generated under ignored `dist/validation-reference-laptop.json`.
 The short Qwen throughput regression run is recorded in `benchmarks/results.md`.
-The complete Python fixture suite now contains 26 passing tests, alongside five
+The complete Python fixture suite now contains 26 passing tests, alongside seven
 passing Node download-page and browser-cleanup tests.
 Functional request checks are not performance benchmarks. The owner informally
 observed generation in the thirty-something tokens/s range on the friend's Mac,
@@ -52,11 +53,41 @@ hardware certification. Other Linux distributions require their own compatibilit
 check; CPU dispatch does not remove libc requirements.
 
 `v0.1.0-preview.2` adds the public [unsigned Apple Silicon Mac preview](https://github.com/FarukZahiragic/apertus-local/releases/tag/v0.1.0-preview.2).
-It targets macOS 15+, includes a first-open guide beside the app, and needs no
+Its outer ARM64 applet requires macOS 15.8+, includes a first-open guide beside the app, and needs no
 Apple Developer membership. It has an ad-hoc code seal and has not been notarized.
+New portable builds replace that host-provided applet with a native launcher
+targeting macOS 13.3 and scan every bundled Mach-O against that maximum minimum.
 The physical browser-download/Finder-opening rehearsal remains pending, as stated
 in the release notes and download page. This is separate from the completed
 physical Mac source/offline rehearsal and hosted delivered-runtime checks.
+
+## Native Windows and broader compatibility preview
+
+`v0.1.0-preview.3` publishes four archives from source
+`189b31ef3ba8c0e9e7a562a9820a4ff372b8e2ff`. Each archive's SHA-256 and every
+payload hash in `release.json` are checked before publication. Model weights are
+separate and retain the same pinned revision/hash on all platforms.
+
+| Environment | Delivered-archive check | Result |
+| --- | --- | --- |
+| Native x64 Windows hosted VM, AMD EPYC, 16 GB RAM | PowerShell 5.1 fixtures; complete ZIP extracted to a path with spaces; actual model, assets, streamed usage, document Q&A, three repeated requests and owned shutdown; outbound Windows Firewall block for the server | pass in [Windows release checks](https://github.com/FarukZahiragic/apertus-local/actions/runs/42496454528); document answer `Sarajevo` |
+| Native ARM64 Windows hosted VM, Cobalt 100, 16 GB RAM | Same fixture and real-model checks using native ARM64 DLLs and the included Microsoft runtime | pass in the same run; document answer `Sarajevo` |
+| Apple Silicon hosted VM, macOS 15 | Native Cocoa wrapper, app metadata/code seal and actual CPU/eight-layer Metal inference from the extracted app | pass in [native release checks](https://github.com/FarukZahiragic/apertus-local/actions/runs/42496454765); every bundled Mach-O, including the wrapper, has minimum 13.3 or lower |
+| Linux x86_64, Ubuntu 22.04 hosted VM | Actual delivered runtime/API and rendered chat input/model with external networking disabled | pass in the same run |
+| Ubuntu 24.04 and Debian 12 consumer containers | Same Linux archive, no compiler, actual model and assets with container networking disabled | pass in the same run |
+
+The Linux archive requires GLIBC 2.34, GLIBCXX 3.4.30 and CXXABI 1.3.13, as measured
+from imported symbols and recorded in `compatibility.json`. Windows targets
+64-bit Windows 10+ with PowerShell 5.1; Mac targets Apple Silicon macOS 13.3+.
+Minimum targets are distinguished from tested runner versions. These are
+functional checks, not physical-laptop benchmarks or certification of every
+historical OS release. See [COMPATIBILITY.md](COMPATIBILITY.md).
+
+A parallel PR run passed the Linux model checks but Chrome exceeded the initial
+10-second command deadline while starting a renderer. The versioned release run
+passed the same browser assertion. The harness now gives only its first command
+a bounded 60-second cold-start allowance; the rendered chat input/model checks
+remain unchanged.
 
 ## Still pending
 
@@ -71,7 +102,10 @@ physical Mac source/offline rehearsal and hosted delivered-runtime checks.
   Workflow commands and optional signing are in [MACOS_RELEASE.md](MACOS_RELEASE.md).
   The preview can be published with this remaining check clearly labelled;
   Developer ID signing is not a release prerequisite for this chosen route.
-- Implement and validate native Windows packaging before offering Windows downloads.
+- Rehearse browser download, extraction, first open and offline relaunch on physical
+  Windows x64 and ARM64 laptops, including minimum OS versions and managed-device
+  policies. Hosted native Windows inference checks pass; these do not certify
+  performance or installation on every participant device.
 - Rehearse the workshop installation with a person who has not developed the repo.
 
 Follow [MACOS.md](MACOS.md), [OFFLINE.md](OFFLINE.md) and

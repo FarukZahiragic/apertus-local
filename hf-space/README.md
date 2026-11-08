@@ -21,5 +21,8 @@ its archive, checksum, model URL and native checks are ready. The Mac unsigned
 preview requires no Apple Developer membership and includes per-app first-open
 instructions in `macos-first-start.html`; the physical Finder-opening rehearsal
 is labelled pending. Developer ID signing/notarization are optional.
-Windows remains unavailable until implemented
-and tested. `scripts/publish_hf.sh` uploads this directory and the exact GGUF.
+Windows has separate Intel/AMD and ARM64 entries and a first-start guide.
+Keep each entry unavailable until its own native archive, checksum and inference
+checks pass. Minimum OS/library capabilities are release metadata, separate from
+the runner version used for testing. `scripts/publish_hf.sh` uploads this directory
+and the exact GGUF.

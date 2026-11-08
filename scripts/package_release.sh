@@ -96,23 +96,51 @@ PY
 # Exercise relocated binaries without a loader-path workaround.
 "$payload/runtime/cpu/bin/llama-server" --version
 "$payload/runtime/cpu/bin/llama-bench" --list-devices
+record_compatibility() {
+  local destination="$1" scan="$2"
+  shift 2
+  python3 "$REPO_ROOT/scripts/runtime_requirements.py" "$scan" "$@" > "$destination/compatibility.json"
+  python3 - "$destination" <<'PY'
+import hashlib, json, sys
+from pathlib import Path
+root = Path(sys.argv[1])
+path = root/'compatibility.json'
+manifest = json.loads((root/'release.json').read_text())
+manifest['compatibility'] = json.loads(path.read_text())
+expected = 'arm64' if manifest['platform'].endswith('arm64') else 'x86_64'
+assert manifest['compatibility']['architectures'] == [expected], 'Archive contains a different CPU architecture'
+manifest['files']['compatibility.json'] = hashlib.sha256(path.read_bytes()).hexdigest()
+(root/'release.json').write_text(json.dumps(manifest, indent=2)+'\n')
+PY
+}
 if [[ "$platform" == macos-arm64 ]]; then
   app="$stage/Apertus Local.app"
-  osacompile -o "$app" "$REPO_ROOT/packaging/Launch.applescript"
+  mac_target="${MACOSX_DEPLOYMENT_TARGET:-13.3}"
+  mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
+  xcrun clang -fobjc-arc "-mmacosx-version-min=$mac_target" -framework Cocoa \
+    "$REPO_ROOT/packaging/Launch.m" -o "$app/Contents/MacOS/ApertusLocal"
   plist="$app/Contents/Info.plist"
-  /usr/libexec/PlistBuddy -c 'Delete :NSAppleEventsUsageDescription' "$plist" >/dev/null 2>&1 || true
-  /usr/libexec/PlistBuddy -c 'Add :NSAppleEventsUsageDescription string Apertus Local opens Terminal to run the model and show startup messages.' "$plist"
-  /usr/libexec/PlistBuddy -c 'Delete :CFBundleIdentifier' "$plist" >/dev/null 2>&1 || true
-  /usr/libexec/PlistBuddy -c 'Add :CFBundleIdentifier string io.github.FarukZahiragic.apertus-local' "$plist"
+  python3 - "$plist" "$mac_target" "$version" <<'PY'
+import plistlib, re, sys
+match = re.match(r'v?(\d+\.\d+\.\d+)', sys.argv[3])
+version = match.group(1) if match else '0.0.0'
+with open(sys.argv[1], 'wb') as output:
+    plistlib.dump(dict(CFBundleIdentifier='io.github.FarukZahiragic.apertus-local',
+        CFBundleName='Apertus Local', CFBundleDisplayName='Apertus Local',
+        CFBundleExecutable='ApertusLocal', CFBundlePackageType='APPL',
+        CFBundleVersion=version, CFBundleShortVersionString=version,
+        LSMinimumSystemVersion=sys.argv[2],
+        NSAppleEventsUsageDescription='Apertus Local opens Terminal to run the model and show startup messages.'), output)
+PY
   mkdir -p "$app/Contents/Resources/apertus-local"
   cp -R "$payload/." "$app/Contents/Resources/apertus-local/"
   rm -rf "$payload"
+  record_compatibility "$app/Contents/Resources/apertus-local" "$app" --max-macos-minimum "$mac_target"
   if [[ "$sign" -eq 1 ]]; then
     "$REPO_ROOT/scripts/sign_macos.sh" "$app"
   else
-    # osacompile's original ad-hoc seal is invalid after adding app resources.
-    # Unsigned previews still need a consistent bundle. Developer ID signing
-    # and notarization are optional through --sign.
+    # Seal the complete bundle, including the delivered runtimes and metadata.
+    # Developer ID signing and notarization are optional through --sign.
     codesign --force --sign - "$app"
     codesign --verify --deep --strict "$app"
   fi
@@ -120,9 +148,15 @@ if [[ "$platform" == macos-arm64 ]]; then
   ditto -c -k --sequesterRsrc --keepParent "$app" "$archive"
   if [[ "$sign" -eq 0 ]]; then
     # Keep first-open help beside the app, readable before macOS permits launch.
-    /usr/bin/zip -j "$archive" "$REPO_ROOT/packaging/MACOS_FIRST_START.txt"
+    python3 - "$REPO_ROOT/packaging/MACOS_FIRST_START.txt" "$stage/MACOS_FIRST_START.txt" "$mac_target" <<'PY'
+from pathlib import Path
+import sys
+Path(sys.argv[2]).write_text(Path(sys.argv[1]).read_text().replace('@MACOS_MINIMUM@', sys.argv[3]))
+PY
+    /usr/bin/zip -j "$archive" "$stage/MACOS_FIRST_START.txt"
   fi
 else
+  record_compatibility "$payload" "$payload/runtime"
   archive="$output/$name.tar.gz"
   tar -czf "$archive" -C "$stage" "$name"
 fi

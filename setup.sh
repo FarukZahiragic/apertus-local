@@ -92,7 +92,7 @@ step='getting the project'
 repo='https://github.com/FarukZahiragic/apertus-local'
 if [[ ! -e "$install_dir" ]]; then
   mkdir -p "$(dirname "$install_dir")"
-  git clone --branch feat/macos-setup --single-branch "$repo" "$install_dir"
+  git clone --branch main --single-branch "$repo" "$install_dir"
 else
   [[ -d "$install_dir" && -e "$install_dir/.git" ]] || {
     echo "error: $install_dir already exists and is not a project checkout; nothing was overwritten." >&2
