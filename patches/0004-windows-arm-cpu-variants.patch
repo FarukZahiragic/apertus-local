@@ -1,0 +1,18 @@
+diff --git a/ggml/src/CMakeLists.txt b/ggml/src/CMakeLists.txt
+--- a/ggml/src/CMakeLists.txt
++++ b/ggml/src/CMakeLists.txt
+@@ -542,6 +542,14 @@ if (GGML_CPU_ALL_VARIANTS)
+             ggml_add_cpu_backend_variant(apple_m1             DOTPROD)
+             ggml_add_cpu_backend_variant(apple_m2_m3          DOTPROD MATMUL_INT8)
+             ggml_add_cpu_backend_variant(apple_m4             DOTPROD MATMUL_INT8 NOSVE SME)
++        elseif (WIN32)
++            # ggml-feats.h already detects these features with the Windows API.
++            # Keep an ARMv8.0 baseline for older Windows ARM laptops; newer
++            # variants are loaded only when their runtime score is supported.
++            ggml_add_cpu_backend_variant(windows_armv8_0)
++            ggml_add_cpu_backend_variant(windows_armv8_2_dp     DOTPROD)
++            ggml_add_cpu_backend_variant(windows_armv8_2_fp16   DOTPROD FP16_VECTOR_ARITHMETIC)
++            ggml_add_cpu_backend_variant(windows_armv8_6_i8mm   DOTPROD FP16_VECTOR_ARITHMETIC MATMUL_INT8)
+         else()
+             message(FATAL_ERROR "Unsupported ARM target OS: ${CMAKE_SYSTEM_NAME}")
+         endif()

@@ -2,7 +2,7 @@
 [CmdletBinding()]
 param([Parameter(Mandatory=$true)][string]$Version,
       [ValidateSet('x64','arm64')][string]$Architecture = 'x64',
-      [string]$BuildDirectory = '', [string]$OutputDirectory = '')
+      [string]$BuildDirectory = '', [string]$OutputDirectory = '', [string]$RuntimeDirectory = '')
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
@@ -11,7 +11,7 @@ if (-not $BuildDirectory) { $BuildDirectory = Join-Path $root "vendor/llama.cpp/
 if (-not $OutputDirectory) { $OutputDirectory = Join-Path $root 'dist' }
 $cache = Get-Content -LiteralPath (Join-Path $BuildDirectory 'CMakeCache.txt') -Raw
 foreach ($required in @('GGML_NATIVE:BOOL=OFF','GGML_BACKEND_DL:BOOL=ON','GGML_CPU_ALL_VARIANTS:BOOL=ON',
-    'GGML_OPENMP:BOOL=OFF','CMAKE_MSVC_RUNTIME_LIBRARY:STRING=MultiThreaded')) {
+    'GGML_OPENMP:BOOL=OFF','CMAKE_MSVC_RUNTIME_LIBRARY:STRING=MultiThreadedDLL')) {
     if ($cache -notmatch ('(?m)^' + [regex]::Escape($required) + '\r?$')) { throw "Nonportable Windows build: missing $required" }
 }
 $bin = Join-Path $BuildDirectory 'bin/Release'
@@ -47,6 +47,18 @@ try {
         Copy-Item -LiteralPath (Join-Path $bin $name) -Destination $runtime
     }
     foreach ($library in @(Get-ChildItem (Join-Path $bin '*.dll'))) { Copy-Item -LiteralPath $library.FullName -Destination $runtime }
+    # ggml_fopen returns FILE* across engine DLL boundaries. Those DLLs must
+    # share one CRT; statically linking a separate CRT into each is unsafe.
+    # App-local deployment needs no participant runtime installer or admin rights.
+    if (-not $RuntimeDirectory) {
+        $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
+        $installation = & $vswhere -latest -products '*' -property installationPath
+        $candidates = @(Get-ChildItem (Join-Path $installation "VC/Redist/MSVC/*/$Architecture/Microsoft.VC*.CRT") -Directory)
+        $RuntimeDirectory = ($candidates | Sort-Object FullName -Descending | Select-Object -First 1).FullName
+    }
+    if (-not $RuntimeDirectory -or -not (Test-Path $RuntimeDirectory)) { throw 'Visual C++ redistributable directory was not found' }
+    foreach ($library in @(Get-ChildItem (Join-Path $RuntimeDirectory '*.dll'))) { Copy-Item -LiteralPath $library.FullName -Destination $runtime }
+    Copy-Item (Join-Path $root 'packaging/MSVC-REDIST-NOTICE.txt') (Join-Path $stage 'licenses')
     if (@(Get-ChildItem (Join-Path $runtime 'ggml-cpu*.dll')).Count -eq 0) { throw 'Missing dynamically dispatched CPU backend DLLs' }
     $files = @{}
     foreach ($file in (Get-ChildItem $stage -Recurse -File)) {
@@ -60,7 +72,7 @@ try {
     $sourceCommit = & git -C $root rev-parse HEAD
     $llamaCommit = & git -C $vendor rev-parse HEAD
     $manifest = @{ version=$Version; platform=$platform; source_commit=$sourceCommit; llama_commit=$llamaCommit;
-        minimum_powershell='5.1'; cpu_dispatch=$true; msvc_runtime='static'; signing='unsigned';
+        minimum_powershell='5.1'; cpu_dispatch=$true; msvc_runtime='app-local'; signing='unsigned';
         patches=$patches; files=$files }
     [IO.File]::WriteAllText((Join-Path $stage 'release.json'), ($manifest | ConvertTo-Json -Depth 5))
     & (Join-Path $runtime 'llama-server.exe') --version

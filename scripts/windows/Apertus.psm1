@@ -223,7 +223,13 @@ function Invoke-Apertus {
     }
     $build = Join-Path $Root 'runtime/cpu'
     if ($env:BUILD_DIR) { $build = $env:BUILD_DIR }
+    elseif (-not (Test-Path (Join-Path $build 'bin/llama-server.exe'))) {
+        $architecture = 'x64'
+        if ((Get-ApertusArchitecture) -eq 'arm64') { $architecture = 'arm64' }
+        $build = Join-Path $Root "vendor/llama.cpp/build-windows-$architecture"
+    }
     $serverPath = Join-Path $build 'bin/llama-server.exe'
+    if (Test-Path (Join-Path $build 'bin/Release/llama-server.exe')) { $serverPath = Join-Path $build 'bin/Release/llama-server.exe' }
     if (-not (Test-Path -LiteralPath $serverPath -PathType Leaf)) { throw 'Runtime missing. Extract the complete Windows ZIP before opening Start.cmd.' }
     $manifestPath = Join-Path $Root 'release.json'
     if (Test-Path -LiteralPath $manifestPath) {
@@ -288,7 +294,9 @@ function Invoke-Apertus {
         }
         if (-not $ready) {
             if (Test-Path -LiteralPath $stderr) { Get-Content -LiteralPath $stderr -Tail 20 | ForEach-Object { Write-Host $_ } }
-            throw "Model startup failed. Check $stderr, or close other applications and retry."
+            $exitDetail = 'startup timeout'
+            if ($server.HasExited) { $exitDetail = 'exit code ' + $server.ExitCode }
+            throw "Model startup failed ($exitDetail). Check $stderr, or close other applications and retry."
         }
         $probe = Invoke-ApertusLocalRequest $port '/completion' '{"prompt":"Hello","n_predict":1,"temperature":0,"cache_prompt":false}' ([Math]::Min($timeout,30) * 1000)
         [IO.File]::WriteAllText((Join-Path $state "check-$port-cpu.json"), $probe)

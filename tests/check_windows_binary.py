@@ -6,6 +6,7 @@ import sys
 root = Path(sys.argv[1])
 expected = {'x64': 0x8664, 'arm64': 0xAA64}[sys.argv[2]]
 files = [*root.glob('*.exe'), *root.glob('*.dll')]
+available = {path.name.lower() for path in files}
 assert files, 'No Windows runtime files'
 for path in files:
     data = path.read_bytes()
@@ -32,8 +33,7 @@ for path in files:
             dependencies.append(data[name:data.index(b'\0', name)].decode().lower())
             entry += 20
     for name in dependencies:
-        assert not name.startswith(('vcruntime', 'msvcp', 'libomp', 'libiomp')), f'Unbundled compiler runtime: {path}: {name}'
-        if name.startswith(('ggml', 'llama', 'common')):
-            assert (root/name).is_file(), f'Missing runtime DLL: {name}'
+        if name.startswith(('vcruntime', 'msvcp', 'libomp', 'libiomp', 'ggml', 'llama', 'common')):
+            assert name in available, f'Missing app-local runtime DLL: {path}: {name}'
     print(path.name + ': ' + ', '.join(dependencies))
 print(f'{len(files)} Windows runtime files passed architecture/dependency checks.')
