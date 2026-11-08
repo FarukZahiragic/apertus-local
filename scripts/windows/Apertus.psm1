@@ -3,9 +3,9 @@ Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 
 function Get-ApertusConfig {
-    param([Parameter(Mandatory=$true)][string]$Root)
+    param([Parameter(Mandatory=$true)][string]$Root, [string]$File = 'model.env')
     $config = @{}
-    foreach ($line in [IO.File]::ReadAllLines((Join-Path $Root 'config/model.env'))) {
+    foreach ($line in [IO.File]::ReadAllLines((Join-Path $Root "config/$File"))) {
         if ($line -match '^(APERTUS_MODEL_[A-Z0-9_]+)=(.*)$') {
             $name = $Matches[1]; $value = $Matches[2].Trim('"')
             if ($value -match '^\$\{([A-Z0-9_]+):-([^}]+)\}$') {
@@ -81,7 +81,9 @@ function Save-ApertusModel {
                 try {
                     $request = [Net.HttpWebRequest]::Create($uri)
                     $request.Timeout = 30000; $request.ReadWriteTimeout = 30000
-                    if ($env:HF_TOKEN) { $request.Headers['Authorization'] = 'Bearer ' + $env:HF_TOKEN }
+                    if ($env:HF_TOKEN -and $uri.Scheme -eq 'https' -and $uri.Host -eq 'huggingface.co') {
+                        $request.Headers['Authorization'] = 'Bearer ' + $env:HF_TOKEN
+                    }
                     if ($offset -gt 0) { $request.AddRange($offset) }
                     $response = $request.GetResponse()
                     if ([int]$response.StatusCode -eq 206) {
@@ -196,7 +198,7 @@ function Invoke-ApertusLocalRequest {
 }
 
 function Invoke-Apertus {
-    param([string]$Root, [switch]$NoBrowser, [switch]$Stop, [switch]$Check, [switch]$GetModel)
+    param([string]$Root, [switch]$NoBrowser, [switch]$Stop, [switch]$Check, [switch]$GetModel, [switch]$TextOnly)
     if ($env:OS -ne 'Windows_NT') { throw 'Use the native Windows package on Windows, or Start.sh/Start.command on Linux/macOS.' }
     $port = 8080
     if ($env:PORT) {
@@ -221,7 +223,20 @@ function Invoke-Apertus {
     $config = Get-ApertusConfig $Root
     $models = Join-Path $dataRoot 'models'
     if ($env:MODELS_DIR) { $models = $env:MODELS_DIR }
-    if ($GetModel) { Save-ApertusModel $config $models | Out-Null; return }
+    $multimodal = $true
+    if ($TextOnly -or $env:MULTIMODAL -eq '0') { $multimodal = $false }
+    elseif ($env:MULTIMODAL -and $env:MULTIMODAL -ne '1') { throw 'MULTIMODAL must be 0 or 1' }
+    $mmconfig = $null; $mmurl = ''
+    if ($multimodal) {
+        $mmconfig = Get-ApertusConfig $Root 'multimodal.env'
+        $mmurl = $mmconfig.APERTUS_MODEL_URL
+        if ($env:MMPROJ_URL) { $mmurl = $env:MMPROJ_URL }
+    }
+    if ($GetModel) {
+        Save-ApertusModel $config $models | Out-Null
+        if ($multimodal) { Save-ApertusModel $mmconfig $models -Url $mmurl | Out-Null }
+        return
+    }
     if ($env:BACKEND -and $env:BACKEND -notin @('auto','cpu')) { throw 'The Windows preview uses CPU. Set BACKEND=cpu or remove the backend override.' }
     $hardware = Get-ApertusHardware
     $threads = $hardware.Threads
@@ -271,6 +286,16 @@ function Invoke-Apertus {
                 if (-not (Test-ApertusModel $model $env:MODEL_SHA256)) { throw 'MODEL_SHA256 mismatch' }
             } else { Write-Host 'Developer MODEL override: checksum not specified.' }
         } else { $model = Save-ApertusModel $config $models }
+        $mmproj = ''
+        if ($multimodal) {
+            if ($env:MMPROJ) {
+                $mmproj = $env:MMPROJ
+                if (-not (Test-Path -LiteralPath $mmproj -PathType Leaf)) { throw "Encoder not found: $mmproj" }
+                if ($env:MMPROJ_SHA256) {
+                    if (-not (Test-ApertusModel $mmproj $env:MMPROJ_SHA256)) { throw 'MMPROJ_SHA256 mismatch' }
+                } else { Write-Host 'Developer MMPROJ override: checksum not specified.' }
+            } else { $mmproj = Save-ApertusModel $mmconfig $models -Url $mmurl }
+        }
         $client = New-Object Net.Sockets.TcpClient
         $occupied = $false
         try {
@@ -290,6 +315,16 @@ function Invoke-Apertus {
             '--host','127.0.0.1','--port',"$port",'--threads',"$threads",'--ctx-size',"$context",
             '--parallel','1','--n-gpu-layers','0','--load-mode',$loadMode,'--jinja',
             '--chat-template-kwargs',('{"enable_thinking":' + $thinking + '}'),'--offline')
+        if ($multimodal) {
+            $imageTokens = 256
+            if ($env:IMAGE_MAX_TOKENS) {
+                if ($env:IMAGE_MAX_TOKENS -notmatch '^[1-9][0-9]*$') { throw 'IMAGE_MAX_TOKENS must be between 256 and 1024' }
+                $imageTokens = [int]$env:IMAGE_MAX_TOKENS
+            }
+            if ($imageTokens -lt 256 -or $imageTokens -gt 1024) { throw 'IMAGE_MAX_TOKENS must be between 256 and 1024' }
+            $arguments += @('--mmproj',$mmproj,'--no-mmproj-offload','--image-min-tokens','256','--image-max-tokens',"$imageTokens")
+            Write-Host "Image/audio: enabled; image budget $imageTokens tokens; CPU encoders"
+        } else { Write-Host 'Image/audio: disabled (text-only)' }
         Write-Host "Loading Apertus; startup logs: $stderr"
         $server = Start-Process -FilePath $serverPath -ArgumentList (ConvertTo-ApertusArguments $arguments) `
             -WorkingDirectory (Split-Path -Parent $serverPath) -RedirectStandardOutput $stdout `

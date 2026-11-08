@@ -12,6 +12,7 @@ try {
     Expand-Archive -LiteralPath $Archive -DestinationPath $stage
     $env:PORT='18087'; $env:CTX='512'; $env:THREADS='2'; $env:BACKEND='cpu'
     $env:GPU_LAYERS='0'; $env:LOAD_MODE='auto'
+    $env:MULTIMODAL='0'
     $env:MODELS_DIR=Join-Path $root 'models'
     $env:APERTUS_STATE_DIR=Join-Path $root '.apertus-state/windows'
     Import-Module (Join-Path $stage 'scripts/windows/Apertus.psm1') -Force -DisableNameChecking
@@ -45,6 +46,26 @@ try {
     if($LASTEXITCODE -ne 0) { throw 'Packaged Windows stop failed' }
     if(-not $launcher.WaitForExit(10000)) { throw 'Packaged launcher did not stop' }
     if($launcher.ExitCode -ne 0) { throw 'Packaged launcher reported a failure' }
+    $launcher.Dispose(); $launcher=$null
+    $env:MULTIMODAL='1'; $env:CTX='1024'
+    $env:MMPROJ=Join-Path $env:MODELS_DIR 'apertus-v1.5-8b-mmproj-F32.gguf'
+    $env:MMPROJ_SHA256=(Get-ApertusConfig $stage 'multimodal.env').APERTUS_MODEL_SHA256
+    $stdout=Join-Path $root 'dist/windows-multimodal.log'
+    $stderr=Join-Path $root 'dist/windows-multimodal.err'
+    $launcher=Start-Process (Join-Path $PSHOME 'powershell.exe') -ArgumentList $arguments -PassThru -NoNewWindow -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $null=$launcher.Handle
+    $ready=$false
+    for($i=0;$i -lt 300;$i++) {
+        if((Test-Path $stdout) -and (Get-Content $stdout -Raw) -match 'Ready:') { $ready=$true; break }
+        if($launcher.HasExited) { Get-Content $stdout; Get-Content $stderr; throw 'Multimodal startup failed' }
+        Start-Sleep -Seconds 1
+    }
+    if(-not $ready) { throw 'Multimodal Windows startup timed out' }
+    python (Join-Path $root 'scripts/validate_multimodal.py') --report (Join-Path $root 'dist/validation-multimodal-windows.json')
+    if($LASTEXITCODE -ne 0) { throw 'Actual Windows image/audio validation failed' }
+    & (Join-Path $stage 'scripts/windows/launch.ps1') -Stop
+    if($LASTEXITCODE -ne 0 -or -not $launcher.WaitForExit(10000)) { throw 'Multimodal Windows stop failed' }
+    if($launcher.ExitCode -ne 0) { throw 'Multimodal launcher reported a failure' }
     Write-Host 'Delivered Windows CPU inference, UI assets, streaming and owned stop passed with server outbound networking blocked.'
 } finally {
     if($launcher) { $launcher.Refresh(); if(-not $launcher.HasExited) { $launcher.Kill(); $launcher.WaitForExit() }; $launcher.Dispose() }

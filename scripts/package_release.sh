@@ -36,6 +36,8 @@ payload="$stage/$name"
 mkdir -p "$payload/scripts" "$payload/config" "$payload/models" "$payload/licenses"
 for file in platform.sh get_model.sh serve.sh launch.sh; do cp "$REPO_ROOT/scripts/$file" "$payload/scripts/"; done
 cp "$REPO_ROOT/config/model.env" "$payload/config/"
+cp "$REPO_ROOT/config/multimodal.env" "$payload/config/"
+cp "$REPO_ROOT"/Start-Text.command "$REPO_ROOT"/Start-Text.sh "$payload/"
 cp "$REPO_ROOT"/Start.command "$REPO_ROOT"/Stop.command "$REPO_ROOT"/Start.sh "$REPO_ROOT"/Stop.sh "$payload/"
 cp "$REPO_ROOT/packaging/README.txt" "$payload/README.txt"
 cp "$REPO_ROOT/packaging/MODEL_CARD.md" "$payload/MODEL_CARD.md"

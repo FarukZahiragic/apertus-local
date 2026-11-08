@@ -26,9 +26,10 @@ try {
     foreach ($directory in @('scripts/windows','config','runtime/cpu/bin','licenses')) {
         [IO.Directory]::CreateDirectory((Join-Path $stage $directory)) | Out-Null
     }
-    foreach ($file in @('Start.cmd','Stop.cmd')) { Copy-Item (Join-Path $root $file) $stage }
+    foreach ($file in @('Start.cmd','Start-Text.cmd','Stop.cmd')) { Copy-Item (Join-Path $root $file) $stage }
     Copy-Item (Join-Path $root 'scripts/windows/*') (Join-Path $stage 'scripts/windows')
     Copy-Item (Join-Path $root 'config/model.env') (Join-Path $stage 'config')
+    Copy-Item (Join-Path $root 'config/multimodal.env') (Join-Path $stage 'config')
     Copy-Item (Join-Path $root 'packaging/WINDOWS_FIRST_START.txt') (Join-Path $stage 'README.txt')
     Copy-Item (Join-Path $root 'packaging/MODEL_CARD.md') $stage
     Copy-Item (Join-Path $root 'packaging/APERTUS-LICENSE.txt') (Join-Path $stage 'licenses')

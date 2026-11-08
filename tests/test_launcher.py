@@ -53,7 +53,7 @@ server.serve_forever()
             sock.bind(('127.0.0.1', 0))
             self.port = sock.getsockname()[1]
         self.env = dict(os.environ, BACKEND='cpu', BUILD_DIR=str(self.root),
-                        MODEL=str(self.root/'model.gguf'), THREADS='1', PORT=str(self.port),
+                        MODEL=str(self.root/'model.gguf'), MULTIMODAL='0', THREADS='1', PORT=str(self.port),
                         APERTUS_STATE_DIR=str(self.root/'state'), STARTUP_TIMEOUT='30')
         self.process = None
 
@@ -89,6 +89,19 @@ server.serve_forever()
 
     def test_ready_then_stop_releases_owned_server(self):
         self.exercise_start_stop()
+
+    def test_multimodal_override_verification_and_lifecycle(self):
+        import hashlib
+        encoder = self.root/'encoders with spaces.gguf'
+        encoder.write_bytes(b'encoder fixture')
+        self.env.update(MULTIMODAL='1', MMPROJ=str(encoder), MMPROJ_SHA256='0'*64)
+        result = subprocess.run([BASH, str(ROOT/'scripts/launch.sh'), '--no-browser'],
+                                env=self.env, capture_output=True, text=True, timeout=10)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('MMPROJ_SHA256 mismatch', result.stderr)
+        self.env['MMPROJ_SHA256'] = hashlib.sha256(encoder.read_bytes()).hexdigest()
+        self.exercise_start_stop()
+        self.assertIn('Image/audio: enabled', (self.root/f'state/server-{self.port}-cpu.log').read_text())
 
     def test_auto_metal_start_failure_retries_cpu(self):
         self.exercise_auto_retry('TEST_START_FAILURE')
