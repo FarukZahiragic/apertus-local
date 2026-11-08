@@ -1,0 +1,44 @@
+name: One-command participant setup
+on:
+  pull_request:
+    paths:
+      - 'run.sh'
+      - 'run.ps1'
+      - 'tests/test_bootstrap.py'
+      - 'tests/bootstrap_smoke.py'
+      - '.github/workflows/bootstrap.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: bootstrap-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  bootstrap:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, macos-15, windows-2022, windows-11-arm]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check standalone setup and failure paths
+        run: python -m unittest discover -s tests -p test_bootstrap.py -v
+      - name: Check published runtime and actual model through both entry points
+        env:
+          HARDWARE_LABEL: 'GitHub-hosted VM (NOT laptop): ${{ matrix.os }} ${{ runner.arch }}'
+        run: python tests/bootstrap_smoke.py --install-dir "${{ runner.temp }}/Apertus participant setup"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bootstrap-${{ matrix.os }}
+          path: |
+            dist/bootstrap-*.log
+            dist/bootstrap-*.json
+            ${{ runner.temp }}/Apertus participant setup/state/*.log
+          include-hidden-files: true
+          retention-days: 7

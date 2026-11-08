@@ -7,6 +7,12 @@ context and operating-system memory. Keep enough free disk for downloads and upd
 
 ## Prepare while online
 
+For participants, use the [one-command setup](ONE_COMMAND.md). It downloads the
+prebuilt native runtime and missing model, then opens local chat directly from
+Terminal. It does not install development tools or open the `.app` wrapper.
+
+The source-building path below is for preparing a development checkout.
+
 For a fresh Mac, only the repository's `setup.sh` file needs to be sent. Save it
 in Downloads, open Terminal and run:
 

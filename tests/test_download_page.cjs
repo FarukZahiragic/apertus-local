@@ -53,16 +53,28 @@ test('multimodal downloads require a published encoder URL and pinned checksum',
     assert.equal(page.get('#download').attrs['aria-disabled'],'true');
   }
 });
-test('Mac preview explains first-open approval and exposes its installation guide',async()=>{
+test('Mac uses direct Terminal setup and retains the archive opening guide',async()=>{
   const page=await render(config,'Macintosh');
   assert.equal(page.get('#mac-guide').hidden,false);
-  assert.match(page.get('#open-instructions').textContent,/Open Anyway/);
+  assert.match(page.get('#open-instructions').textContent,/Terminal/);
+  assert.match(page.get('#start-command').value,/bash -c/);
+  assert.match(page.get('#start-command').value,/\/main\/run\.sh/);
+  assert.equal(page.get('#command-panel').hidden,false);
   assert.match(page.get('#platform-note').textContent,/No Apple Developer membership/);
   const linux=await render(config,'Linux');
   assert.equal(linux.get('#mac-guide').hidden,true);
   const guide=fs.readFileSync('hf-space/macos-first-start.html','utf8');
   assert.match(guide,/Privacy &amp; Security/);
   assert.match(guide,/Open Anyway/);
+});
+test('Windows offers the PowerShell command and keeps it hidden for unavailable releases',async()=>{
+  const page=await render(config,'Windows NT 10.0');
+  assert.match(page.get('#start-command').value,/scriptblock/);
+  assert.match(page.get('#start-command').value,/\/main\/run\.ps1/);
+  assert.match(page.get('#shell-label').textContent,/PowerShell/);
+  const unavailable=structuredClone(config);
+  unavailable.platforms['windows-x86_64'].available=false;
+  assert.equal((await render(unavailable,'Windows')).get('#command-panel').hidden,true);
 });
 test('Windows downloads use the Windows label and first-start guide',async()=>{
   const ready=structuredClone(config);
