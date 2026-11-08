@@ -13,6 +13,10 @@ const browser = spawn(chrome, [
   '--disable-background-networking', '--no-first-run', '--disable-extensions',
   `--user-data-dir=${profile}`, '--remote-debugging-pipe', 'about:blank'
 ], { stdio: ['ignore', 'ignore', 'pipe', 'pipe', 'pipe'] });
+const browserExited = new Promise(resolve => {
+  browser.once('exit', resolve);
+  browser.once('error', resolve);
+});
 let nextId = 0;
 let buffer = '';
 let diagnostics = '';
@@ -75,6 +79,11 @@ main().catch(error => {
   process.exitCode = 1;
 }).finally(async () => {
   try { await call('Browser.close'); } catch { browser.kill('SIGTERM'); }
+  // Browser.close acknowledges before Chrome finishes writing its profile.
+  // Wait for our process to exit before removing that directory.
+  const forceExit = setTimeout(() => browser.kill('SIGKILL'), 5000);
+  await browserExited;
+  clearTimeout(forceExit);
   fs.writeFileSync(path.join(path.dirname(output), 'offline-browser.log'), diagnostics);
-  fs.rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  await fs.promises.rm(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });

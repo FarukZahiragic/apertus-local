@@ -41,7 +41,7 @@ jobs:
           TEST_BASH: /bin/bash
         run: python3 -m unittest discover -s tests -v
       - name: Check download page behavior
-        run: node --test tests/test_download_page.cjs
+        run: node --test tests/test_*.cjs
   native:
     needs: scripts
     if: github.event_name != 'workflow_dispatch' || inputs.macos_release_version == ''
