@@ -73,12 +73,14 @@ this route does not fetch optional image/audio encoders.
 
 An existing model in the default data folder is verified and reused. The bootstrap
 also checks `models/` in the current directory and `~/apertus-1.5-local/models/` for
-the expected file. It does not scan other folders. These overrides avoid copies:
+the expected file. It does not scan other folders.
 
 A prepared Apertus checkout/package in the current directory or
 `~/apertus-1.5-local` is also reused when its model metadata matches and a built
 CPU runtime is present. This avoids even the runtime download on an already
 prepared machine.
+
+These overrides avoid copies:
 
 | Setting | Meaning |
 | --- | --- |
