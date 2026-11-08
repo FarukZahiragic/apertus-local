@@ -6,16 +6,23 @@ const status = document.querySelector('#status');
 let configuration;
 let selectedByUser = false;
 const platformText = {
-  'macos-arm64': ['Apple M-series chip. No Apple Developer membership needed.', 'Unzip and open Apertus Local.app. If macOS blocks this unsigned preview, use System Settings → Privacy & Security → Open Anyway. Allow Terminal access when asked and keep its window open.'],
-  'linux-x86_64': ['For compatible Intel / AMD Linux laptops. Check the release notes for the supported distribution.', 'Extract the archive, open a terminal in the extracted folder, and run ./Start.sh. Keep the terminal open.'],
-  'windows-x86_64': ['64-bit Windows on Intel / AMD processors.', 'Extract the whole ZIP, then double-click Start.cmd. It gets the model once and opens local chat. Keep its window open; Ctrl+C or Stop.cmd stops the model.'],
-  'windows-arm64': ['64-bit Windows on ARM / Snapdragon processors.', 'Extract the whole ZIP, then double-click Start.cmd. It gets the model once and opens local chat. Keep its window open; Ctrl+C or Stop.cmd stops the model.']
+  'macos-arm64': ['Apple M-series chip. No Apple Developer membership needed.', 'Open Terminal and paste the command above. It starts the server directly, without the app wrapper. Keep the terminal open and save the printed start.sh command for later.'],
+  'linux-x86_64': ['For compatible Intel / AMD Linux laptops. Check the release notes for the supported distribution.', 'Open a terminal and paste the command above. It prepares local chat and prints a start.sh command for later, including offline. Keep the terminal open.'],
+  'windows-x86_64': ['64-bit Windows on Intel / AMD processors.', 'Open PowerShell and paste the command above. It prepares local chat and leaves Start.cmd and Stop.cmd for later, including offline. Keep its window open.'],
+  'windows-arm64': ['64-bit Windows on ARM / Snapdragon processors.', 'Open PowerShell and paste the command above. It selects the native runtime and leaves Start.cmd and Stop.cmd for later, including offline. Keep its window open.']
 };
 function safeURL(value) {
   try { const parsed = new URL(value); return parsed.protocol === 'https:' ? parsed.href : null; } catch { return null; }
 }
 function update() {
   const selected = platform.value;
+  const windows = selected.startsWith('windows');
+  const script = windows ? 'run.ps1' : 'run.sh';
+  const scriptURL = 'https://raw.githubusercontent.com/FarukZahiragic/apertus-local/main/' + script;
+  const command = windows ? '& ([scriptblock]::Create((irm ' + scriptURL + ')))' : 'bash -c "$(curl -fsSL ' + scriptURL + ')"';
+  document.querySelector('#start-command').value = command;
+  document.querySelector('#shell-label').textContent = windows ? 'Paste into PowerShell' : 'Paste into Terminal';
+  document.querySelector('#command-source').href = 'https://github.com/FarukZahiragic/apertus-local/blob/main/' + script;
   const release = configuration?.platforms?.[selected];
   document.querySelector('#version').textContent = release?.version || configuration?.version || 'Preparing a release';
   document.querySelector('#platform-note').textContent = platformText[selected][0] + (release?.minimum_os ? ' Requires ' + release.minimum_os + '.' : ' See release notes for minimum system requirements.');
@@ -25,6 +32,7 @@ function update() {
   const url = safeURL(release?.url);
   const sumURL = safeURL(release?.checksum_url);
   const available = release?.available === true && url && sumURL && safeURL(configuration?.model?.url);
+  document.querySelector('#command-panel').hidden = !available;
   button.classList.toggle('disabled', !available);
   button.setAttribute('aria-disabled', String(!available));
   button.removeAttribute('href');
@@ -35,6 +43,17 @@ function update() {
   if (available) checksum.href = sumURL; else checksum.removeAttribute('href');
 }
 platform.addEventListener('change', () => { selectedByUser = true; update(); });
+document.querySelector('#copy-command').addEventListener('click', async () => {
+  const input = document.querySelector('#start-command');
+  const copy = document.querySelector('#copy-command');
+  try {
+    await navigator.clipboard.writeText(input.value);
+    copy.textContent = 'Copied';
+  } catch {
+    input.focus(); input.select();
+    copy.textContent = 'Select and copy the command';
+  }
+});
 const agent = navigator.userAgent || '';
 if (/Windows/i.test(agent)) platform.value = 'windows-x86_64';
 else if (/Linux/i.test(agent)) platform.value = 'linux-x86_64';
