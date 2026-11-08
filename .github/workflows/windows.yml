@@ -40,7 +40,7 @@ jobs:
       - name: Parse native PowerShell scripts
         run: |
           $bad=$false
-          Get-ChildItem scripts,tests -Recurse -Include *.ps1,*.psm1 | ForEach-Object {
+          @(Get-Item run.ps1) + @(Get-ChildItem scripts,tests -Recurse -Include *.ps1,*.psm1) | ForEach-Object {
             $tokens=$null; $errors=$null
             [void][System.Management.Automation.Language.Parser]::ParseFile($_.FullName,[ref]$tokens,[ref]$errors)
             if($errors) { $errors | Format-List; $bad=$true }
