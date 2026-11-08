@@ -127,7 +127,13 @@ check, not a physical-Mac speed measurement. A successful signed run creates a
 
 Set `sign_macos_release=false` to prepare an unsigned development candidate without
 Apple credentials. It is retained as an Actions artifact; no public release is
-created. The first signed run and Apple's real acceptance remain pending until
+created. The [first candidate run](https://github.com/FarukZahiragic/apertus-local/actions/runs/42422097790)
+passed, including real CPU and partial Metal inference from the extracted app.
+Its `macos-release-v0.1.0-preview.2` artifact contains the 19.6 MB ZIP, checksum
+and inference reports. All 55 payload hashes and the archive hash were checked
+after downloading it; no model weights are bundled. This is a development
+candidate with an ad-hoc code seal, not a Developer ID signed release.
+The first signed run and Apple's real acceptance remain pending until
 credentials are supplied. Run `gh run list --workflow native.yml` to find the run,
 then `gh run watch RUN_ID --exit-status` to follow it.
 
