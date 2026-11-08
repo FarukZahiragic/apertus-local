@@ -143,7 +143,7 @@ Mac checks pass. GitHub CI artifacts are development builds, not workshop releas
 ## Automated and recorded checks
 
 `python3 -m unittest discover -s tests -v` and
-`node --test tests/test_download_page.cjs` exercise the portable control paths.
+`node --test tests/test_*.cjs` exercise the portable control paths and browser cleanup.
 GitHub Actions builds native Linux and Apple Silicon packages, downloads the exact
 GGUF and runs real-model UI/API checks. The Mac VM may expose no usable Metal
 GPU; that case is reported as unavailable rather than counted as a GPU test.
