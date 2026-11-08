@@ -1,4 +1,4 @@
-Apertus Local — offline text, image and audio chat (candidate)
+Apertus Local — offline text, image and audio chat
 
 Recommended: 16 GB RAM, space for a 5.3 GiB model and 872 MiB encoders, plus runtime
 and update overhead. No GPU is required.
@@ -23,7 +23,7 @@ Image detail is limited for laptop memory and speed; tiny text in images may be
 hard to read. Image/audio processing adds time before the answer begins.
 For text-only use without loading the encoders, open Start-Text.sh (Linux),
 Start-Text.cmd (Windows), or run the Mac app with MULTIMODAL=0 as described at
-https://github.com/FarukZahiragic/apertus-local/blob/feat/multimodal-candidate/docs/MULTIMODAL.md
+https://github.com/FarukZahiragic/apertus-local/blob/main/docs/MULTIMODAL.md
 
 After preparation, disconnect networking, relaunch and chat at
 http://127.0.0.1:8080/. Chat, attachments and pasted text stay on the local machine.

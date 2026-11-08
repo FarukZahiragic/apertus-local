@@ -20,10 +20,12 @@ data = Path(args.install_dir).resolve()
 windows = os.name == 'nt'
 shell = shutil.which('powershell.exe') if windows else '/bin/bash'
 env = dict(os.environ, APERTUS_INSTALL_DIR=str(data), PORT=str(args.port),
-           CTX='512', THREADS='2', BACKEND='cpu')
+           CTX='512', THREADS='2', BACKEND='cpu', MULTIMODAL='1')
 env.pop('BUILD_DIR', None)
 env.pop('MODEL', None)
 env.pop('MODEL_SHA256', None)
+env.pop('MMPROJ', None)
+env.pop('MMPROJ_SHA256', None)
 env.pop('APERTUS_RUNTIME_DIR', None)
 env.pop('APERTUS_PACKAGE_URL', None)
 env.pop('APERTUS_PACKAGE_SHA256', None)
@@ -64,6 +66,11 @@ def stop_owned():
 
 
 try:
+    # Preparation must populate both files before the saved offline entry is used.
+    prepare = ([shell, '-NoLogo', '-NoProfile', '-ExecutionPolicy', 'Bypass',
+                '-File', str(ROOT/'run.ps1'), '-PrepareOnly'] if windows else
+               [shell, str(ROOT/'run.sh'), '--prepare-only'])
+    subprocess.run(prepare, env=env, cwd=ROOT, check=True, timeout=args.timeout)
     for first in (True, False):
         label = 'first-start' if first else 'cached-restart'
         log = output / f'bootstrap-{label}.log'
@@ -84,6 +91,16 @@ try:
         subprocess.run([sys.executable, str(ROOT / 'scripts/validate_local.py'),
                         '--max-tokens', '8', '--report', str(report)],
                        env=env, cwd=ROOT, check=True, timeout=300)
+        if first:
+            subprocess.run([sys.executable, str(ROOT/'scripts/validate_multimodal.py'),
+                            '--report', str(output/'bootstrap-multimodal.json')],
+                           env=env, cwd=ROOT, check=True, timeout=600)
+        else:
+            import urllib.request
+            opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
+            with opener.open(f'http://127.0.0.1:{args.port}/props',timeout=10) as response:
+                capabilities=json.load(response)['modalities']
+            assert capabilities['vision'] and capabilities['audio'], capabilities
         stop_owned()
     print('One-command setup, actual model/UI/API, owned stop and cached restart passed.', flush=True)
 finally:

@@ -1,9 +1,9 @@
 {
-  "version": "v0.1.0-preview.4",
+  "version": "v0.2.0-preview.1",
   "model": {
     "repo": "faruk-zahiragic/Apertus-v1.5-8B-GGUF",
-    "revision": "c40df29efdea4f0dd59ccf73635574918405561b",
-    "url": "https://huggingface.co/faruk-zahiragic/Apertus-v1.5-8B-GGUF/resolve/c40df29efdea4f0dd59ccf73635574918405561b/apertus-v1.5-8b-Q4_K_M.gguf",
+    "revision": "8ed96d0d225a8b706229692687b52bd519c4a8e8",
+    "url": "https://huggingface.co/faruk-zahiragic/Apertus-v1.5-8B-GGUF/resolve/8ed96d0d225a8b706229692687b52bd519c4a8e8/apertus-v1.5-8b-Q4_K_M.gguf",
     "filename": "apertus-v1.5-8b-Q4_K_M.gguf",
     "bytes": 5656804512,
     "sha256": "e8ddf308abe64441725dcdbfc32e7c89f2b52b94e90f24c30236694f0a90eb8c"
@@ -11,38 +11,46 @@
   "platforms": {
     "macos-arm64": {
       "available": true,
-      "url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.3/apertus-local-v0.1.0-preview.3-macos-arm64.zip",
-      "checksum_url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.3/apertus-local-v0.1.0-preview.3-macos-arm64.zip.sha256",
+      "url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.2.0-preview.1/apertus-local-v0.2.0-preview.1-macos-arm64.zip",
+      "checksum_url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.2.0-preview.1/apertus-local-v0.2.0-preview.1-macos-arm64.zip.sha256",
       "minimum_os": "macOS 13.3 or later",
-      "status": "Unsigned Apple Silicon preview. CPU and partial Metal inference checked on a hosted Mac; physical first-open rehearsal remains separate.",
+      "status": "Text, image and audio input checked on a hosted Apple Silicon Mac. Unsigned preview; physical Finder first-open rehearsal remains separate.",
       "signing": "unsigned",
-      "version": "v0.1.0-preview.3"
+      "version": "v0.2.0-preview.1"
     },
     "linux-x86_64": {
       "available": true,
-      "url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.3/apertus-local-v0.1.0-preview.3-linux-x86_64.tar.gz",
-      "checksum_url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.3/apertus-local-v0.1.0-preview.3-linux-x86_64.tar.gz.sha256",
+      "url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.2.0-preview.1/apertus-local-v0.2.0-preview.1-linux-x86_64.tar.gz",
+      "checksum_url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.2.0-preview.1/apertus-local-v0.2.0-preview.1-linux-x86_64.tar.gz.sha256",
       "minimum_os": "glibc 2.34+, GLIBCXX 3.4.30+ and CXXABI 1.3.13+",
-      "status": "Same archive checked on Ubuntu 22.04, Ubuntu 24.04 and Debian 12; local inference checked with networking disabled.",
-      "version": "v0.1.0-preview.3"
+      "status": "Text, image and audio input checked with networking disabled on Ubuntu 22.04, Ubuntu 24.04 and Debian 12.",
+      "version": "v0.2.0-preview.1"
     },
     "windows-x86_64": {
       "available": true,
-      "url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.4/apertus-local-v0.1.0-preview.4-windows-x86_64.zip",
-      "checksum_url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.4/apertus-local-v0.1.0-preview.4-windows-x86_64.zip.sha256",
+      "url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.2.0-preview.1/apertus-local-v0.2.0-preview.1-windows-x86_64.zip",
+      "checksum_url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.2.0-preview.1/apertus-local-v0.2.0-preview.1-windows-x86_64.zip.sha256",
       "minimum_os": "64-bit Windows 10 or later with Windows PowerShell 5.1",
-      "status": "Updated Windows launcher. Actual model and extracted launcher checked on a native x64 runner with server outbound networking blocked.",
+      "status": "Text, image and audio input checked in the extracted native package with server outbound networking blocked. Unsigned preview.",
       "signing": "unsigned",
-      "version": "v0.1.0-preview.4"
+      "version": "v0.2.0-preview.1"
     },
     "windows-arm64": {
       "available": true,
-      "url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.4/apertus-local-v0.1.0-preview.4-windows-arm64.zip",
-      "checksum_url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.1.0-preview.4/apertus-local-v0.1.0-preview.4-windows-arm64.zip.sha256",
+      "url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.2.0-preview.1/apertus-local-v0.2.0-preview.1-windows-arm64.zip",
+      "checksum_url": "https://github.com/FarukZahiragic/apertus-local/releases/download/v0.2.0-preview.1/apertus-local-v0.2.0-preview.1-windows-arm64.zip.sha256",
       "minimum_os": "ARM64 Windows 10 or later with Windows PowerShell 5.1",
-      "status": "Updated Windows launcher. Actual model and extracted launcher checked on a native ARM64 runner with server outbound networking blocked.",
+      "status": "Text, image and audio input checked in the extracted native package with server outbound networking blocked. Unsigned preview.",
       "signing": "unsigned",
-      "version": "v0.1.0-preview.4"
+      "version": "v0.2.0-preview.1"
     }
+  },
+  "encoders": {
+    "repo": "faruk-zahiragic/Apertus-v1.5-8B-GGUF",
+    "revision": "8ed96d0d225a8b706229692687b52bd519c4a8e8",
+    "url": "https://huggingface.co/faruk-zahiragic/Apertus-v1.5-8B-GGUF/resolve/8ed96d0d225a8b706229692687b52bd519c4a8e8/apertus-v1.5-8b-mmproj-F32.gguf",
+    "filename": "apertus-v1.5-8b-mmproj-F32.gguf",
+    "bytes": 914229792,
+    "sha256": "765b3b22e91022c2e300480a882456433d416962e8cb28a6c300528fd5efa543"
   }
 }

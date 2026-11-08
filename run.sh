@@ -30,15 +30,17 @@ case "$(uname -s) $(uname -m)" in
   'Linux x86_64') platform=linux-x86_64 ;;
   *) echo 'error: use Apple Silicon macOS, x86_64 Linux, or run.ps1 on Windows.' >&2; exit 1 ;;
 esac
-version=v0.1.0-preview.3
+version=v0.2.0-preview.1
+export MULTIMODAL="${MULTIMODAL:-1}"
+[[ "$MULTIMODAL" == 0 || "$MULTIMODAL" == 1 ]] || { echo 'error: MULTIMODAL must be 0 or 1' >&2; exit 1; }
 case "$platform" in
   macos-arm64)
     archive="apertus-local-$version-$platform.zip"
-    digest=e9ee04e05a31797c1b7f643061be777113fc5e901fde92d6b0856ba4e76220e4
+    digest=9ac42d54b95d703840147e0c6ed29070aa0616c0c665ed5db499d3869f959576
     default_root="$HOME/Library/Application Support/Apertus Local" ;;
   linux-x86_64)
     archive="apertus-local-$version-$platform.tar.gz"
-    digest=c2d1925bed2f39bc88b073665973bb338fba27a7e05677cf3cc4dccb443f2462
+    digest=0d41ab417e2fb708d6112ab300ff3e8d01c0e4d0f5ebc49c80abaa025041840e
     default_root="${XDG_DATA_HOME:-$HOME/.local/share}/apertus-local" ;;
 esac
 url="https://github.com/FarukZahiragic/apertus-local/releases/download/$version/$archive"
@@ -63,6 +65,7 @@ data="$(cd "$data" && pwd)"
 if [[ -z "${APERTUS_RUNTIME_DIR:-}" ]]; then
   for candidate in "$PWD" "$HOME/apertus-1.5-local"; do
     if [[ -f "$candidate/scripts/launch.sh" && -f "$candidate/config/model.env" ]] &&
+       [[ "$MULTIMODAL" == 0 || -f "$candidate/config/multimodal.env" ]] &&
        grep -q '^APERTUS_MODEL_SHA256=e8ddf308abe64441725dcdbfc32e7c89f2b52b94e90f24c30236694f0a90eb8c$' "$candidate/config/model.env" &&
        [[ -x "$candidate/runtime/cpu/bin/llama-server" || -x "$candidate/vendor/llama.cpp/build/bin/llama-server" ]]; then
       APERTUS_RUNTIME_DIR="$candidate"; break
@@ -84,13 +87,14 @@ hash_file() {
 }
 valid_runtime() {
   [[ -f "$runtime/scripts/launch.sh" && -f "$runtime/scripts/get_model.sh" && -f "$runtime/config/model.env" ]] || return 1
+  [[ "$MULTIMODAL" == 0 || -f "$runtime/config/multimodal.env" ]] || return 1
   if [[ -n "${APERTUS_RUNTIME_DIR:-}" ]]; then return 0; fi
   [[ -f "$runtime/.bootstrap-sha256" && "$(cat "$runtime/.bootstrap-sha256")" == "$digest" ]]
 }
 
 echo 'Apertus Local - one-command setup'
 echo "Local files: $data"
-echo 'The model is 5.3 GiB. A missing native runtime adds about 17-20 MB once.'
+echo 'Model files total 6.1 GiB (5.3 GiB in text-only mode). A missing native runtime downloads once.'
 if ! valid_runtime; then
   [[ -z "${APERTUS_RUNTIME_DIR:-}" ]] || { echo 'error: APERTUS_RUNTIME_DIR is not an Apertus runtime folder.' >&2; exit 1; }
   [[ ! -e "$runtime" ]] || { echo "error: unrecognized runtime at $runtime; nothing was overwritten." >&2; exit 1; }
@@ -114,6 +118,8 @@ if ! valid_runtime; then
   else
     tar -xzf "$partial" -C "$stage"
     payload="$stage/apertus-local-$version-$platform"
+    # The preview promotes tested CI archive bytes without repacking their payload.
+    if [[ ! -d "$payload" ]]; then payload="$stage/apertus-local-ci-$platform"; fi
   fi
   [[ -f "$payload/scripts/launch.sh" && -x "$payload/runtime/cpu/bin/llama-server" ]] || {
     echo 'error: the runtime archive is missing its launcher or server.' >&2; exit 1;
@@ -137,7 +143,10 @@ mkdir -p "$models"
 models="$(cd "$models" && pwd)"
 export MODELS_DIR="$models"
 export APERTUS_STATE_DIR="${APERTUS_STATE_DIR:-$data/state}"
-export MULTIMODAL=0
+if [[ -n "${MMPROJ:-}" ]]; then
+  [[ -f "$MMPROJ" ]] || { echo "error: encoder does not exist: $MMPROJ" >&2; exit 1; }
+  export MMPROJ="$(cd "$(dirname "$MMPROJ")" && pwd)/$(basename "$MMPROJ")"
+fi
 if [[ -n "${MODEL:-}" ]]; then
   MODEL="$(cd "$(dirname "$MODEL")" && pwd)/$(basename "$MODEL")"
   export MODEL MODEL_SHA256="${MODEL_SHA256:-e8ddf308abe64441725dcdbfc32e7c89f2b52b94e90f24c30236694f0a90eb8c}"
@@ -149,7 +158,11 @@ temporary="$(mktemp "$data/.start.XXXXXX")"
   printf '#!/usr/bin/env bash\nset -euo pipefail\n'
   printf 'if [[ -z "${MODELS_DIR:-}" ]]; then export MODELS_DIR=%q; fi\n' "$models"
   printf 'if [[ -z "${APERTUS_STATE_DIR:-}" ]]; then export APERTUS_STATE_DIR=%q; fi\n' "$APERTUS_STATE_DIR"
-  printf 'export MULTIMODAL=0\n'
+  printf 'export MULTIMODAL="${MULTIMODAL:-%s}"\n' "$MULTIMODAL"
+  if [[ -n "${MMPROJ:-}" ]]; then
+    printf 'if [[ -z "${MMPROJ:-}" ]]; then export MMPROJ=%q; fi\n' "$MMPROJ"
+    if [[ -n "${MMPROJ_SHA256:-}" ]]; then printf 'export MMPROJ_SHA256=%q\n' "$MMPROJ_SHA256"; fi
+  fi
   if [[ -n "${MODEL:-}" ]]; then
     printf 'if [[ -z "${MODEL:-}" ]]; then export MODEL=%q; fi\n' "$MODEL"
     printf 'if [[ -z "${MODEL_SHA256:-}" ]]; then export MODEL_SHA256=%q; fi\n' "$MODEL_SHA256"
@@ -164,6 +177,14 @@ if [[ "$prepare" == 1 ]]; then
     [[ "$(hash_file "$MODEL")" == "$MODEL_SHA256" ]] || { echo 'error: MODEL_SHA256 mismatch.' >&2; exit 1; }
   else
     /bin/bash "$runtime/scripts/get_model.sh" --apertus
+  fi
+  if [[ "$MULTIMODAL" == 1 ]]; then
+    if [[ -n "${MMPROJ:-}" ]]; then
+      mmsha="${MMPROJ_SHA256:-$(source "$runtime/config/multimodal.env"; printf '%s' "$APERTUS_MODEL_SHA256")}"
+      [[ "$(hash_file "$MMPROJ")" == "$mmsha" ]] || { echo 'error: MMPROJ_SHA256 mismatch.' >&2; exit 1; }
+    else
+      /bin/bash "$runtime/scripts/get_model.sh" --multimodal
+    fi
   fi
   echo 'Preparation complete. Start local chat with the command above.'
 else

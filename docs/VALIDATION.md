@@ -129,7 +129,37 @@ archives; the download page displays each platform's actual version.
 | ARM64 | 11,390,884 | `664538e5bb9b52d09ac0413ac95aa28d24401da9637fa777123ea01efc79e1e4` |
 | Intel/AMD x64 | 11,745,878 | `bb67c41c0599dc5ad1a89094a6c160781da807f4d4e86df1fe8ffc47de3fdaae` |
 
-## Still pending
+## Multimodal preview and owner acceptance
+
+The owner tested text and image input on the reference Linux laptop, then reported
+that text speed was pretty much the same as before and authorized continuation.
+This is a qualitative observation, not a controlled before/after benchmark.
+PR #27 was merged only after this acceptance and the native checks below passed.
+
+| Environment | Delivered-package check | Result |
+| --- | --- | --- |
+| Native Windows x64 and ARM64 hosted VMs | Large red/blue image recognition, image follow-up context and known speech transcription, with server outbound networking blocked | pass in [Windows checks](https://github.com/FarukZahiragic/apertus-local/actions/runs/42525747718) |
+| Hosted Apple Silicon Mac | Same real image/audio checks on CPU; existing text CPU/partial Metal checks and ad-hoc app code seal | pass in [native checks](https://github.com/FarukZahiragic/apertus-local/actions/runs/42525747720) |
+| Ubuntu 22.04 hosted VM | Same real image/audio checks, fresh offline startup and rendered browser UI with only loopback enabled | pass in the same run |
+| Ubuntu 24.04 and Debian 12 containers | Same delivered Linux archive and real image/audio checks with container networking disabled | pass in the same run |
+| Reference laptop, actual Chrome | Select image through the file input, submit question and receive streamed correct color answer | pass; network isolation not established in this local browser check |
+
+The encoder conversion was reproduced with the same SHA-256, and all 292 tensors
+retain F32. The additional file is 914,229,792 bytes, SHA-256
+`765b3b22e91022c2e300480a882456433d416962e8cb28a6c300528fd5efa543`.
+The existing language GGUF is unchanged. Large image requests consumed 352 prompt
+tokens in the default regression fixture, confirming the CPU/context image budget.
+All archive, payload and published-asset hashes were checked before promotion.
+
+`v0.2.0-preview.1` promotes the exact tested candidate archive bytes. Outer archive
+filenames use the preview version; internal provenance retains the `ci` build
+label and GitHub PR test-merge commit `fa1d8752d695804d09390271013474668dc8be2e`.
+That complete source tree matches the implementation merged as
+`346920dd264dd88abc8fe695c7ff39e49db52dab`. CPU dispatch and OS/library minimums
+remain those of the previous portable packages. Hosted checks do not replace
+physical Mac first-open acceptance or hardware performance measurements.
+
+## Remaining hardware checks
 
 - The physical Mac source/offline rehearsal is accepted from the owner's report.
   Linux offline hardware rehearsal remains pending; hosted Linux isolation passed.

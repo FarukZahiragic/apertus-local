@@ -32,7 +32,10 @@ function update() {
   document.querySelector('#windows-guide').hidden = !selected.startsWith('windows');
   const url = safeURL(release?.url);
   const sumURL = safeURL(release?.checksum_url);
-  const available = release?.available === true && url && sumURL && safeURL(configuration?.model?.url);
+  const encoders = configuration?.encoders;
+  const encodersReady = safeURL(encoders?.url) && /^[a-fA-F0-9]{64}$/.test(encoders?.sha256 || '')
+    && Number.isSafeInteger(encoders?.bytes) && encoders.bytes > 0;
+  const available = release?.available === true && url && sumURL && safeURL(configuration?.model?.url) && encodersReady;
   document.querySelector('#command-panel').hidden = !available;
   button.classList.toggle('disabled', !available);
   button.setAttribute('aria-disabled', String(!available));

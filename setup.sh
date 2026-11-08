@@ -43,7 +43,7 @@ trap on_error ERR
 echo 'Apertus Local — Apple Silicon setup'
 echo "Setup log: $log"
 echo "Install folder: $install_dir"
-echo 'Keep internet connected during setup. The model is 5.3 GiB; allow about 20 GB free for setup.'
+echo 'Keep internet connected during setup. Model files total 6.1 GiB; allow about 20 GB free for setup.'
 if (( $(sysctl -n hw.memsize) < 15000000000 )); then
   echo 'Memory note: 16 GB RAM is recommended. Smaller Macs are experimental.'
 fi
@@ -122,6 +122,10 @@ echo 'Building Metal runtime for optional integrated GPU acceleration.'
 /bin/bash scripts/setup_llamacpp.sh --metal
 step='downloading and verifying Apertus'
 /bin/bash scripts/get_model.sh --apertus
+if [[ "${MULTIMODAL:-1}" == 1 && -f config/multimodal.env ]]; then
+  step='downloading and verifying image/audio encoders'
+  /bin/bash scripts/get_model.sh --multimodal
+fi
 
 echo
 echo 'Setup complete. Future starts work without internet.'

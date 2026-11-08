@@ -44,6 +44,15 @@ test('download links reject non-HTTPS schemes',async()=>{
   const page=await render(unsafe);
   assert.equal(page.get('#download').href,undefined);
 });
+test('multimodal downloads require a published encoder URL and pinned checksum',async()=>{
+  for (const change of [{url:null},{sha256:'bad'},{bytes:0}]) {
+    const broken=structuredClone(config);
+    Object.assign(broken.encoders,change);
+    const page=await render(broken);
+    assert.equal(page.get('#download').href,undefined);
+    assert.equal(page.get('#download').attrs['aria-disabled'],'true');
+  }
+});
 test('Mac uses direct Terminal setup and retains the archive opening guide',async()=>{
   const page=await render(config,'Macintosh');
   assert.equal(page.get('#mac-guide').hidden,false);

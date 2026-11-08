@@ -1,22 +1,27 @@
-# Image and audio candidate
+# Image and audio input
 
-This candidate adds image/audio input and text output on Windows x64/ARM64,
+The native preview supports image/audio input and text output on Windows x64/ARM64,
 Apple Silicon macOS and Linux x86_64. It uses the existing pinned Apertus language
 model, its full input vocabulary, and the matching source's separate F32 encoders.
 No GPU is required. Recommended RAM remains 16 GB; 8 GB operation is unvalidated.
-**Do not merge into main until the project owner has tested it locally.**
-The public Hugging Face Space and existing production downloads are unchanged.
+The owner tested text and image chat locally and reported text speed was pretty
+much the same as before, then authorized the merge and publication. This informal
+observation is not a controlled performance benchmark. Native CI also passed on
+Windows x64/ARM64, Apple Silicon Mac and Linux, including offline Ubuntu/Debian
+checks. Detailed physical Mac benchmarks and the new app's Finder first-open
+rehearsal remain separate.
 
-## Try the packaged candidate
+## Run the native preview
 
 Download your platform archive from the
-[candidate release](https://github.com/FarukZahiragic/apertus-local/releases/tag/v0.2.0-mm-candidate.1).
+[multimodal preview release](https://github.com/FarukZahiragic/apertus-local/releases/tag/v0.2.0-preview.1).
 Extract it to a new folder; keep your previous working copy for comparison.
-Use these archives for the candidate; the previously shared standalone `setup.sh`
-fetches main and prepares the current text-only release.
+The standalone `setup.sh` also prepares both files when run from a current main
+checkout. It preserves existing checkouts; use a fresh install folder if your
+previous checkout predates multimodal support.
 
 - Windows: extract the whole matching ZIP and open `Start.cmd`.
-- Mac: extract the ZIP and open `Apertus Local.app`. For this unsigned candidate,
+- Mac: extract the ZIP and open `Apertus Local.app`. For this unsigned preview,
   follow `MACOS_FIRST_START.txt` if macOS asks for first-open approval.
 - Linux: extract the tar.gz, open a terminal there and run `./Start.sh`.
 
@@ -33,7 +38,7 @@ to a small laptop budget by default; tiny text and fine details may be missed.
 Try a short speech clip, initially under 15 seconds, and ask for a transcription.
 Use short messages and start a new chat if the 4096-token context fills.
 Audio counts roughly 40 input codes per second, plus prompt and framing tokens.
-This candidate does not promise video support or generate images/audio.
+Video is outside the validated scope. Outputs are text.
 
 ## Your local acceptance test
 
@@ -71,8 +76,8 @@ Language-model URL/checksum overrides never apply to the encoder download.
 
 ## Source and developer verification
 
-`config/multimodal.env` pins the encoder bytes, SHA-256, source revision and
-candidate asset URL. The language model in `config/model.env` is unchanged.
+`config/multimodal.env` pins the encoder bytes, SHA-256, artifact revision and
+pinned encoder download URL. The language model in `config/model.env` is unchanged.
 `patches/0005-apertus-image-token-budget.patch` fixes the pinned runtime's missing
 Apertus image-budget handling. Normalization, resizing algorithm and tensor math
 are unchanged. Conversion preserves F32 and omits the unused audio decoder.

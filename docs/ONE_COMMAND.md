@@ -24,13 +24,13 @@ hashing and archive tools.
 
 ## Downloads and local files
 
-The 5.3 GiB model is the large download. A computer also needs an inference runtime:
+The model files total 6.1 GiB: a 5.3 GiB language model and 872 MiB F32 image/audio encoders. A computer also needs an inference runtime:
 model weights cannot execute on their own. The current runtime packages are about
 12 MB on Windows, 17 MB on Linux and 20 MB on Mac. The archive is removed after
 verification and extraction; the installed runtime and model are reused.
 
 The runtime is downloaded from the already published native releases:
-`v0.1.0-preview.3` on macOS/Linux and `v0.1.0-preview.4` on Windows. The Mac bootstrap
+`v0.2.0-preview.1` on all four platforms. The Mac bootstrap
 extracts the server payload from the ZIP and discards the app wrapper. It runs
 directly in the Terminal you opened; there is no Finder app launch or app-to-Terminal
 automation request. It does not change Gatekeeper or remove quarantine attributes.
@@ -66,8 +66,9 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/FarukZahiragic/apertus-l
 ```
 
 Start using the printed local command, try a conversation, stop, disable networking
-and start again. The browser UI and API are served locally. Text chat is the default;
-this route does not fetch optional image/audio encoders.
+and start again. The browser UI and API are served locally. Text, image and audio input are enabled by default. Preparation downloads both
+files, and the saved entry point retains this mode. Set `MULTIMODAL=0` before
+setup for a lighter text-only installation; it skips the encoders.
 
 ## Reuse a model or runtime
 
@@ -77,7 +78,7 @@ the expected file. It does not scan other folders.
 
 A prepared Apertus checkout/package in the current directory or
 `~/apertus-1.5-local` is also reused when its model metadata matches and a built
-CPU runtime is present. This avoids even the runtime download on an already
+CPU runtime is present. Image-enabled setup also requires multimodal metadata; older text-only runtimes are upgraded. This avoids even the runtime download on an already
 prepared machine.
 
 These overrides avoid copies:
@@ -87,6 +88,9 @@ These overrides avoid copies:
 | `MODELS_DIR` | Existing folder containing the exact model; also used for future downloads |
 | `MODEL` | Exact existing GGUF path; the default Apertus checksum is enforced |
 | `MODEL_SHA256` | Explicit checksum when deliberately testing another model |
+| `MULTIMODAL` | `1` by default; set `0` for text-only setup |
+| `MMPROJ` | Existing encoder GGUF; verified during preparation and retained in the saved entry point |
+| `MMPROJ_SHA256` | Explicit encoder checksum for a developer override |
 | `APERTUS_RUNTIME_DIR` | Existing Apertus package or prepared checkout; skip runtime download |
 | `APERTUS_INSTALL_DIR` | Alternate data folder for the bootstrap |
 

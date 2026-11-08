@@ -8,11 +8,13 @@ if ($env:OS -ne 'Windows_NT') { throw 'Use run.ps1 on Windows, or run.sh on macO
 $architecture = $env:PROCESSOR_ARCHITEW6432
 if (-not $architecture) { $architecture = $env:PROCESSOR_ARCHITECTURE }
 switch ($architecture) {
-    'AMD64' { $platform = 'windows-x86_64'; $digest = 'bb67c41c0599dc5ad1a89094a6c160781da807f4d4e86df1fe8ffc47de3fdaae' }
-    'ARM64' { $platform = 'windows-arm64'; $digest = '664538e5bb9b52d09ac0413ac95aa28d24401da9637fa777123ea01efc79e1e4' }
+    'AMD64' { $platform = 'windows-x86_64'; $digest = '61cfedb051528fe4946d8c76081c9d853b7bde3238a26658f6956ecf89ead08e' }
+    'ARM64' { $platform = 'windows-arm64'; $digest = '0ac0ff60258e0ab118ef2b70a13b14b55af06a36d8072bc59c7ca6ca12ded82f' }
     default { throw 'Apertus requires 64-bit Windows on Intel/AMD or ARM/Snapdragon.' }
 }
-$version = 'v0.1.0-preview.4'
+$version = 'v0.2.0-preview.1'
+if (-not $env:MULTIMODAL) { $env:MULTIMODAL = '1' }
+if ($env:MULTIMODAL -notin @('0','1')) { throw 'MULTIMODAL must be 0 or 1' }
 $archive = "apertus-local-$version-$platform.zip"
 $url = "https://github.com/FarukZahiragic/apertus-local/releases/download/$version/$archive"
 if ($env:APERTUS_PACKAGE_URL -or $env:APERTUS_PACKAGE_SHA256) {
@@ -34,7 +36,8 @@ if (-not $env:APERTUS_RUNTIME_DIR) {
         if ($platform -eq 'windows-arm64') { $buildArch = 'arm64' }
         $built = Join-Path $candidate "vendor/llama.cpp/build-windows-$buildArch/bin"
         $hasServer = [IO.File]::Exists($server) -or [IO.File]::Exists((Join-Path $built 'llama-server.exe')) -or [IO.File]::Exists((Join-Path $built 'Release/llama-server.exe'))
-        if ($hasServer -and [IO.File]::Exists($config) -and [IO.File]::Exists((Join-Path $candidate 'scripts/windows/launch.ps1'))) {
+        $hasEncoders = $env:MULTIMODAL -eq '0' -or [IO.File]::Exists((Join-Path $candidate 'config/multimodal.env'))
+        if ($hasServer -and $hasEncoders -and [IO.File]::Exists($config) -and [IO.File]::Exists((Join-Path $candidate 'scripts/windows/launch.ps1'))) {
             if ([IO.File]::ReadAllText($config) -match '(?m)^APERTUS_MODEL_SHA256=e8ddf308abe64441725dcdbfc32e7c89f2b52b94e90f24c30236694f0a90eb8c\r?$') { $env:APERTUS_RUNTIME_DIR = $candidate; break }
         }
     }
@@ -49,6 +52,7 @@ function Get-BootstrapHash {
     finally { $stream.Dispose(); $algorithm.Dispose() }
 }
 function Test-BootstrapRuntime {
+    if ($env:MULTIMODAL -eq '1' -and -not [IO.File]::Exists((Join-Path $runtime 'config/multimodal.env'))) { return $false }
     if (-not [IO.File]::Exists((Join-Path $runtime 'scripts/windows/Apertus.psm1'))) { return $false }
     if (-not [IO.File]::Exists((Join-Path $runtime 'scripts/windows/launch.ps1'))) { return $false }
     if ($env:APERTUS_RUNTIME_DIR) { return $true }
@@ -57,7 +61,7 @@ function Test-BootstrapRuntime {
 }
 Write-Host 'Apertus Local - one-command setup'
 Write-Host "Local files: $data"
-Write-Host 'The model is 5.3 GiB. A missing native runtime adds about 12 MB once.'
+Write-Host 'Model files total 6.1 GiB (5.3 GiB in text-only mode). A missing native runtime downloads once.'
 if (-not (Test-BootstrapRuntime)) {
     if ($env:APERTUS_RUNTIME_DIR) { throw 'APERTUS_RUNTIME_DIR is not an Apertus Windows runtime folder.' }
     if (Test-Path -LiteralPath $runtime) { throw "Unrecognized runtime at $runtime; nothing was overwritten." }
@@ -102,7 +106,10 @@ if (-not $env:MODEL -and -not $env:MODELS_DIR) {
     }
 }
 $env:MODELS_DIR = $models
-$env:MULTIMODAL = '0'
+if ($env:MMPROJ) {
+    if (-not [IO.File]::Exists($env:MMPROJ)) { throw "Encoder does not exist: $env:MMPROJ" }
+    $env:MMPROJ = [IO.Path]::GetFullPath($env:MMPROJ)
+}
 if (-not $env:APERTUS_STATE_DIR) { $env:APERTUS_STATE_DIR = Join-Path $data 'state' }
 if ($env:MODEL -and -not $env:MODEL_SHA256) { $env:MODEL_SHA256 = 'e8ddf308abe64441725dcdbfc32e7c89f2b52b94e90f24c30236694f0a90eb8c' }
 function Quote-BootstrapLiteral {
@@ -110,8 +117,8 @@ function Quote-BootstrapLiteral {
     return "'" + $Value.Replace("'", "''") + "'"
 }
 $start = Join-Path $data 'start.ps1'
-$lines = @('$ErrorActionPreference = ''Stop''', '$env:MULTIMODAL = ''0''')
-foreach ($name in @('MODELS_DIR', 'APERTUS_STATE_DIR', 'MODEL', 'MODEL_SHA256')) {
+$lines = @('$ErrorActionPreference = ''Stop''', ('if (-not $env:MULTIMODAL) {{ $env:MULTIMODAL = ''{0}'' }}' -f $env:MULTIMODAL))
+foreach ($name in @('MODELS_DIR', 'APERTUS_STATE_DIR', 'MODEL', 'MODEL_SHA256', 'MMPROJ', 'MMPROJ_SHA256')) {
     $value = [Environment]::GetEnvironmentVariable($name)
     if ($value) { $lines += ('if (-not $env:{0}) {{ $env:{0} = {1} }}' -f $name, (Quote-BootstrapLiteral $value)) }
 }
@@ -131,7 +138,22 @@ if ($PrepareOnly) {
     Import-Module $module -Force -DisableNameChecking
     if ($env:MODEL) {
         if ((Get-BootstrapHash $env:MODEL) -ne $env:MODEL_SHA256) { throw 'MODEL_SHA256 mismatch.' }
-    } else { Invoke-Apertus -Root $runtime -GetModel }
+    } else {
+        $config = Get-ApertusConfig $runtime
+        Save-ApertusModel $config $models | Out-Null
+    }
+    if ($env:MULTIMODAL -eq '1') {
+        $config = Get-ApertusConfig $runtime 'multimodal.env'
+        if ($env:MMPROJ) {
+            $hash = $config.APERTUS_MODEL_SHA256
+            if ($env:MMPROJ_SHA256) { $hash = $env:MMPROJ_SHA256 }
+            if ((Get-BootstrapHash $env:MMPROJ) -ne $hash) { throw 'MMPROJ_SHA256 mismatch.' }
+        } else {
+            $encoderUrl = $config.APERTUS_MODEL_URL
+            if ($env:MMPROJ_URL) { $encoderUrl = $env:MMPROJ_URL }
+            Save-ApertusModel $config $models -Url $encoderUrl | Out-Null
+        }
+    }
     Write-Host 'Preparation complete. Open Start.cmd in the folder above to chat.'
 } else {
     $launchArgs = @()

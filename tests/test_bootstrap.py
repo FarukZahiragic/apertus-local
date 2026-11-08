@@ -51,7 +51,7 @@ class BootstrapFixture(unittest.TestCase):
         self.env = dict(os.environ, APERTUS_INSTALL_DIR=str(self.data),
                         APERTUS_PACKAGE_URL=f'http://127.0.0.1:{self.server.server_port}/runtime',
                         BOOTSTRAP_TEST_CALLS=str(self.calls))
-        for key in ('MODEL', 'MODEL_SHA256', 'MODELS_DIR', 'APERTUS_RUNTIME_DIR', 'APERTUS_STATE_DIR'):
+        for key in ('MODEL', 'MODEL_SHA256', 'MODELS_DIR', 'APERTUS_RUNTIME_DIR', 'APERTUS_STATE_DIR', 'MULTIMODAL', 'MMPROJ', 'MMPROJ_SHA256'):
             self.env.pop(key, None)
 
     def publish_archive(self, path):
@@ -88,9 +88,10 @@ class PosixBootstrapTests(BootstrapFixture):
         for directory in ('scripts', 'config', 'runtime/cpu/bin'):
             (root / directory).mkdir(parents=True)
         (root / 'config/model.env').write_text('fixture\n')
+        (root / 'config/multimodal.env').write_text('APERTUS_MODEL_SHA256=' + hashlib.sha256(b'encoder fixture').hexdigest() + '\n')
         (root / 'scripts/launch.sh').write_text('''#!/bin/bash
 set -euo pipefail
-printf 'launch:%s|models:%s|model:%s|multimodal:%s\\n' "$*" "$MODELS_DIR" "${MODEL:-}" "$MULTIMODAL" >> "$BOOTSTRAP_TEST_CALLS"
+printf 'launch:%s|models:%s|model:%s|multimodal:%s|encoder:%s\\n' "$*" "$MODELS_DIR" "${MODEL:-}" "$MULTIMODAL" "${MMPROJ:-}" >> "$BOOTSTRAP_TEST_CALLS"
 ''')
         (root / 'scripts/get_model.sh').write_text('''#!/bin/bash
 set -euo pipefail
@@ -113,7 +114,7 @@ mkdir -p "$MODELS_DIR"
                         archive.writestr(info, file.read_bytes())
         else:
             with tarfile.open(path, 'w:gz') as archive:
-                archive.add(self.payload, arcname='apertus-local-v0.1.0-preview.3-linux-x86_64')
+                archive.add(self.payload, arcname='apertus-local-ci-linux-x86_64')
         self.publish_archive(path)
 
     def run_setup(self, *args, inline=False):
@@ -126,7 +127,7 @@ mkdir -p "$MODELS_DIR"
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(self.requests, ['full'])
         self.assertIn('launch:--no-browser', self.calls.read_text())
-        self.assertIn('multimodal:0', self.calls.read_text())
+        self.assertIn('multimodal:1', self.calls.read_text())
         self.assertTrue((self.data / 'start.sh').exists())
         self.assertFalse(list((self.data / 'downloads').glob('*')))
 
@@ -136,6 +137,50 @@ mkdir -p "$MODELS_DIR"
         self.stub('curl', 'echo "network must not be used" >&2; exit 99')
         second = self.run_setup('--no-browser')
         self.assertEqual(second.returncode, 0, second.stdout + second.stderr)
+        self.assertEqual(self.requests, ['full'])
+
+    def test_preparation_fetches_encoders_and_text_mode_skips_them(self):
+        result = self.run_setup('--prepare-only')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('model:--apertus', self.calls.read_text())
+        self.assertIn('model:--multimodal', self.calls.read_text())
+        self.calls.unlink()
+        self.env['MULTIMODAL'] = '0'
+        result = self.run_setup('--prepare-only')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn('--multimodal', self.calls.read_text())
+        self.env.pop('MULTIMODAL')
+        result = self.run_command([BASH, str(self.data/'start.sh')])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('multimodal:0', self.calls.read_text())
+
+    def test_explicit_encoder_is_verified_and_preserved_offline(self):
+        model = self.root/'existing model.gguf'; model.write_bytes(b'language')
+        encoder = self.root/"encoder's file.gguf"; encoder.write_bytes(b'encoder')
+        self.env.update(APERTUS_RUNTIME_DIR=str(self.payload), MODEL=str(model),
+                        MODEL_SHA256=hashlib.sha256(model.read_bytes()).hexdigest(),
+                        MMPROJ=str(encoder), MMPROJ_SHA256=hashlib.sha256(encoder.read_bytes()).hexdigest())
+        result = self.run_setup('--prepare-only')
+        self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
+        self.env.pop('MMPROJ'); self.env.pop('MMPROJ_SHA256')
+        result = self.run_command([BASH, str(self.data/'start.sh')])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('encoder:'+str(encoder), self.calls.read_text())
+
+    def test_bad_explicit_encoder_rejects_preparation(self):
+        encoder = self.root/'encoder.gguf'; encoder.write_bytes(b'wrong')
+        self.env.update(MMPROJ=str(encoder), MMPROJ_SHA256='0'*64)
+        result = self.run_setup('--prepare-only')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('MMPROJ_SHA256 mismatch', result.stderr)
+
+    def test_old_text_runtime_is_not_automatically_reused_for_images(self):
+        checkout = Path(self.env['HOME'])/'apertus-1.5-local'
+        self.make_payload(checkout)
+        (checkout/'config/model.env').write_text('APERTUS_MODEL_SHA256=e8ddf308abe64441725dcdbfc32e7c89f2b52b94e90f24c30236694f0a90eb8c\n')
+        (checkout/'config/multimodal.env').unlink()
+        result = self.run_setup('--prepare-only')
+        self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(self.requests, ['full'])
 
     def test_offline_start_preserves_quoted_paths_and_arguments(self):
@@ -158,7 +203,7 @@ mkdir -p "$MODELS_DIR"
     def test_resume_and_completed_partial_recovery(self):
         downloads = self.data / 'downloads'
         downloads.mkdir(parents=True)
-        partial = downloads / 'apertus-local-v0.1.0-preview.3-linux-x86_64.tar.gz.part'
+        partial = downloads / 'apertus-local-v0.2.0-preview.1-linux-x86_64.tar.gz.part'
         partial.write_bytes(self.archive_bytes[:100])
         result = self.run_setup('--prepare-only')
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
@@ -167,7 +212,7 @@ mkdir -p "$MODELS_DIR"
     def test_completed_partial_does_not_download_again(self):
         downloads = self.data / 'downloads'
         downloads.mkdir(parents=True)
-        (downloads / 'apertus-local-v0.1.0-preview.3-linux-x86_64.tar.gz.part').write_bytes(self.archive_bytes)
+        (downloads / 'apertus-local-v0.2.0-preview.1-linux-x86_64.tar.gz.part').write_bytes(self.archive_bytes)
         self.stub('curl', 'exit 99')
         result = self.run_setup('--prepare-only')
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -205,7 +250,7 @@ mkdir -p "$MODELS_DIR"
         self.assertIn('Reusing the local runtime: ' + str(checkout), result.stdout)
 
     def test_unrecognized_runtime_is_preserved(self):
-        runtime = self.data / 'packages/linux-x86_64-v0.1.0-preview.3'
+        runtime = self.data / 'packages/linux-x86_64-v0.2.0-preview.1'
         runtime.mkdir(parents=True)
         sentinel = runtime / 'keep.txt'
         sentinel.write_text('Keep this.')
@@ -256,13 +301,25 @@ class WindowsBootstrapTests(BootstrapFixture):
                         LOCALAPPDATA=str(self.root / 'appdata'), USERPROFILE=str(self.root / 'home'))
         self.env.pop('PROCESSOR_ARCHITEW6432', None)
         self.package = self.root / 'runtime.zip'
-        module = '''function Invoke-Apertus {
+        module = '''function Get-ApertusConfig {
+    param([string]$Root, [string]$File = 'model.env')
+    if ($File -eq 'multimodal.env') { return @{APERTUS_MODEL_FILE='encoder.gguf'; APERTUS_MODEL_SHA256='fixture'; APERTUS_MODEL_URL='https://example.org/encoder'} }
+    return @{APERTUS_MODEL_FILE='language.gguf'}
+}
+function Save-ApertusModel {
+    param($Config, [string]$Directory, [string]$Url)
+    $kind = 'model'
+    if ($Config.APERTUS_MODEL_FILE -eq 'encoder.gguf') { $kind = 'encoder' }
+    [IO.File]::AppendAllText($env:BOOTSTRAP_TEST_CALLS, "$kind`:$Directory|multimodal:$env:MULTIMODAL`n")
+}
+function Invoke-Apertus {
     param([string]$Root, [switch]$GetModel)
-    if ($env:MULTIMODAL -ne '0') { throw 'Bootstrap must not fetch optional encoders' }
+    if ($env:MULTIMODAL -notin @('0','1')) { throw 'Unexpected multimodal mode' }
     [IO.File]::AppendAllText($env:BOOTSTRAP_TEST_CALLS, "model:$env:MODELS_DIR`n")
 }
 '''
         with zipfile.ZipFile(self.package, 'w') as archive:
+            archive.writestr('config/multimodal.env', '# encoder fixture\n')
             archive.writestr('scripts/windows/Apertus.psm1', module)
             archive.writestr('scripts/windows/launch.ps1', '# fixture\n')
             archive.writestr('runtime/cpu/bin/llama-server.exe', b'fixture')
@@ -283,7 +340,7 @@ class WindowsBootstrapTests(BootstrapFixture):
         self.assertTrue((self.data / 'Stop.cmd').exists())
         self.assertIn('model:' + str(self.data / 'models'), self.calls.read_text())
         self.assertIn('Sysnative', (self.data / 'Start.cmd').read_text())
-        self.assertIn("$env:MULTIMODAL = '0'", (self.data / 'start.ps1').read_text(encoding='utf-8-sig'))
+        self.assertIn("$env:MULTIMODAL = '1'", (self.data / 'start.ps1').read_text(encoding='utf-8-sig'))
         self.assertIn("bootstrap''s", (self.data / 'start.ps1').read_text(encoding='utf-8-sig'))
 
     def test_windows_reuses_verified_runtime(self):
@@ -292,6 +349,29 @@ class WindowsBootstrapTests(BootstrapFixture):
         second = self.run_setup()
         self.assertEqual(second.returncode, 0, second.stdout + second.stderr)
         self.assertEqual(self.requests, ['full'])
+
+    def test_windows_prepares_both_files_and_allows_text_only(self):
+        result = self.run_setup()
+        self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
+        self.assertIn('encoder:', self.calls.read_text())
+        self.calls.unlink(); self.env['MULTIMODAL']='0'
+        result = self.run_setup()
+        self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
+        self.assertNotIn('encoder:', self.calls.read_text())
+        self.assertIn("$env:MULTIMODAL = '0'", (self.data/'start.ps1').read_text(encoding='utf-8-sig'))
+
+    def test_windows_preserves_explicit_encoder_path_and_checks_hash(self):
+        model=self.root/'language.gguf'; model.write_bytes(b'language')
+        encoder=self.root/"encoder's file.gguf"; encoder.write_bytes(b'encoder')
+        self.env.update(MODEL=str(model), MODEL_SHA256=hashlib.sha256(model.read_bytes()).hexdigest(),
+                        MMPROJ=str(encoder), MMPROJ_SHA256=hashlib.sha256(encoder.read_bytes()).hexdigest())
+        result=self.run_setup()
+        self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
+        self.assertIn(str(encoder).replace("'","''"), (self.data/'start.ps1').read_text(encoding='utf-8-sig'))
+        self.env['MMPROJ_SHA256']='0'*64
+        result=self.run_setup()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('MMPROJ_SHA256 mismatch', result.stderr)
 
     def test_windows_saves_absolute_existing_model_path(self):
         model = self.root / "existing model's file.gguf"
@@ -302,7 +382,8 @@ class WindowsBootstrapTests(BootstrapFixture):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         saved = (self.data / 'start.ps1').read_text(encoding='utf-8-sig')
         self.assertIn(str(model).replace("'", "''"), saved)
-        self.assertFalse(self.calls.exists())
+        self.assertIn('encoder:', self.calls.read_text())
+        self.assertNotIn('model:', self.calls.read_text())
 
     def test_windows_bad_hash_never_runs_model_download(self):
         self.env['APERTUS_PACKAGE_SHA256'] = '0' * 64
@@ -315,7 +396,7 @@ class WindowsBootstrapTests(BootstrapFixture):
         self.env['PROCESSOR_ARCHITECTURE'] = 'ARM64'
         result = self.run_setup()
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertTrue((self.data / 'packages/windows-arm64-v0.1.0-preview.4').exists())
+        self.assertTrue((self.data / 'packages/windows-arm64-v0.2.0-preview.1').exists())
 
 
 if __name__ == '__main__':
