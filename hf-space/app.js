@@ -21,6 +21,7 @@ function update() {
   const scriptURL = 'https://raw.githubusercontent.com/FarukZahiragic/apertus-local/main/' + script;
   const command = windows ? '& ([scriptblock]::Create((irm ' + scriptURL + ')))' : 'bash -c "$(curl -fsSL ' + scriptURL + ')"';
   document.querySelector('#start-command').value = command;
+  document.querySelector('#copy-command').textContent = 'Copy command';
   document.querySelector('#shell-label').textContent = windows ? 'Paste into PowerShell' : 'Paste into Terminal';
   document.querySelector('#command-source').href = 'https://github.com/FarukZahiragic/apertus-local/blob/main/' + script;
   const release = configuration?.platforms?.[selected];
