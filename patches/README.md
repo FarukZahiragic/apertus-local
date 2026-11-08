@@ -4,6 +4,12 @@
 applies these patches in order. Keep each one minimal; drop it once the pinned branch
 contains the change.
 
+`0005-apertus-image-token-budget.patch` makes Apertus honor `--image-min-tokens`
+and `--image-max-tokens`. The unpatched path always used the model's metadata,
+allowing a phone photo to use thousands of tokens and excessive CPU memory.
+The launcher defaults to 256 image codes (plus row and framing tokens), with
+an optional budget up to 1024. The source's resize and normalization remain intact.
+
 `0004-windows-arm-cpu-variants.patch` adds the missing Windows ARM64 build entries
 for the pin's existing Windows CPU feature detection. It includes ARMv8.0 and
 optional dot-product, FP16 and I8MM variants. The existing runtime scoring checks

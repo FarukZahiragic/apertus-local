@@ -10,13 +10,20 @@ tags:
 ---
 # Apertus-v1.5-8B Q4_K_M for Apertus Local
 
-Text-only conversion of [Swiss AI's Apertus-v1.5-8B](https://huggingface.co/swiss-ai/Apertus-v1.5-8B),
+Language-weight conversion of [Swiss AI's Apertus-v1.5-8B](https://huggingface.co/swiss-ai/Apertus-v1.5-8B),
 source revision `0be762a6`, using the Apertus-compatible llama.cpp fork at
-`442b0444168a0f72788b40a16c8289bd1eb217f5`. It excludes the source model's vision
-and audio components. Quantization changes model outputs; check task suitability.
+`442b0444168a0f72788b40a16c8289bd1eb217f5`. Its full input vocabulary supports
+the source's image/audio codes when paired with the separate F32 encoders below.
+Quantization changes model outputs; check task suitability.
 
 File: `apertus-v1.5-8b-Q4_K_M.gguf`, 5,656,804,512 bytes.
 SHA-256: `e8ddf308abe64441725dcdbfc32e7c89f2b52b94e90f24c30236694f0a90eb8c`.
+
+Candidate image/audio encoders: `apertus-v1.5-8b-mmproj-F32.gguf`, 914,229,792 bytes.
+SHA-256: `765b3b22e91022c2e300480a882456433d416962e8cb28a6c300528fd5efa543`.
+Both encoders are F32, as required by the source's precision-sensitive tokenizers.
+Inputs are text, images and audio; outputs are text. The launcher defaults to
+256 image codes and CPU encoders. See `docs/MULTIMODAL.md` in the source repository.
 
 Conversion, validation and exact runtime patches:
 [apertus-local](https://github.com/FarukZahiragic/apertus-local).

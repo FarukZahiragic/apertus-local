@@ -1,6 +1,7 @@
-Apertus Local — offline text chat
+Apertus Local — offline text, image and audio chat (candidate)
 
-Recommended: 16 GB RAM, space for a 5.3 GiB model plus runtime and update overhead.
+Recommended: 16 GB RAM, space for a 5.3 GiB model and 872 MiB encoders, plus runtime
+and update overhead. No GPU is required.
 
 macOS: open Apertus Local.app. It opens a Terminal window and then local chat.
 Linux: extract the archive, open a terminal in the extracted folder, run ./Start.sh.
@@ -13,9 +14,19 @@ macOS app model folder: ~/Library/Application Support/Apertus Local/models/
 Linux/source model folder: models/ next to the launcher.
 File: apertus-v1.5-8b-Q4_K_M.gguf
 SHA256: e8ddf308abe64441725dcdbfc32e7c89f2b52b94e90f24c30236694f0a90eb8c
+Encoders: apertus-v1.5-8b-mmproj-F32.gguf (downloaded and verified automatically).
+To prepare offline from USB, copy BOTH GGUF files into the model folder.
+
+In chat, use the attachment button to add an image or a short audio clip. Begin
+with one clear image or a clip shorter than 15 seconds. The app produces text.
+Image detail is limited for laptop memory and speed; tiny text in images may be
+hard to read. Image/audio processing adds time before the answer begins.
+For text-only use without loading the encoders, open Start-Text.sh (Linux),
+Start-Text.cmd (Windows), or run the Mac app with MULTIMODAL=0 as described at
+https://github.com/FarukZahiragic/apertus-local/blob/feat/multimodal-candidate/docs/MULTIMODAL.md
 
 After preparation, disconnect networking, relaunch and chat at
-http://127.0.0.1:8080/. Chat and pasted text stay on the local machine.
+http://127.0.0.1:8080/. Chat, attachments and pasted text stay on the local machine.
 
 CPU is available on every packaged platform. Metal is experimental on Apple
 Silicon and remains opt-in until Apertus checks pass on that hardware.

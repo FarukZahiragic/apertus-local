@@ -1,0 +1,27 @@
+diff --git a/tools/mtmd/clip.cpp b/tools/mtmd/clip.cpp
+index 1f55097b..4b8a91e1 100644
+--- a/tools/mtmd/clip.cpp
++++ b/tools/mtmd/clip.cpp
+@@ -1936,6 +1936,22 @@ struct clip_model_loader {
+                         get_u32(KEY_V_CODEBOOK_DIM, hparams.codebook_dim);
+                         get_u32(KEY_V_TOKEN_OFFSET, hparams.token_offset);
+                         get_u32(KEY_V_SPATIAL_FACTOR, hparams.vision_spatial_factor);
++                        // Apertus uses one discrete code per spatial-factor square.
++                        // Respect the caller's CPU/context budget before preprocessing.
++                        const int64_t patch_area = int64_t(hparams.vision_spatial_factor) * hparams.vision_spatial_factor;
++                        auto pixel_budget = [patch_area](int tokens) {
++                            const int64_t pixels = int64_t(tokens) * patch_area;
++                            if (pixels <= 0 || pixels > INT32_MAX) {
++                                throw std::runtime_error("invalid Apertus image token budget");
++                            }
++                            return int(pixels);
++                        };
++                        if (hparams.custom_image_min_tokens > 0) {
++                            hparams.image_min_pixels = pixel_budget(hparams.custom_image_min_tokens);
++                        }
++                        if (hparams.custom_image_max_tokens > 0) {
++                            hparams.image_max_pixels = pixel_budget(hparams.custom_image_max_tokens);
++                        }
+                         get_u32(KEY_V_RESIDUAL_BLOCK_COUNT, hparams.vision_residual_block_count);
+                         get_arr_int(KEY_V_CHANNEL_MULTIPLIERS, hparams.vision_channel_multipliers, true);
+                         get_arr_int(KEY_V_ATTENTION_LEVELS, hparams.vision_attention_levels, true);

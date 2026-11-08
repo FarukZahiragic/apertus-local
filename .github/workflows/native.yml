@@ -81,7 +81,9 @@ jobs:
             echo "PACKAGED_ROOT=$RUNNER_TEMP/apertus-delivered/apertus-local-$PACKAGE_VERSION-linux-x86_64" >> "$GITHUB_ENV"
           fi
       - name: Download exact Apertus model
-        run: scripts/get_model.sh --apertus
+        run: |
+          scripts/get_model.sh --apertus
+          scripts/get_model.sh --multimodal
       - name: Smoke-test actual Apertus on each available backend
         if: runner.os == 'macOS'
         run: /bin/bash tests/native_smoke.sh
@@ -125,6 +127,7 @@ jobs:
           test -n "$archive"
           tar -xzf "$archive" -C dist/compat-runtime
           scripts/get_model.sh --apertus
+          scripts/get_model.sh --multimodal
       - name: Prepare consumer distribution without a compiler
         run: |
           docker build -t "apertus-compat:$GITHUB_RUN_ID" --build-arg 'BASE=${{ matrix.image }}' - <<'DOCKER'
@@ -177,7 +180,9 @@ jobs:
           if [[ "$SIGN_RELEASE" == true ]]; then arguments+=(--sign); fi
           /bin/bash scripts/release_macos.sh "${arguments[@]}"
       - name: Download exact model for delivered-runtime check
-        run: scripts/get_model.sh --apertus
+        run: |
+          scripts/get_model.sh --apertus
+          scripts/get_model.sh --multimodal
       - name: Verify actual inference from delivered app
         run: |
           archive="dist/release/apertus-local-$RELEASE_VERSION-macos-arm64.zip"

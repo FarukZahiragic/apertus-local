@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Start verified local chat and open the browser after llama-server is ready.
-# Usage: scripts/launch.sh [--no-browser|--stop|--check]
+# Usage: scripts/launch.sh [--no-browser|--text-only|--stop|--check]
 # Env: BACKEND, GPU_LAYERS, THREADS, CTX, PORT, MODEL, MODEL_SHA256, MODELS_DIR, BUILD_DIR,
 #      APERTUS_STATE_DIR, STARTUP_TIMEOUT (seconds, default 300).
 # Keep this terminal open. Ctrl+C or the Stop launcher stops only this server.
@@ -12,6 +12,7 @@ open_browser=1 action=start
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --no-browser) open_browser=0 ;;
+    --text-only) export MULTIMODAL=0 ;;
     --stop) action=stop ;;
     --check) action=check ;;
     -h|--help) sed -n '2,/^set -euo pipefail/{ /^set -euo pipefail/!p; }' "$0"; exit 0 ;;
@@ -77,6 +78,24 @@ else
   fi
 fi
 export MODEL
+export MULTIMODAL="${MULTIMODAL:-1}"
+[[ "$MULTIMODAL" == 0 || "$MULTIMODAL" == 1 ]] || { echo 'error: MULTIMODAL must be 0 or 1' >&2; exit 1; }
+if [[ "$MULTIMODAL" == 1 ]]; then
+  if [[ -z "${MMPROJ:-}" ]]; then
+    "$REPO_ROOT/scripts/get_model.sh" --multimodal
+    # Source in a subshell to preserve the language-model metadata above.
+    mmfile="$(source "$REPO_ROOT/config/multimodal.env"; printf '%s' "$APERTUS_MODEL_FILE")"
+    export MMPROJ="${MODELS_DIR:-$REPO_ROOT/models}/$mmfile"
+  else
+    [[ -f "$MMPROJ" ]] || { echo "error: encoder not found: $MMPROJ" >&2; exit 1; }
+    if [[ -n "${MMPROJ_SHA256:-}" ]]; then
+      ap_verify "$MMPROJ" "$MMPROJ_SHA256" || { echo 'error: MMPROJ_SHA256 mismatch' >&2; exit 1; }
+    else
+      echo 'Developer MMPROJ override: checksum not specified.'
+    fi
+    export MMPROJ
+  fi
+fi
 if curl --noproxy '*' --connect-timeout 1 --max-time 2 -s -o /dev/null "http://127.0.0.1:$PORT/"; then
   echo "error: port $PORT is already serving another application; choose PORT or stop it" >&2; exit 1
 fi

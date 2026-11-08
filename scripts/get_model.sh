@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Download a GGUF, resume interruptions, verify SHA-256, then install atomically.
-# Usage: scripts/get_model.sh [--apertus | HF_REPO FILE]
+# Usage: scripts/get_model.sh [--apertus | --multimodal | HF_REPO FILE]
 # Default: Qwen/Qwen2.5-1.5B-Instruct-GGUF qwen2.5-1.5b-instruct-q4_k_m.gguf
 # --apertus uses config/model.env, including the pinned checksum; a verified local
 # copy works without networking. Set APERTUS_MODEL_REPO or MODEL_URL for download.
@@ -17,6 +17,15 @@ case "${1:-}" in
     MODEL_SHA256="${MODEL_SHA256:-$APERTUS_MODEL_SHA256}"
     MODEL_BYTES="${MODEL_BYTES:-$APERTUS_MODEL_BYTES}"
     MODEL_REVISION="${MODEL_REVISION:-$APERTUS_MODEL_REVISION}"
+    ;;
+  --multimodal)
+    [[ $# -eq 1 ]] || { echo 'error: --multimodal takes no arguments' >&2; exit 1; }
+    source "$REPO_ROOT/config/multimodal.env"
+    HF_REPO="$APERTUS_MODEL_REPO" FILE="$APERTUS_MODEL_FILE"
+    # Language-model URL/checksum overrides must never leak into this download.
+    MODEL_SHA256="$APERTUS_MODEL_SHA256" MODEL_BYTES="$APERTUS_MODEL_BYTES"
+    MODEL_REVISION="$APERTUS_MODEL_REVISION"
+    MODEL_URL="${MMPROJ_URL:-$APERTUS_MODEL_URL}"
     ;;
   *)
     [[ $# -eq 0 || $# -eq 2 ]] || { echo 'error: provide HF_REPO FILE, or --apertus' >&2; exit 1; }
@@ -42,7 +51,9 @@ if [[ -z "${MODEL_URL:-}" && -z "$HF_REPO" ]]; then
 fi
 URL="${MODEL_URL:-https://huggingface.co/$HF_REPO/resolve/${MODEL_REVISION:-main}/$FILE}"
 auth=()
-[[ -z "${HF_TOKEN:-}" ]] || auth=(-H "Authorization: Bearer $HF_TOKEN")
+if [[ "$URL" == https://huggingface.co/* && -n "${HF_TOKEN:-}" ]]; then
+  auth=(-H "Authorization: Bearer $HF_TOKEN")
+fi
 if [[ -z "$expected" ]]; then
   expected="$(curl -sfI "${auth[@]+"${auth[@]}"}" "$URL" | tr -d '\r"' | awk 'tolower($1) == "x-linked-etag:" {print $2}')" || {
     echo 'error: cannot access model; check the repository name, access terms, and HF_TOKEN' >&2; exit 1;

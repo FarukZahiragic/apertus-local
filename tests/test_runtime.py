@@ -59,6 +59,22 @@ class RuntimeTests(unittest.TestCase):
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn('error:', result.stderr)
 
+    def test_multimodal_requires_encoder_and_bounds_image_work(self):
+        encoder = self.root/'encoders with spaces.gguf'
+        encoder.touch()
+        result = self.serve(MULTIMODAL='1', MMPROJ=str(encoder), IMAGE_MAX_TOKENS='512')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        args = json.loads(result.stdout.splitlines()[-1])
+        self.assertEqual(args[args.index('--mmproj')+1], str(encoder))
+        self.assertEqual(args[args.index('--image-max-tokens')+1], '512')
+        self.assertIn('--no-mmproj-offload', args)
+        for settings in [dict(MULTIMODAL='1', MMPROJ='/missing'),
+                         dict(MULTIMODAL='1', MMPROJ=str(encoder), IMAGE_MAX_TOKENS='9999')]:
+            self.assertNotEqual(self.serve(**settings).returncode, 0)
+        result = self.serve(MULTIMODAL='0', MMPROJ=str(encoder))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn('--mmproj', json.loads(result.stdout.splitlines()[-1]))
+
     def test_auto_metal_requires_validation_and_available_device(self):
         shims = self.root / 'shims'
         shims.mkdir()

@@ -10,6 +10,7 @@ if [[ -n "${PACKAGED_ROOT:-}" ]]; then
   export MODEL="$PWD/models/apertus-v1.5-8b-Q4_K_M.gguf"
 fi
 export HARDWARE_KIND="${HARDWARE_KIND:-GitHub-hosted VM (NOT laptop)}" PORT=18087 CTX=512 THREADS=2
+export MULTIMODAL=0
 launcher=''
 cleanup() {
   if [[ -n "$launcher" ]]; then
@@ -70,3 +71,26 @@ for backend in "${backends[@]}"; do
   wait "$launcher"
   launcher=''
 done
+# Exercise image resizing, visual follow-up and audio on every native CPU build.
+# Keep this sequential with text/Metal checks to bound hosted-runner memory.
+export MULTIMODAL=1 BACKEND=cpu GPU_LAYERS=0 LOAD_MODE=auto CTX=1024 PORT=18088
+if [[ -n "${PACKAGED_ROOT:-}" ]]; then
+  export BUILD_DIR="$launch_root/runtime/cpu"
+else
+  export BUILD_DIR="${MM_BUILD_DIR:-$PWD/vendor/llama.cpp/build-portable}"
+fi
+export MMPROJ="$PWD/models/apertus-v1.5-8b-mmproj-F32.gguf"
+export MMPROJ_SHA256="$(source config/multimodal.env; printf '%s' "$APERTUS_MODEL_SHA256")"
+/bin/bash "$launch_root/scripts/launch.sh" --no-browser > dist/launcher-multimodal.log 2>&1 &
+launcher=$!
+ready=0
+for ((i=0; i<300; i++)); do
+  kill -0 "$launcher" 2>/dev/null || { cat dist/launcher-multimodal.log; exit 1; }
+  if grep -q 'Ready:' dist/launcher-multimodal.log; then ready=1; break; fi
+  sleep 1
+done
+[[ "$ready" -eq 1 ]] || { cat dist/launcher-multimodal.log; exit 1; }
+python3 scripts/validate_multimodal.py
+/bin/bash "$launch_root/scripts/launch.sh" --stop
+wait "$launcher"
+launcher=''
