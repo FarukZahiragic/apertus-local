@@ -64,7 +64,7 @@ Participants do not need these build tools.
 
 ```powershell
 scripts/setup_windows.ps1 -Architecture x64
-scripts/package_windows.ps1 -Version v0.1.0-preview.4 -Architecture x64
+scripts/package_windows.ps1 -Version v0.2.0-preview.2 -Architecture x64
 ```
 
 On native ARM64 Windows, replace `x64` with `arm64`. The build uses the same

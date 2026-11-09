@@ -30,7 +30,7 @@ model weights cannot execute on their own. The current runtime packages are abou
 verification and extraction; the installed runtime and model are reused.
 
 The runtime is downloaded from the already published native releases:
-`v0.2.0-preview.1` on all four platforms. The Mac bootstrap
+`v0.2.0-preview.2` on all four platforms. The Mac bootstrap
 extracts the server payload from the ZIP and discards the app wrapper. It runs
 directly in the Terminal you opened; there is no Finder app launch or app-to-Terminal
 automation request. It does not change Gatekeeper or remove quarantine attributes.
