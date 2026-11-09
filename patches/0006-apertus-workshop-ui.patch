@@ -12,12 +12,12 @@ index dec34ebd..09094908 100644
  endif()
  
 diff --git a/tools/ui/src/lib/components/app/chat/ChatForm/ChatFormActions/ChatFormActionAdd/ChatFormActionAddDropdown.svelte b/tools/ui/src/lib/components/app/chat/ChatForm/ChatFormActions/ChatFormActionAdd/ChatFormActionAddDropdown.svelte
-index 1ce73184..c51cd244 100644
+index 1ce73184..35d3ab80 100644
 --- a/tools/ui/src/lib/components/app/chat/ChatForm/ChatFormActions/ChatFormActionAdd/ChatFormActionAddDropdown.svelte
 +++ b/tools/ui/src/lib/components/app/chat/ChatForm/ChatFormActions/ChatFormActionAdd/ChatFormActionAddDropdown.svelte
 @@ -1,4 +1,5 @@
  <script lang="ts">
-+	import { APERTUS_WORKSHOP_UI } from '$lib/constants/workshop.constants';
++	import { APERTUS_WORKSHOP_UI } from '$lib/constants/app.constants';
  	import { File, Image, MessageSquare, Mic, Plus, Video } from '@lucide/svelte';
  	import {
  		ChatFormActionAddReasoningSubmenu,
@@ -58,12 +58,12 @@ index 1ce73184..c51cd244 100644
  	</DropdownMenu.Root>
  </div>
 diff --git a/tools/ui/src/lib/components/app/chat/ChatForm/ChatFormActions/ChatFormActionAdd/ChatFormActionAddSheet.svelte b/tools/ui/src/lib/components/app/chat/ChatForm/ChatFormActions/ChatFormActionAdd/ChatFormActionAddSheet.svelte
-index acd0f4d2..18b41bdf 100644
+index acd0f4d2..b3957dd9 100644
 --- a/tools/ui/src/lib/components/app/chat/ChatForm/ChatFormActions/ChatFormActionAdd/ChatFormActionAddSheet.svelte
 +++ b/tools/ui/src/lib/components/app/chat/ChatForm/ChatFormActions/ChatFormActionAdd/ChatFormActionAddSheet.svelte
 @@ -1,4 +1,5 @@
  <script lang="ts">
-+	import { APERTUS_WORKSHOP_UI } from '$lib/constants/workshop.constants';
++	import { APERTUS_WORKSHOP_UI } from '$lib/constants/app.constants';
  	import {
  		Check,
  		ChevronDown,
@@ -135,12 +135,12 @@ index acd0f4d2..18b41bdf 100644
  		</Sheet.Content>
  	</Sheet.Root>
 diff --git a/tools/ui/src/lib/components/app/models/ModelCapabilityIcons.svelte b/tools/ui/src/lib/components/app/models/ModelCapabilityIcons.svelte
-index c9505a95..160f836a 100644
+index c9505a95..d72d24bc 100644
 --- a/tools/ui/src/lib/components/app/models/ModelCapabilityIcons.svelte
 +++ b/tools/ui/src/lib/components/app/models/ModelCapabilityIcons.svelte
 @@ -1,4 +1,5 @@
  <script lang="ts">
-+	import { APERTUS_WORKSHOP_UI } from '$lib/constants/workshop.constants';
++	import { APERTUS_WORKSHOP_UI } from '$lib/constants/app.constants';
  	import { Image, Lightbulb, Mic, Video, Wrench } from '@lucide/svelte';
  	import * as Tooltip from '$lib/components/ui/tooltip';
  	import type { ModelModalities } from '$lib/types/models';
@@ -172,12 +172,12 @@ index c9505a95..160f836a 100644
  					<Tooltip.Trigger>
  						<Video class={iconSize} />
 diff --git a/tools/ui/src/lib/components/app/models/ModelsSelectorDropdown.svelte b/tools/ui/src/lib/components/app/models/ModelsSelectorDropdown.svelte
-index 30dedcba..2669e3f7 100644
+index 30dedcba..c9a8cbdd 100644
 --- a/tools/ui/src/lib/components/app/models/ModelsSelectorDropdown.svelte
 +++ b/tools/ui/src/lib/components/app/models/ModelsSelectorDropdown.svelte
 @@ -1,4 +1,5 @@
  <script lang="ts">
-+	import { APERTUS_WORKSHOP_UI } from '$lib/constants/workshop.constants';
++	import { APERTUS_WORKSHOP_UI } from '$lib/constants/app.constants';
  	import ModelLoadHighlight from './ModelLoadHighlight.svelte';
  	import type { ModelItem } from './utils';
  	import { ChevronDown, Lightbulb, Loader2 } from '@lucide/svelte';
@@ -210,12 +210,21 @@ index 30dedcba..2669e3f7 100644
  								<Lightbulb class="h-3.5 w-3.5 shrink-0 text-amber-400" />
  							{/if}
  
+diff --git a/tools/ui/src/lib/constants/app.constants.ts b/tools/ui/src/lib/constants/app.constants.ts
+index c598f480..8200dfde 100644
+--- a/tools/ui/src/lib/constants/app.constants.ts
++++ b/tools/ui/src/lib/constants/app.constants.ts
+@@ -1 +1,4 @@
+ export const APP_NAME = import.meta.env?.VITE_PUBLIC_APP_NAME || 'llama-ui';
++
++/** Restrict the participant UI to the validated Apertus workshop workflow. */
++export const APERTUS_WORKSHOP_UI = true;
 diff --git a/tools/ui/src/lib/constants/attachment-menu.constants.ts b/tools/ui/src/lib/constants/attachment-menu.constants.ts
-index 143450a7..e60f3cc6 100644
+index 143450a7..1a3f9b42 100644
 --- a/tools/ui/src/lib/constants/attachment-menu.constants.ts
 +++ b/tools/ui/src/lib/constants/attachment-menu.constants.ts
 @@ -1,3 +1,4 @@
-+import { APERTUS_WORKSHOP_UI } from './workshop.constants';
++import { APERTUS_WORKSHOP_UI } from './app.constants';
  import { FILE_TYPE_ICONS } from '$lib/constants';
  import { AttachmentAction, AttachmentItemEnabledWhen, AttachmentMenuItemId } from '$lib/enums';
  import type { AttachmentMenuItem } from '$lib/types';
@@ -228,11 +237,11 @@ index 143450a7..e60f3cc6 100644
 +	? 'Add files or a system message'
 +	: 'Add files, prompts, tools or MCP Servers';
 diff --git a/tools/ui/src/lib/constants/settings.constants.ts b/tools/ui/src/lib/constants/settings.constants.ts
-index 7140bbcc..d409b7e6 100644
+index 7140bbcc..fce11348 100644
 --- a/tools/ui/src/lib/constants/settings.constants.ts
 +++ b/tools/ui/src/lib/constants/settings.constants.ts
 @@ -1,3 +1,4 @@
-+import { APERTUS_WORKSHOP_UI } from '$lib/constants/workshop.constants';
++import { APERTUS_WORKSHOP_UI } from '$lib/constants/app.constants';
  import { CLI_FLAGS } from './cli-flags.constants';
  import { DEFAULT_MCP_CONFIG } from './mcp.constants';
  import { SETTINGS_KEYS } from './settings-keys.constants';
@@ -268,20 +277,12 @@ index 7140bbcc..d409b7e6 100644
  
  /** INPUT-type settings whose value is a number. */
  export const NUMERIC_FIELDS = getAllSettings()
-diff --git a/tools/ui/src/lib/constants/workshop.constants.ts b/tools/ui/src/lib/constants/workshop.constants.ts
-new file mode 100644
-index 00000000..fe94cac4
---- /dev/null
-+++ b/tools/ui/src/lib/constants/workshop.constants.ts
-@@ -0,0 +1,2 @@
-+/** The participant build exposes only the validated Apertus workshop workflow. */
-+export const APERTUS_WORKSHOP_UI = true;
 diff --git a/tools/ui/src/lib/stores/conversations/preferences.svelte.ts b/tools/ui/src/lib/stores/conversations/preferences.svelte.ts
-index 916911a1..c062a0ac 100644
+index 916911a1..49a38e8a 100644
 --- a/tools/ui/src/lib/stores/conversations/preferences.svelte.ts
 +++ b/tools/ui/src/lib/stores/conversations/preferences.svelte.ts
 @@ -1,3 +1,4 @@
-+import { APERTUS_WORKSHOP_UI } from '$lib/constants/workshop.constants';
++import { APERTUS_WORKSHOP_UI } from '$lib/constants/app.constants';
  /**
   * ConversationPreferences - Per-chat options with global fallback
   *
@@ -296,11 +297,11 @@ index 916911a1..c062a0ac 100644
  			if (this.host.activeConversation.reasoningEffort !== undefined) {
  				return this.host.activeConversation.reasoningEffort;
 diff --git a/tools/ui/src/lib/stores/mcp/index.svelte.ts b/tools/ui/src/lib/stores/mcp/index.svelte.ts
-index 768e2c1a..dcb90361 100644
+index 768e2c1a..3a559d54 100644
 --- a/tools/ui/src/lib/stores/mcp/index.svelte.ts
 +++ b/tools/ui/src/lib/stores/mcp/index.svelte.ts
 @@ -1,3 +1,4 @@
-+import { APERTUS_WORKSHOP_UI } from '$lib/constants/workshop.constants';
++import { APERTUS_WORKSHOP_UI } from '$lib/constants/app.constants';
  /**
   * mcpStore - MCP host: server connections and tool operations
   *
@@ -315,11 +316,11 @@ index 768e2c1a..dcb90361 100644
  
  		// cache the parse: the config string rarely changes and getServers is
 diff --git a/tools/ui/src/lib/stores/models/props.svelte.ts b/tools/ui/src/lib/stores/models/props.svelte.ts
-index 9d2d817a..00973104 100644
+index 9d2d817a..d9ce5b0a 100644
 --- a/tools/ui/src/lib/stores/models/props.svelte.ts
 +++ b/tools/ui/src/lib/stores/models/props.svelte.ts
 @@ -1,3 +1,4 @@
-+import { APERTUS_WORKSHOP_UI } from '$lib/constants/workshop.constants';
++import { APERTUS_WORKSHOP_UI } from '$lib/constants/app.constants';
  /**
   * ModelPropsManager - Per-model props cache, modalities and thinking detection
   *
@@ -342,11 +343,11 @@ index 9d2d817a..00973104 100644
  		};
  	}
 diff --git a/tools/ui/src/lib/stores/tools.svelte.ts b/tools/ui/src/lib/stores/tools.svelte.ts
-index 1d413340..24e8bb86 100644
+index 1d413340..f047ceaf 100644
 --- a/tools/ui/src/lib/stores/tools.svelte.ts
 +++ b/tools/ui/src/lib/stores/tools.svelte.ts
 @@ -1,3 +1,4 @@
-+import { APERTUS_WORKSHOP_UI } from '$lib/constants/workshop.constants';
++import { APERTUS_WORKSHOP_UI } from '$lib/constants/app.constants';
  /**
   * toolsStore - Tool registry and enablement
   *
