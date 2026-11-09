@@ -30,17 +30,17 @@ case "$(uname -s) $(uname -m)" in
   'Linux x86_64') platform=linux-x86_64 ;;
   *) echo 'error: use Apple Silicon macOS, x86_64 Linux, or run.ps1 on Windows.' >&2; exit 1 ;;
 esac
-version=v0.2.0-preview.1
+version=v0.2.0-preview.2
 export MULTIMODAL="${MULTIMODAL:-1}"
 [[ "$MULTIMODAL" == 0 || "$MULTIMODAL" == 1 ]] || { echo 'error: MULTIMODAL must be 0 or 1' >&2; exit 1; }
 case "$platform" in
   macos-arm64)
     archive="apertus-local-$version-$platform.zip"
-    digest=9ac42d54b95d703840147e0c6ed29070aa0616c0c665ed5db499d3869f959576
+    digest=ffcfb7a8be0b0f1f11f1bb71056ba94c6b97c1f0b2ab9f8a4ac1bb664d42a6ea
     default_root="$HOME/Library/Application Support/Apertus Local" ;;
   linux-x86_64)
     archive="apertus-local-$version-$platform.tar.gz"
-    digest=0d41ab417e2fb708d6112ab300ff3e8d01c0e4d0f5ebc49c80abaa025041840e
+    digest=a3cfbc425314d7367ebe552963743fcd562ec0301fd62e0e7503a126510113b1
     default_root="${XDG_DATA_HOME:-$HOME/.local/share}/apertus-local" ;;
 esac
 url="https://github.com/FarukZahiragic/apertus-local/releases/download/$version/$archive"

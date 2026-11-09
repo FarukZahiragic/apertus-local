@@ -8,11 +8,11 @@ if ($env:OS -ne 'Windows_NT') { throw 'Use run.ps1 on Windows, or run.sh on macO
 $architecture = $env:PROCESSOR_ARCHITEW6432
 if (-not $architecture) { $architecture = $env:PROCESSOR_ARCHITECTURE }
 switch ($architecture) {
-    'AMD64' { $platform = 'windows-x86_64'; $digest = '61cfedb051528fe4946d8c76081c9d853b7bde3238a26658f6956ecf89ead08e' }
-    'ARM64' { $platform = 'windows-arm64'; $digest = '0ac0ff60258e0ab118ef2b70a13b14b55af06a36d8072bc59c7ca6ca12ded82f' }
+    'AMD64' { $platform = 'windows-x86_64'; $digest = '04a4534aff2f00dedb1cc0349331d253bef6f8d8472e5e4ddcc756e2b37824e6' }
+    'ARM64' { $platform = 'windows-arm64'; $digest = 'ed9c2ac8524a0d07abd9b19c10665ee42c0090373ba9ea5b31b2fd9f00d280d3' }
     default { throw 'Apertus requires 64-bit Windows on Intel/AMD or ARM/Snapdragon.' }
 }
-$version = 'v0.2.0-preview.1'
+$version = 'v0.2.0-preview.2'
 if (-not $env:MULTIMODAL) { $env:MULTIMODAL = '1' }
 if ($env:MULTIMODAL -notin @('0','1')) { throw 'MULTIMODAL must be 0 or 1' }
 $archive = "apertus-local-$version-$platform.zip"
