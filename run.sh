@@ -64,6 +64,14 @@ mkdir -p "$data"
 data="$(cd "$data" && pwd)"
 if [[ -z "${APERTUS_RUNTIME_DIR:-}" ]]; then
   for candidate in "$PWD" "$HOME/apertus-1.5-local"; do
+    # An older prepared runtime would bring the generic UI back after an update.
+    if [[ -x "$candidate/runtime/cpu/bin/llama-server" ]]; then
+      grep -q '"0006-apertus-workshop-ui.patch"' "$candidate/release.json" 2>/dev/null || continue
+    else
+      cache="$candidate/vendor/llama.cpp/build/CMakeCache.txt"
+      grep -q '^LLAMA_BUILD_UI:BOOL=ON$' "$cache" 2>/dev/null &&
+        grep -q '^LLAMA_USE_PREBUILT_UI:BOOL=OFF$' "$cache" 2>/dev/null || continue
+    fi
     if [[ -f "$candidate/scripts/launch.sh" && -f "$candidate/config/model.env" ]] &&
        [[ "$MULTIMODAL" == 0 || -f "$candidate/config/multimodal.env" ]] &&
        grep -q '^APERTUS_MODEL_SHA256=e8ddf308abe64441725dcdbfc32e7c89f2b52b94e90f24c30236694f0a90eb8c$' "$candidate/config/model.env" &&

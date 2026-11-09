@@ -37,7 +37,20 @@ if (-not $env:APERTUS_RUNTIME_DIR) {
         $built = Join-Path $candidate "vendor/llama.cpp/build-windows-$buildArch/bin"
         $hasServer = [IO.File]::Exists($server) -or [IO.File]::Exists((Join-Path $built 'llama-server.exe')) -or [IO.File]::Exists((Join-Path $built 'Release/llama-server.exe'))
         $hasEncoders = $env:MULTIMODAL -eq '0' -or [IO.File]::Exists((Join-Path $candidate 'config/multimodal.env'))
-        if ($hasServer -and $hasEncoders -and [IO.File]::Exists($config) -and [IO.File]::Exists((Join-Path $candidate 'scripts/windows/launch.ps1'))) {
+        $hasParticipantUI = $false
+        if ([IO.File]::Exists($server)) {
+            try {
+                $manifest = [IO.File]::ReadAllText((Join-Path $candidate 'release.json')) | ConvertFrom-Json
+                $hasParticipantUI = $manifest.patches.PSObject.Properties.Name -contains '0006-apertus-workshop-ui.patch'
+            } catch { $hasParticipantUI = $false }
+        } else {
+            $cache = Join-Path $candidate "vendor/llama.cpp/build-windows-$buildArch/CMakeCache.txt"
+            if ([IO.File]::Exists($cache)) {
+                $text = [IO.File]::ReadAllText($cache)
+                $hasParticipantUI = $text -match '(?m)^LLAMA_BUILD_UI:BOOL=ON\r?$' -and $text -match '(?m)^LLAMA_USE_PREBUILT_UI:BOOL=OFF\r?$'
+            }
+        }
+        if ($hasServer -and $hasParticipantUI -and $hasEncoders -and [IO.File]::Exists($config) -and [IO.File]::Exists((Join-Path $candidate 'scripts/windows/launch.ps1'))) {
             if ([IO.File]::ReadAllText($config) -match '(?m)^APERTUS_MODEL_SHA256=e8ddf308abe64441725dcdbfc32e7c89f2b52b94e90f24c30236694f0a90eb8c\r?$') { $env:APERTUS_RUNTIME_DIR = $candidate; break }
         }
     }
