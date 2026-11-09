@@ -65,6 +65,9 @@ for backend in "${backends[@]}"; do
     [[ -n "$chrome" ]] || { echo 'error: CI browser unavailable' >&2; exit 1; }
     # CI's namespace runs as root. The browser visits only our trusted local UI.
     node tests/browser_smoke.cjs "$chrome" "http://127.0.0.1:$PORT/" dist/offline-ui.html
+    if [[ "${WORKSHOP_UI_CHECK:-0}" == 1 ]]; then
+      node tests/workshop_ui.mjs "$chrome" "http://127.0.0.1:$PORT/" text
+    fi
     echo 'Actual browser rendered the Apertus UI with external networking blocked.'
   fi
   /bin/bash "$launch_root/scripts/launch.sh" --stop
@@ -91,6 +94,11 @@ for ((i=0; i<300; i++)); do
 done
 [[ "$ready" -eq 1 ]] || { cat dist/launcher-multimodal.log; exit 1; }
 python3 scripts/validate_multimodal.py
+if [[ "${WORKSHOP_UI_CHECK:-0}" == 1 ]]; then
+  chrome="$(command -v google-chrome || command -v chromium || true)"
+  [[ -n "$chrome" ]] || { echo 'error: CI browser unavailable' >&2; exit 1; }
+  node tests/workshop_ui.mjs "$chrome" "http://127.0.0.1:$PORT/" multimodal
+fi
 /bin/bash "$launch_root/scripts/launch.sh" --stop
 wait "$launcher"
 launcher=''

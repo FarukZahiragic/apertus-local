@@ -26,6 +26,7 @@ generation (tentative, not reached on the reference laptop).
 | 11 | `chore/workshop-validation` | Automated checks and fresh-install/offline rehearsal | local Bash 3.2 checks pass; extracted Linux package passes document Q&A and 50 requests; native CI passes; physical Mac source/offline rehearsal passed per owner; packaged app first-open and Linux offline hardware rehearsals pending |
 | 12 | `feat/windows-support` | Native Windows x64/ARM64 downloads and broad OS compatibility requirements | implemented in PR #25; native x64/ARM64 launcher and real-model checks pass; preview.3 publishes four native packages; Mac wrapper targets 13.3 and Linux symbol floors are recorded; Ubuntu/Debian consumer checks pass; physical Windows installation and performance remain separate |
 | 13 | `feat/one-command-launcher` | One pasted command on Mac/Linux/Windows; reuse verified native runtimes and weights; direct Terminal launch on Mac | implemented; actual-model first launch and cached restart pass on four native CI platforms and the reference Linux laptop; 8 GB machines and physical attendee installation remain outside the validated contract; see VALIDATION.md for the initial constrained Mac restart failure |
+| 14 | `feat/workshop-ui` | Keep the bundled chat UI aligned with the validated Apertus workflow | implemented; delivered UI passes desktop/mobile and saved-preference checks in text-only and multimodal modes; all four native archives and Ubuntu/Debian consumers pass; preview.2 includes the compiled UI and reuses model files |
 
 ## Phase details
 

@@ -11,6 +11,7 @@ if (-not $BuildDirectory) { $BuildDirectory = Join-Path $root "vendor/llama.cpp/
 if (-not $OutputDirectory) { $OutputDirectory = Join-Path $root 'dist' }
 $cache = Get-Content -LiteralPath (Join-Path $BuildDirectory 'CMakeCache.txt') -Raw
 foreach ($required in @('GGML_NATIVE:BOOL=OFF','GGML_BACKEND_DL:BOOL=ON','GGML_CPU_ALL_VARIANTS:BOOL=ON',
+    'LLAMA_BUILD_UI:BOOL=ON','LLAMA_USE_PREBUILT_UI:BOOL=OFF',
     'GGML_OPENMP:BOOL=OFF','CMAKE_MSVC_RUNTIME_LIBRARY:STRING=MultiThreadedDLL')) {
     if ($cache -notmatch ('(?m)^' + [regex]::Escape($required) + '\r?$')) { throw "Nonportable Windows build: missing $required" }
 }

@@ -14,7 +14,7 @@ rehearsal remain separate.
 ## Run the native preview
 
 Download your platform archive from the
-[multimodal preview release](https://github.com/FarukZahiragic/apertus-local/releases/tag/v0.2.0-preview.1).
+[multimodal preview release](https://github.com/FarukZahiragic/apertus-local/releases/tag/v0.2.0-preview.2).
 Extract it to a new folder; keep your previous working copy for comparison.
 The standalone `setup.sh` also prepares both files when run from a current main
 checkout. It preserves existing checkouts; use a fresh install folder if your

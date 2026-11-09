@@ -30,7 +30,7 @@ model weights cannot execute on their own. The current runtime packages are abou
 verification and extraction; the installed runtime and model are reused.
 
 The runtime is downloaded from the already published native releases:
-`v0.2.0-preview.1` on all four platforms. The Mac bootstrap
+`v0.2.0-preview.2` on all four platforms. The Mac bootstrap
 extracts the server payload from the ZIP and discards the app wrapper. It runs
 directly in the Terminal you opened; there is no Finder app launch or app-to-Terminal
 automation request. It does not change Gatekeeper or remove quarantine attributes.
@@ -78,8 +78,9 @@ the expected file. It does not scan other folders.
 
 A prepared Apertus checkout/package in the current directory or
 `~/apertus-1.5-local` is also reused when its model metadata matches and a built
-CPU runtime is present. Image-enabled setup also requires multimodal metadata; older text-only runtimes are upgraded. This avoids even the runtime download on an already
-prepared machine.
+CPU runtime includes the participant UI. Image-enabled setup also requires
+multimodal metadata. Older runtimes are upgraded while existing weights are
+reused; a current participant runtime avoids that download as well.
 
 These overrides avoid copies:
 

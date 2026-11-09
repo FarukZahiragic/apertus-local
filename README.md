@@ -45,6 +45,10 @@ Keep the terminal open; Ctrl+C stops chat. The command prints a local entry poin
 for later starts, including offline. See [docs/ONE_COMMAND.md](docs/ONE_COMMAND.md)
 for preparation without starting, existing model/runtime reuse, and OS requirements.
 
+The bundled [participant chat UI](docs/WORKSHOP_UI.md) keeps text, image and audio
+input and supported chat settings. It omits generic reasoning levels and
+unconfigured tool, MCP and agent controls.
+
 ## Downloadable launcher
 
 Download the matching archive from the [Hugging Face download page](https://huggingface.co/spaces/faruk-zahiragic/apertus-local)
@@ -82,7 +86,9 @@ measured. CPU serving remains supported.
 `scripts/bench_mac.sh` records a controlled CPU/Metal comparison after both builds
 are available; every row identifies the hardware and backend.
 
-Prerequisites (Ubuntu 24.04):
+Source-build prerequisites (Ubuntu 24.04): install Node.js 24/npm for the bundled
+UI, then the native build tools below. Participant downloads include the UI and
+need no Node.js.
 
 ```bash
 sudo apt install -y git cmake build-essential python3 python3-venv curl

@@ -241,3 +241,31 @@ checks pass, including verification that both bootstraps leave optional image/au
 encoders off. The cross-platform workflow checks the actual published runtime,
 model, stop and saved entry point rather than substituting a small model.
 These are functional checks; no new performance benchmark is inferred.
+
+## Participant UI cleanup
+
+The patched upstream UI builds from source and passes Svelte/TypeScript checks
+with no errors or warnings. All 63 local Python tests and 13 Node tests pass.
+On the physical i5-1135G7/16 GB Ubuntu laptop, Chrome rendered desktop and mobile
+menus correctly in both text-only and multimodal mode. Both runs sent a real
+chat request and retained the conversation after reload. Seeded old reasoning
+and tool preferences added no thinking override, budget or tools to the request;
+saved MCP configuration made no connection attempt.
+
+Local browser checks served the compiled UI through the existing tested native
+server's static-path option. Native CI separately builds the new embedded UI
+and tests it from the delivered archive with external networking blocked.
+The [native archive checks](https://github.com/FarukZahiragic/apertus-local/actions/runs/42538045487)
+and [Windows checks](https://github.com/FarukZahiragic/apertus-local/actions/runs/42538045282)
+passed on all four platforms. Both delivered-UI browser reports passed with
+external networking blocked, and the Ubuntu 24.04/Debian 12 consumer checks passed.
+The Mac CPU-to-Metal rebuild exposed a new untracked patch file surviving reset;
+the constant now lives in an existing tracked upstream file. Reapplying the full
+patch set twice succeeds, as does the native Mac CPU/Metal build.
+
+Preview.2 promotes these exact archive bytes without repacking. All 202 payload
+hashes and four archive hashes were checked locally before publication; Windows
+patch hashes reflect Git's CRLF checkout. The source commit is
+`807bf96ae83ba7c10bbd6d9044550a9d4ce1a467`. Automatic setup upgrades older generic
+UI runtimes and reuses current participant runtimes and model files.
+No inference-performance benchmark is inferred from these functional checks.

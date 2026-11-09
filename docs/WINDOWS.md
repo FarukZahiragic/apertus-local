@@ -57,13 +57,14 @@ count fallback if inventory is unavailable. No particular CPU model is hardcoded
 
 ## Maintainer builds
 
-Use a native Windows build host with Git, CMake, Python for validation, and Visual
+Use a native Windows build host with Git, CMake, Node.js 24/npm for the bundled
+UI, Python for validation, and Visual
 Studio 2022 C++ tools. ARM64 builds use LLVM Clang and Ninja plus the ARM64 tools.
 Participants do not need these build tools.
 
 ```powershell
 scripts/setup_windows.ps1 -Architecture x64
-scripts/package_windows.ps1 -Version v0.1.0-preview.4 -Architecture x64
+scripts/package_windows.ps1 -Version v0.2.0-preview.2 -Architecture x64
 ```
 
 On native ARM64 Windows, replace `x64` with `arm64`. The build uses the same

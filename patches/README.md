@@ -4,6 +4,13 @@
 applies these patches in order. Keep each one minimal; drop it once the pinned branch
 contains the change.
 
+`0006-apertus-workshop-ui.patch` trims the existing UI to the participant workflow:
+no generic reasoning-effort menus, unconfigured tools/MCP/agent controls or video
+claims. It ignores saved effort/tool choices and prevents old MCP configurations
+from reconnecting, while preserving chat history and loaded image/audio inputs.
+Build the patched UI from source with Node.js 24/npm; the build scripts disable
+the generic prebuilt UI. See [WORKSHOP_UI.md](../docs/WORKSHOP_UI.md).
+
 `0005-apertus-image-token-budget.patch` makes Apertus honor `--image-min-tokens`
 and `--image-max-tokens`. The unpatched path always used the model's metadata,
 allowing a phone photo to use thousands of tokens and excessive CPU memory.

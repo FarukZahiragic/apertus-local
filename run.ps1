@@ -8,11 +8,11 @@ if ($env:OS -ne 'Windows_NT') { throw 'Use run.ps1 on Windows, or run.sh on macO
 $architecture = $env:PROCESSOR_ARCHITEW6432
 if (-not $architecture) { $architecture = $env:PROCESSOR_ARCHITECTURE }
 switch ($architecture) {
-    'AMD64' { $platform = 'windows-x86_64'; $digest = '61cfedb051528fe4946d8c76081c9d853b7bde3238a26658f6956ecf89ead08e' }
-    'ARM64' { $platform = 'windows-arm64'; $digest = '0ac0ff60258e0ab118ef2b70a13b14b55af06a36d8072bc59c7ca6ca12ded82f' }
+    'AMD64' { $platform = 'windows-x86_64'; $digest = '04a4534aff2f00dedb1cc0349331d253bef6f8d8472e5e4ddcc756e2b37824e6' }
+    'ARM64' { $platform = 'windows-arm64'; $digest = 'ed9c2ac8524a0d07abd9b19c10665ee42c0090373ba9ea5b31b2fd9f00d280d3' }
     default { throw 'Apertus requires 64-bit Windows on Intel/AMD or ARM/Snapdragon.' }
 }
-$version = 'v0.2.0-preview.1'
+$version = 'v0.2.0-preview.2'
 if (-not $env:MULTIMODAL) { $env:MULTIMODAL = '1' }
 if ($env:MULTIMODAL -notin @('0','1')) { throw 'MULTIMODAL must be 0 or 1' }
 $archive = "apertus-local-$version-$platform.zip"
@@ -37,7 +37,20 @@ if (-not $env:APERTUS_RUNTIME_DIR) {
         $built = Join-Path $candidate "vendor/llama.cpp/build-windows-$buildArch/bin"
         $hasServer = [IO.File]::Exists($server) -or [IO.File]::Exists((Join-Path $built 'llama-server.exe')) -or [IO.File]::Exists((Join-Path $built 'Release/llama-server.exe'))
         $hasEncoders = $env:MULTIMODAL -eq '0' -or [IO.File]::Exists((Join-Path $candidate 'config/multimodal.env'))
-        if ($hasServer -and $hasEncoders -and [IO.File]::Exists($config) -and [IO.File]::Exists((Join-Path $candidate 'scripts/windows/launch.ps1'))) {
+        $hasParticipantUI = $false
+        if ([IO.File]::Exists($server)) {
+            try {
+                $manifest = [IO.File]::ReadAllText((Join-Path $candidate 'release.json')) | ConvertFrom-Json
+                $hasParticipantUI = $manifest.patches.PSObject.Properties.Name -contains '0006-apertus-workshop-ui.patch'
+            } catch { $hasParticipantUI = $false }
+        } else {
+            $cache = Join-Path $candidate "vendor/llama.cpp/build-windows-$buildArch/CMakeCache.txt"
+            if ([IO.File]::Exists($cache)) {
+                $text = [IO.File]::ReadAllText($cache)
+                $hasParticipantUI = $text -match '(?m)^LLAMA_BUILD_UI:BOOL=ON\r?$' -and $text -match '(?m)^LLAMA_USE_PREBUILT_UI:BOOL=OFF\r?$'
+            }
+        }
+        if ($hasServer -and $hasParticipantUI -and $hasEncoders -and [IO.File]::Exists($config) -and [IO.File]::Exists((Join-Path $candidate 'scripts/windows/launch.ps1'))) {
             if ([IO.File]::ReadAllText($config) -match '(?m)^APERTUS_MODEL_SHA256=e8ddf308abe64441725dcdbfc32e7c89f2b52b94e90f24c30236694f0a90eb8c\r?$') { $env:APERTUS_RUNTIME_DIR = $candidate; break }
         }
     }

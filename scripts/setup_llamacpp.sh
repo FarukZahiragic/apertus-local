@@ -87,9 +87,9 @@ if [[ "$backend" == vulkan ]]; then
   }
 fi
 
-for tool in git cmake "$CC" "$CXX"; do
+for tool in git cmake npm "$CC" "$CXX"; do
   command -v "$tool" >/dev/null || {
-    echo "error: '$tool' not found. Ubuntu: install git cmake build-essential. macOS: install Xcode command line tools and CMake." >&2
+    echo "error: '$tool' not found. Source builds need git, CMake, a C/C++ compiler and Node.js 24/npm. Participants can use the prebuilt runtime." >&2
     exit 1
   }
 done
@@ -118,6 +118,7 @@ cmake -S "$LLAMA_CPP_DIR" -B "$LLAMA_CPP_DIR/$build_dir" \
   -DCMAKE_C_COMPILER="$CC" \
   -DCMAKE_CXX_COMPILER="$CXX" \
   -DLLAMA_BUILD_TESTS=OFF \
+  -DLLAMA_BUILD_UI=ON -DLLAMA_USE_PREBUILT_UI=OFF \
   "${extra_cmake[@]}"
 
 cmake --build "$LLAMA_CPP_DIR/$build_dir" -j "$JOBS" \
