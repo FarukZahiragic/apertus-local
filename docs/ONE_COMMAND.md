@@ -78,8 +78,9 @@ the expected file. It does not scan other folders.
 
 A prepared Apertus checkout/package in the current directory or
 `~/apertus-1.5-local` is also reused when its model metadata matches and a built
-CPU runtime is present. Image-enabled setup also requires multimodal metadata; older text-only runtimes are upgraded. This avoids even the runtime download on an already
-prepared machine.
+CPU runtime includes the participant UI. Image-enabled setup also requires
+multimodal metadata. Older runtimes are upgraded while existing weights are
+reused; a current participant runtime avoids that download as well.
 
 These overrides avoid copies:
 
