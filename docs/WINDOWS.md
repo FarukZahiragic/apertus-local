@@ -57,7 +57,8 @@ count fallback if inventory is unavailable. No particular CPU model is hardcoded
 
 ## Maintainer builds
 
-Use a native Windows build host with Git, CMake, Python for validation, and Visual
+Use a native Windows build host with Git, CMake, Node.js 24/npm for the bundled
+UI, Python for validation, and Visual
 Studio 2022 C++ tools. ARM64 builds use LLVM Clang and Ninja plus the ARM64 tools.
 Participants do not need these build tools.
 

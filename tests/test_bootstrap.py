@@ -88,6 +88,7 @@ class PosixBootstrapTests(BootstrapFixture):
         for directory in ('scripts', 'config', 'runtime/cpu/bin'):
             (root / directory).mkdir(parents=True)
         (root / 'config/model.env').write_text('fixture\n')
+        (root / 'release.json').write_text('{"patches":{"0006-apertus-workshop-ui.patch":"fixture"}}')
         (root / 'config/multimodal.env').write_text('APERTUS_MODEL_SHA256=' + hashlib.sha256(b'encoder fixture').hexdigest() + '\n')
         (root / 'scripts/launch.sh').write_text('''#!/bin/bash
 set -euo pipefail
@@ -249,6 +250,29 @@ mkdir -p "$MODELS_DIR"
         self.assertEqual(self.requests, [])
         self.assertIn('Reusing the local runtime: ' + str(checkout), result.stdout)
 
+    def test_prepared_generic_ui_is_upgraded(self):
+        checkout = Path(self.env['HOME']) / 'apertus-1.5-local'
+        self.make_payload(checkout)
+        (checkout / 'config/model.env').write_text('APERTUS_MODEL_SHA256=e8ddf308abe64441725dcdbfc32e7c89f2b52b94e90f24c30236694f0a90eb8c\n')
+        (checkout / 'release.json').write_text('{"patches":{}}')
+        result = self.run_setup('--no-browser')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.requests, ['full'])
+        self.assertNotIn('Reusing the local runtime: ' + str(checkout), result.stdout)
+
+    def test_source_runtime_with_built_participant_ui_is_reused(self):
+        checkout = Path(self.env['HOME']) / 'apertus-1.5-local'
+        self.make_payload(checkout)
+        (checkout / 'config/model.env').write_text('APERTUS_MODEL_SHA256=e8ddf308abe64441725dcdbfc32e7c89f2b52b94e90f24c30236694f0a90eb8c\n')
+        build = checkout / 'vendor/llama.cpp/build'
+        (build / 'bin').mkdir(parents=True)
+        (checkout / 'runtime/cpu/bin/llama-server').rename(build / 'bin/llama-server')
+        (build / 'CMakeCache.txt').write_text('LLAMA_BUILD_UI:BOOL=ON\nLLAMA_USE_PREBUILT_UI:BOOL=OFF\n')
+        self.stub('curl', 'exit 99')
+        result = self.run_setup('--no-browser')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.requests, [])
+
     def test_unrecognized_runtime_is_preserved(self):
         runtime = self.data / 'packages/linux-x86_64-v0.2.0-preview.1'
         runtime.mkdir(parents=True)
@@ -319,6 +343,7 @@ function Invoke-Apertus {
 }
 '''
         with zipfile.ZipFile(self.package, 'w') as archive:
+            archive.writestr('release.json', '{"patches":{"0006-apertus-workshop-ui.patch":"fixture"}}')
             archive.writestr('config/multimodal.env', '# encoder fixture\n')
             archive.writestr('scripts/windows/Apertus.psm1', module)
             archive.writestr('scripts/windows/launch.ps1', '# fixture\n')
@@ -348,6 +373,25 @@ function Invoke-Apertus {
         self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
         second = self.run_setup()
         self.assertEqual(second.returncode, 0, second.stdout + second.stderr)
+        self.assertEqual(self.requests, ['full'])
+
+    def test_windows_reuses_prepared_participant_ui(self):
+        checkout = Path(self.env['USERPROFILE']) / 'apertus-1.5-local'
+        with zipfile.ZipFile(self.package) as archive:
+            archive.extractall(checkout)
+        (checkout / 'config/model.env').write_text('APERTUS_MODEL_SHA256=e8ddf308abe64441725dcdbfc32e7c89f2b52b94e90f24c30236694f0a90eb8c\n')
+        result = self.run_setup()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.requests, [])
+
+    def test_windows_upgrades_prepared_generic_ui(self):
+        checkout = Path(self.env['USERPROFILE']) / 'apertus-1.5-local'
+        with zipfile.ZipFile(self.package) as archive:
+            archive.extractall(checkout)
+        (checkout / 'config/model.env').write_text('APERTUS_MODEL_SHA256=e8ddf308abe64441725dcdbfc32e7c89f2b52b94e90f24c30236694f0a90eb8c\n')
+        (checkout / 'release.json').write_text('{"patches":{}}')
+        result = self.run_setup()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(self.requests, ['full'])
 
     def test_windows_prepares_both_files_and_allows_text_only(self):

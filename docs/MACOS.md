@@ -21,7 +21,7 @@ bash ~/Downloads/setup.sh
 ```
 
 The script installs Apple command line tools if missing (complete the macOS
-window), installs missing CMake/Python using Homebrew if needed, clones
+window), installs missing CMake/Python/Node build tools using Homebrew if needed, clones
 `main` into `~/apertus-1.5-local`, builds CPU and Metal, and downloads
 the checksum-verified public model. It opens CPU chat and prints commands for
 future starts and CPU/Metal benchmarks. No signing identity or Hugging Face
@@ -43,8 +43,8 @@ Silicon macOS; packaged workshop downloads are a separate distribution path.
 
 For manual installation instead:
 
-Install Xcode command line tools with `xcode-select --install`, then CMake (for
-example `brew install cmake` if you already use Homebrew). Clone this repository.
+Install Xcode command line tools with `xcode-select --install`, then CMake and
+Node.js 24/npm (for example `brew install cmake node` with Homebrew). Clone this repository.
 The build uses Apple Clang, the pinned Apertus-compatible llama.cpp fork and the
 same patches as Linux. A stock Homebrew llama.cpp is not a substitute for this pin.
 

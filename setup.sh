@@ -68,9 +68,10 @@ fi
 
 packages=()
 command -v cmake >/dev/null 2>&1 || packages+=(cmake)
+command -v npm >/dev/null 2>&1 || packages+=(node)
 if ! command -v python3 >/dev/null 2>&1 || ! python3 --version >/dev/null 2>&1; then packages+=(python); fi
 if [[ ${#packages[@]} -gt 0 ]]; then
-  step='installing CMake/Python prerequisites'
+  step='installing source-build prerequisites'
   brew_cmd="$(command -v brew || true)"
   if [[ -x /opt/homebrew/bin/brew ]]; then brew_cmd=/opt/homebrew/bin/brew; fi
   if [[ -z "$brew_cmd" ]]; then

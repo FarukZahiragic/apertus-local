@@ -241,3 +241,19 @@ checks pass, including verification that both bootstraps leave optional image/au
 encoders off. The cross-platform workflow checks the actual published runtime,
 model, stop and saved entry point rather than substituting a small model.
 These are functional checks; no new performance benchmark is inferred.
+
+## Participant UI cleanup
+
+The patched upstream UI builds from source and passes Svelte/TypeScript checks
+with no errors or warnings. All 59 local Python tests and 10 Node tests pass.
+On the physical i5-1135G7/16 GB Ubuntu laptop, Chrome rendered desktop and mobile
+menus correctly in both text-only and multimodal mode. Both runs sent a real
+chat request and retained the conversation after reload. Seeded old reasoning
+and tool preferences added no thinking override, budget or tools to the request;
+saved MCP configuration made no connection attempt.
+
+Local browser checks served the compiled UI through the existing tested native
+server's static-path option. Native CI separately builds the new embedded UI
+and tests it from the delivered archive with external networking blocked.
+Those archive checks must pass before promoting a participant runtime.
+No inference-performance benchmark is inferred from these functional checks.

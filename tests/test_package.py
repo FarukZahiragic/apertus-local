@@ -48,6 +48,7 @@ class PackageTests(unittest.TestCase):
                 build = vendor/backend
                 (build/'bin').mkdir(parents=True)
                 (build/'CMakeCache.txt').write_text('GGML_NATIVE:BOOL=OFF\nGGML_BACKEND_DL:BOOL=ON\n'
+                                                  'LLAMA_BUILD_UI:BOOL=ON\nLLAMA_USE_PREBUILT_UI:BOOL=OFF\n'
                                                   f'GGML_METAL:BOOL={"ON" if "metal" in backend else "OFF"}\n')
                 for name in ['llama-server','llama-bench','llama-cli']:
                     path = build/'bin'/name
