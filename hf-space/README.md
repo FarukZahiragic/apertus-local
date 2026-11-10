@@ -11,6 +11,10 @@ short_description: Download Apertus 8B for private, offline laptop chat
 
 # Apertus Local
 
+Personal prototype by Faruk Zahiragić, not supported by EPFL.
+[Report issues on GitHub](https://github.com/FarukZahiragic/apertus-local/issues);
+support and updates are not guaranteed.
+
 A download page for native Apertus-v1.5-8B Q4_K_M chat through llama-server.
 Text, images and audio are processed on the participant's laptop; this Space does not process prompts or attachments. Answers are text. Model files total about 6.1 GiB, including separate F32 encoders.
 
@@ -22,8 +26,10 @@ preview requires no Apple Developer membership and includes per-app first-open
 instructions in `macos-first-start.html`; the physical Finder-opening rehearsal
 is labelled pending. Developer ID signing/notarization are optional.
 The command selector has two choices: macOS / Linux and Windows. The setup
-scripts detect the native OS and processor. Hardware-specific archive links
-remain in the optional download section, with their own checksum, system
+scripts detect the native OS and processor. Setup commands and source links use
+the reviewed bootstrap revision in `app.js`; keep the repository README and
+`docs/ONE_COMMAND.md` commands on that same revision when updating it.
+Hardware-specific archive links remain in the optional download section, with their own checksum, system
 requirements and first-start guides. The current official Apertus wordmark and
 blue palette are documented in `assets/README.md` and served with the page.
 Keep each entry unavailable until its own native archive, checksum and inference
