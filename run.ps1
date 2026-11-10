@@ -5,6 +5,7 @@ param([switch]$PrepareOnly, [switch]$NoBrowser)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
 if ($env:OS -ne 'Windows_NT') { throw 'Use run.ps1 on Windows, or run.sh on macOS/Linux.' }
+# Choose a native package and its fixed checksum; no build tools are installed.
 $architecture = $env:PROCESSOR_ARCHITEW6432
 if (-not $architecture) { $architecture = $env:PROCESSOR_ARCHITECTURE }
 switch ($architecture) {
@@ -25,6 +26,7 @@ $uri = [Uri]$url
 if ($uri.Scheme -ne 'https' -and -not ($uri.Scheme -eq 'http' -and $uri.IsLoopback)) { throw 'Package downloads require HTTPS (HTTP loopback is allowed for tests).' }
 if ($env:MODEL -and -not [IO.File]::Exists($env:MODEL)) { throw "MODEL does not exist: $env:MODEL" }
 if ($env:MODEL) { $env:MODEL = [IO.Path]::GetFullPath($env:MODEL) }
+# Keep new files in the user's data folder; reuse a prepared runtime when found.
 $data = Join-Path $env:LOCALAPPDATA 'Apertus Local'
 if ($env:APERTUS_INSTALL_DIR) { $data = [IO.Path]::GetFullPath($env:APERTUS_INSTALL_DIR) }
 [IO.Directory]::CreateDirectory($data) | Out-Null
@@ -75,6 +77,7 @@ function Test-BootstrapRuntime {
 Write-Host 'Apertus Local - one-command setup'
 Write-Host "Local files: $data"
 Write-Host 'Model files total 6.1 GiB (5.3 GiB in text-only mode). A missing native runtime downloads once.'
+# Verify the downloaded archive before extracting it into the data folder.
 if (-not (Test-BootstrapRuntime)) {
     if ($env:APERTUS_RUNTIME_DIR) { throw 'APERTUS_RUNTIME_DIR is not an Apertus Windows runtime folder.' }
     if (Test-Path -LiteralPath $runtime) { throw "Unrecognized runtime at $runtime; nothing was overwritten." }
@@ -111,6 +114,7 @@ if (-not (Test-BootstrapRuntime)) {
         Remove-Item -LiteralPath $lockPath -Force -ErrorAction SilentlyContinue
     }
 } else { Write-Host "Reusing the local runtime: $runtime" }
+# Reuse existing weights where possible; otherwise download into this install.
 $models = Join-Path $data 'models'
 if ($env:MODELS_DIR) { $models = [IO.Path]::GetFullPath($env:MODELS_DIR) }
 if (-not $env:MODEL -and -not $env:MODELS_DIR) {
@@ -129,6 +133,8 @@ function Quote-BootstrapLiteral {
     param([string]$Value)
     return "'" + $Value.Replace("'", "''") + "'"
 }
+# Save small offline launchers with the selected paths and mode. They delegate
+# to the packaged launch.ps1; model execution stays in the shared runtime.
 $start = Join-Path $data 'start.ps1'
 $lines = @('$ErrorActionPreference = ''Stop''', ('if (-not $env:MULTIMODAL) {{ $env:MULTIMODAL = ''{0}'' }}' -f $env:MULTIMODAL))
 foreach ($name in @('MODELS_DIR', 'APERTUS_STATE_DIR', 'MODEL', 'MODEL_SHA256', 'MMPROJ', 'MMPROJ_SHA256')) {
@@ -144,6 +150,7 @@ $cmd = @('@echo off', 'setlocal',
 [IO.File]::WriteAllLines((Join-Path $data 'Start.cmd'), $cmd, [Text.Encoding]::ASCII)
 [IO.File]::WriteAllLines((Join-Path $data 'Stop.cmd'), @('@echo off', 'call "%~dp0Start.cmd" -Stop'), [Text.Encoding]::ASCII)
 Write-Host "Next time, including offline: open $(Join-Path $data 'Start.cmd')"
+# Preparation only downloads/verifies files; normal setup starts local chat.
 if ($PrepareOnly) {
     # Loading the module as an in-memory script also works when setup was pasted
     # into a shell that does not permit executing downloaded .ps1 files directly.
