@@ -1,5 +1,8 @@
 # Workshop packages
 
+Personal prototype by Faruk Zahiragić, not supported by EPFL. Support and updates
+are not guaranteed. See [install folders and removal steps](ONE_COMMAND.md#remove-apertus-local).
+
 The shortest participant path is now a single Terminal/PowerShell command from
 [ONE_COMMAND.md](ONE_COMMAND.md). It obtains the native runtime automatically,
 downloads only missing weights and opens chat. On Mac it runs the server directly

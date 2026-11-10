@@ -42,9 +42,13 @@ test('Mac and Linux share the Terminal command, and Windows uses PowerShell', as
   const linux = await render(config, 'Linux');
   const windows = await render(config, 'Windows NT 10.0');
   assert.equal(mac.get('#start-command').value, linux.get('#start-command').value);
-  assert.match(mac.get('#start-command').value, /bash -c.*\/main\/run\.sh/);
+  const revision = mac.get('#start-command').value.match(/\/([a-f0-9]{40})\/run\.sh/)[1];
+  assert.match(mac.get('#start-command').value, /bash -c/);
+  assert.ok(mac.get('#command-source').href.endsWith('/' + revision + '/run.sh'));
   assert.equal(windows.get('#platform').value, 'windows');
-  assert.match(windows.get('#start-command').value, /scriptblock.*\/main\/run\.ps1/);
+  assert.match(windows.get('#start-command').value, /scriptblock/);
+  assert.ok(windows.get('#start-command').value.includes('/' + revision + '/run.ps1'));
+  assert.ok(windows.get('#command-source').href.endsWith('/' + revision + '/run.ps1'));
   assert.match(windows.get('#shell-label').textContent, /PowerShell/);
 });
 test('switching OS updates the command, copy feedback and visible archive choices', async () => {

@@ -1,5 +1,9 @@
 # apertus-local
 
+Personal workshop prototype by Faruk Zahiragić. Not supported by EPFL.
+[Report issues on GitHub](https://github.com/FarukZahiragic/apertus-local/issues);
+support and updates are not guaranteed.
+
 Text, image and audio input are supported on Windows x64/ARM64, Apple Silicon Mac
 and Linux x86_64. The launcher reuses the language model and downloads matching
 F32 encoders. See [image/audio setup and validation](docs/MULTIMODAL.md).
@@ -28,13 +32,13 @@ prompt processing (the 1 November 2026 row in `benchmarks/results.md`).
 On **Apple Silicon macOS or x86_64 Linux**, paste this into Terminal:
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/FarukZahiragic/apertus-local/main/run.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/FarukZahiragic/apertus-local/7be7121b402832d72bbe8ab04328214e8bd4f02a/run.sh)"
 ```
 
 On **Windows x64 or ARM64**, paste this into PowerShell:
 
 ```powershell
-& ([scriptblock]::Create((irm https://raw.githubusercontent.com/FarukZahiragic/apertus-local/main/run.ps1)))
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/FarukZahiragic/apertus-local/7be7121b402832d72bbe8ab04328214e8bd4f02a/run.ps1)))
 ```
 
 The command gets a checksum-verified native runtime if missing (about 12 MB on
@@ -44,6 +48,9 @@ The Mac path runs the server directly in Terminal, without opening the app wrapp
 Keep the terminal open; Ctrl+C stops chat. The command prints a local entry point
 for later starts, including offline. See [docs/ONE_COMMAND.md](docs/ONE_COMMAND.md)
 for preparation without starting, existing model/runtime reuse, and OS requirements.
+The setup command is pinned to a fixed source version. It runs with your user
+permissions, without an OS sandbox. See [install folders](docs/ONE_COMMAND.md#downloads-and-local-files)
+and [removal steps](docs/ONE_COMMAND.md#remove-apertus-local).
 
 The bundled [participant chat UI](docs/WORKSHOP_UI.md) keeps text, image and audio
 input and supported chat settings. It omits generic reasoning levels and
