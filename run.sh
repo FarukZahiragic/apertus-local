@@ -19,6 +19,7 @@ for argument in "$@"; do
   esac
 done
 
+# Choose a native package and its fixed checksum; no build tools are installed.
 case "$(uname -s) $(uname -m)" in
   'Darwin arm64') platform=macos-arm64 ;;
   'Darwin x86_64')
@@ -59,6 +60,7 @@ if [[ -n "${MODEL:-}" && ! -f "$MODEL" ]]; then
   echo "error: MODEL does not exist: $MODEL" >&2; exit 1
 fi
 
+# Keep new files in the user's data folder; reuse a prepared runtime when found.
 data="${APERTUS_INSTALL_DIR:-$default_root}"
 mkdir -p "$data"
 data="$(cd "$data" && pwd)"
@@ -103,6 +105,7 @@ valid_runtime() {
 echo 'Apertus Local - one-command setup'
 echo "Local files: $data"
 echo 'Model files total 6.1 GiB (5.3 GiB in text-only mode). A missing native runtime downloads once.'
+# Verify the downloaded archive before extracting it into the data folder.
 if ! valid_runtime; then
   [[ -z "${APERTUS_RUNTIME_DIR:-}" ]] || { echo 'error: APERTUS_RUNTIME_DIR is not an Apertus runtime folder.' >&2; exit 1; }
   [[ ! -e "$runtime" ]] || { echo "error: unrecognized runtime at $runtime; nothing was overwritten." >&2; exit 1; }
@@ -141,6 +144,7 @@ else
   echo "Reusing the local runtime: $runtime"
 fi
 runtime="$(cd "$runtime" && pwd)"
+# Reuse existing weights where possible; otherwise download into this install.
 models="${MODELS_DIR:-$data/models}"
 if [[ -z "${MODELS_DIR:-}${MODEL:-}" ]]; then
   for candidate in "$PWD/models" "$HOME/apertus-1.5-local/models"; do
@@ -160,7 +164,8 @@ if [[ -n "${MODEL:-}" ]]; then
   export MODEL MODEL_SHA256="${MODEL_SHA256:-e8ddf308abe64441725dcdbfc32e7c89f2b52b94e90f24c30236694f0a90eb8c}"
 fi
 
-# Save an offline entry point; model and runtime paths stay outside the script.
+# Save a small offline launcher with the selected paths and mode. It delegates
+# to the packaged launch.sh; model execution stays in the shared runtime.
 temporary="$(mktemp "$data/.start.XXXXXX")"
 {
   printf '#!/usr/bin/env bash\nset -euo pipefail\n'
@@ -180,6 +185,7 @@ temporary="$(mktemp "$data/.start.XXXXXX")"
 chmod 755 "$temporary"
 mv -f "$temporary" "$data/start.sh"
 printf 'Next time, including offline: bash %q\n' "$data/start.sh"
+# Preparation only downloads/verifies files; normal setup starts local chat.
 if [[ "$prepare" == 1 ]]; then
   if [[ -n "${MODEL:-}" ]]; then
     [[ "$(hash_file "$MODEL")" == "$MODEL_SHA256" ]] || { echo 'error: MODEL_SHA256 mismatch.' >&2; exit 1; }
