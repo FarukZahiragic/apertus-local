@@ -1,5 +1,9 @@
 # One-command participant setup
 
+Personal prototype by Faruk Zahiragić, not supported by EPFL.
+[Report issues on GitHub](https://github.com/FarukZahiragic/apertus-local/issues);
+support and updates are not guaranteed.
+
 Open Terminal on macOS/Linux, or PowerShell on Windows, and paste one command.
 It downloads the native runtime only when missing, prepares the model and opens
 the same llama-server chat at http://127.0.0.1:8080/.
@@ -7,20 +11,24 @@ the same llama-server chat at http://127.0.0.1:8080/.
 macOS and Linux:
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/FarukZahiragic/apertus-local/main/run.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/FarukZahiragic/apertus-local/7be7121b402832d72bbe8ab04328214e8bd4f02a/run.sh)"
 ```
 
 Windows:
 
 ```powershell
-& ([scriptblock]::Create((irm https://raw.githubusercontent.com/FarukZahiragic/apertus-local/main/run.ps1)))
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/FarukZahiragic/apertus-local/7be7121b402832d72bbe8ab04328214e8bd4f02a/run.ps1)))
 ```
 
-The commands execute this repository's [run.sh](../run.sh) or
-[run.ps1](../run.ps1). The inference runtime and model have pinned SHA-256
+The commands use a fixed setup version: [run.sh](https://github.com/FarukZahiragic/apertus-local/blob/7be7121b402832d72bbe8ab04328214e8bd4f02a/run.sh) or
+[run.ps1](https://github.com/FarukZahiragic/apertus-local/blob/7be7121b402832d72bbe8ab04328214e8bd4f02a/run.ps1). The inference runtime and model have pinned SHA-256
 checksums. No compiler, Git checkout, Python, Homebrew, administrator installation
 or global PATH change is needed. The bootstrap uses the platform's download,
 hashing and archive tools.
+
+Setup saves a small launcher with your selected file paths for offline starts.
+Chat runs as your normal user, without an OS sandbox, and listens only on
+`127.0.0.1:8080` by default. It adds no background service or automatic startup.
 
 ## Downloads and local files
 
@@ -53,16 +61,31 @@ The small online bootstrap command needs connectivity each time it is fetched.
 Use the printed local entry point for offline starts. If the runtime or model is
 not prepared yet, inference cannot start offline.
 
+## Remove Apertus Local
+
+1. Stop chat with Ctrl+C or the Stop launcher.
+2. Delete your platform's default folder listed above, or your chosen
+   `APERTUS_INSTALL_DIR`. This removes its runtime, launchers, logs and downloaded
+   models. To keep the downloads, move the `models` folder elsewhere first.
+   Reused models or runtimes outside the install folder are left alone.
+3. Clear browser site data for the local chat address (normally
+   `http://127.0.0.1:8080`) to remove saved chats and settings.
+
+If you downloaded an archive, also delete its extracted folder or
+`Apertus Local.app`, and the downloaded ZIP/tar.gz. Mac and Windows archives use
+the data folders above; Linux archives keep data inside the extracted folder.
+If you chose separate model or state folders, remove those too if no longer needed.
+
 ## Prepare before the workshop
 
 To download and verify without starting chat:
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/FarukZahiragic/apertus-local/main/run.sh)" -- --prepare-only
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/FarukZahiragic/apertus-local/7be7121b402832d72bbe8ab04328214e8bd4f02a/run.sh)" -- --prepare-only
 ```
 
 ```powershell
-& ([scriptblock]::Create((irm https://raw.githubusercontent.com/FarukZahiragic/apertus-local/main/run.ps1))) -PrepareOnly
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/FarukZahiragic/apertus-local/7be7121b402832d72bbe8ab04328214e8bd4f02a/run.ps1))) -PrepareOnly
 ```
 
 Start using the printed local command, try a conversation, stop, disable networking
