@@ -19,7 +19,7 @@
   <main>
     <section class="wrap hero">
       <div class="intro">
-        <p class="eyebrow">APERTUS 1.5 · LOCAL CHAT</p>
+        <p class="eyebrow">APERTUS 1.5 · LOCAL CHAT PROTOTYPE</p>
         <h1>Apertus.<br>On <span>your laptop.</span></h1>
         <p class="lead">Chat with text, photos, and short audio clips. After setup, everything runs on your laptop—even offline.</p>
         <ul class="benefits" aria-label="Features"><li>Free to use</li><li>Conversations stay local</li><li>No dedicated GPU needed</li></ul>
@@ -28,6 +28,7 @@
       <section id="setup" class="download-panel" aria-labelledby="download-title">
         <div class="panel-top"><span class="eyebrow">GET STARTED</span><span id="version" class="version">Loading release…</span></div>
         <h2 id="download-title">Start local chat</h2>
+        <p class="prototype-note"><strong>Personal prototype by Faruk Zahiragić.</strong> Not supported by EPFL. <a href="https://github.com/FarukZahiragic/apertus-local/issues">Report an issue</a>; support and updates are not guaranteed.</p>
         <label for="platform">Your operating system</label>
         <select id="platform"><option value="macos-linux">macOS / Linux</option><option value="windows">Windows</option></select>
         <p id="platform-note" class="device-note">Setup automatically selects the right download for your laptop.</p>
@@ -37,7 +38,7 @@
           <textarea id="start-command" rows="4" readonly spellcheck="false" aria-describedby="command-help"></textarea>
           <button id="copy-command" type="button">Copy command</button>
           <span id="copy-status" class="sr-only" role="status" aria-live="polite"></span>
-          <p id="command-help" class="small">Keep the terminal window open while you chat. Setup saves a launcher for next time.</p>
+          <p id="command-help" class="small">Downloads verified files and saves a launcher for next time. No admin access needed. Keep the terminal open while chatting.</p>
           <a id="command-source" class="small">Read the setup script <span aria-hidden="true">↗</span></a>
         </div>
         <p id="status" class="status" role="status" aria-live="polite">Loading release information…</p>
@@ -67,6 +68,9 @@
     <section class="wrap questions" aria-labelledby="questions-title">
       <div><p class="eyebrow">A FEW USEFUL DETAILS</p><h2 id="questions-title">Before you start</h2><p id="model-link" class="small"><a href="https://huggingface.co/faruk-zahiragic/Apertus-v1.5-8B-GGUF">Model files &amp; checksums ↗</a></p></div>
       <div class="faq">
+        <details><summary>What does setup install?</summary><p>A native runtime, about 6.1 GiB of model files, and a small launcher for offline starts. Files stay in your user folders; setup makes no permanent system settings changes. <a href="https://github.com/FarukZahiragic/apertus-local/blob/main/docs/ONE_COMMAND.md#downloads-and-local-files">See the install folders ↗</a></p></details>
+        <details><summary>Is it sandboxed?</summary><p>It runs with your normal user permissions, without an OS sandbox. Chat listens on <code>127.0.0.1:8080</code> by default, accessible only from your computer.</p></details>
+        <details><summary>How do I remove it?</summary><p>Stop Apertus, then delete its install folder. Keep the models folder if you want to reuse the downloads. Clear the local chat site's browser data to remove saved chats and settings. <a href="https://github.com/FarukZahiragic/apertus-local/blob/main/docs/ONE_COMMAND.md#remove-apertus-local">Removal steps ↗</a></p></details>
         <details><summary>Which laptops are supported?</summary><p>Apple Silicon Macs with macOS 13.3 or later, 64-bit Windows 10 or later on Intel/AMD or ARM, and compatible Intel/AMD Linux systems. We recommend 16 GB RAM; 8 GB machines are not yet validated. Leave room for the model, runtime, and future downloads. <a href="https://github.com/FarukZahiragic/apertus-local/blob/main/docs/DISTRIBUTION.md">Full system requirements ↗</a></p></details>
         <details><summary>How do I open it again?</summary><p>Setup prints the saved launcher path. On Windows, use <code>Start.cmd</code> and <code>Stop.cmd</code>. On macOS or Linux, run the saved <code>start.sh</code> command in Terminal and press <kbd>Ctrl+C</kbd> to stop. Keep the terminal window open while chatting.</p></details>
         <details><summary>Can I use photos and audio?</summary><p>Yes. Attach a clear photo or a short audio clip in local chat; Apertus answers in text. Start with less than 15 seconds of speech. Your laptop processes the attachments, so response times depend on your hardware.</p></details>

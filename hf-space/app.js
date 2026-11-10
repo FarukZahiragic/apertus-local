@@ -13,6 +13,8 @@ const labels = {
 let configuration;
 let loadFailed = false;
 let selection = 0;
+// Keep the copied command and its source link on the same reviewed setup version.
+const bootstrapRevision = '7be7121b402832d72bbe8ab04328214e8bd4f02a';
 
 function safeURL(value) {
   try { const parsed = new URL(value); return parsed.protocol === 'https:' ? parsed.href : null; } catch { return null; }
@@ -28,13 +30,13 @@ function update() {
   selection++;
   const windows = platform.value === 'windows';
   const script = windows ? 'run.ps1' : 'run.sh';
-  const scriptURL = 'https://raw.githubusercontent.com/FarukZahiragic/apertus-local/main/' + script;
+  const scriptURL = 'https://raw.githubusercontent.com/FarukZahiragic/apertus-local/' + bootstrapRevision + '/' + script;
   const command = windows ? '& ([scriptblock]::Create((irm ' + scriptURL + ')))' : 'bash -c "$(curl -fsSL ' + scriptURL + ')"';
   document.querySelector('#start-command').value = command;
   copy.textContent = 'Copy command';
   copyStatus.textContent = '';
   document.querySelector('#shell-label').textContent = windows ? 'Paste into PowerShell' : 'Paste into Terminal';
-  document.querySelector('#command-source').href = 'https://github.com/FarukZahiragic/apertus-local/blob/main/' + script;
+  document.querySelector('#command-source').href = 'https://github.com/FarukZahiragic/apertus-local/blob/' + bootstrapRevision + '/' + script;
   document.querySelector('#version').textContent = configuration?.version || 'Loading release…';
   document.querySelector('#platform-note').textContent = windows
     ? 'For Intel/AMD and ARM PCs. Setup detects your processor automatically.'
